@@ -1,0 +1,636 @@
+
+<SelectionBottomMenu>:
+	id: selection_row
+    md_bg_color: "#232217"
+    size: root.size[0],65
+    size_hint: 1,None
+    MDRelativeLayout:
+		Button:
+        	id: create_album
+
+        	background_normal: "album60.png"
+        	size_hint: (None,None)
+        	size: (60,60)
+        	pos_hint: {'center_x':0.5, 'center_y':0.5}
+    MDRelativeLayout:
+    	Button:
+        	id: delete_selected
+        	#background_color: "#232217"
+        	size_hint: (None,None)
+        	pos_hint: {'center_x':0.5, 'center_y':0.5}
+        	size: (60,60)
+        	background_normal: "bin60.png"
+    MDRelativeLayout:
+		Button:
+        	id: close_menu
+        	#background_color: "#232217"
+        	size_hint: (None,None)
+        	pos_hint: {'center_x':0.5, 'center_y':0.5}
+        	size: (60,60)
+        	background_normal: "x60.png"
+
+
+# snackbar !!!
+<AudioInfo>:
+	id: audio_row
+	orientation: 'vertical'
+    md_bg_color: "#232217"
+    size: root.size[0],65
+    size_hint: 1,None
+	MDBoxLayout:
+		size: root.size[0],root.size[1] - 5
+		Button:
+        	id: song_status
+        	background_color: "#232217"
+    		background_normal: "play60.png"
+
+    		pos_hint: {'center_x':0.5, 'center_y':0.5}
+    		size: (60,60)
+            size_hint: (None,None)
+
+    				
+		Button:
+			id: song_name
+			on_release: app.switch_to_player(self.text)
+			background_color: "#232217"
+
+			#opacity: 0
+			size: root.size
+			text: "Artist - song"
+			
+		Button:
+			id: song_timer
+			on_press: app.switch_to_player(root)
+			size_hint: None,None
+			background_color: "#232217"
+			size: 50,root.size[1] - 5
+			text: "00:00"
+			haling: "right"
+			
+      			
+	MDProgressBar:
+		id: song_progress
+		size_hint_y:None
+		height:5
+		max: 1
+		value: 1
+<Album>
+	MDBoxLayout:
+        orientation: "vertical"
+        id: box
+        MDTopAppBar:
+        	id: menu_row
+        	md_bg_color: "#232217"
+        	specific_text_color: "white"
+            title: "Album"
+            elevation: 3
+            right_action_items: []
+
+        MDBoxLayout:
+            MDScrollView:
+            	do_scroll_x: False
+            	MDBoxLayout:
+            		orientation: "vertical"
+            		size_hint: 1, None
+            		height: self.minimum_height
+            		Image:
+        				id: album_image
+        				source: "song.png"
+        				#pos_hint: {'center_x':0.5, 'center_y':0.65}
+            			size_hint: (1,None)
+            			size: 160,160
+
+                	MDList:
+                    	adaptive_height: True
+                    	id: container
+                    
+                    
+<AlbumList>
+	MDBoxLayout:
+        orientation: "vertical"
+        id: box
+        MDTopAppBar:
+        	id: menu_row
+        	md_bg_color: "#232217"
+        	specific_text_color: "white"
+            title: "Album"
+            elevation: 3
+            right_action_items: []
+
+        MDBoxLayout:
+
+            MDScrollView:
+            		
+            	GridLayout:
+            		id: album_container
+            		cols: 3
+            		padding: 10, 10
+            		spacing: 10, 10
+            		size_hint_y: None
+            		height: self.minimum_height
+
+            			#size_hint_x: None
+            			#width: self.minimum_width
+
+
+<Login>:
+	MDRelativeLayout:
+		md_bg_color: [0.5,0.5,1,1]
+		id: login_container
+        MDTopAppBar:
+        	id: menu_row
+        	pos_hint: {'center_x':0.5, 'center_y':.95}
+        	md_bg_color: "#232217"
+        	specific_text_color: "white"
+            title: ""
+            elevation: 3
+            right_action_items: [["back.png", lambda x: root.close_login_page()]]
+        Image:
+        	id: login_img
+			size: (60,60)
+            size_hint: (None,None)
+            source: ""
+            pos_hint: {'center_x':0.5, 'center_y':0.8}
+        MDLabel:
+        	text:'Login'
+        	font_size:18
+        	pos_hint: {'center_x':0.6, 'center_y':0.665}
+        TextInput:
+        	id: login
+        	multiline:False
+        	font_size:20
+			pos_hint:{'center_x':0.5, 'center_y':0.6}
+			size: (root.size[0]*0.8,50)
+            size_hint: (None,None)
+		MDLabel:
+        	text:'Password'
+        	font_size:18
+        	pos_hint: {'center_x':0.6, 'center_y':0.465}
+        TextInput:
+        	id: password
+        	multiline:False
+        	font_size:20
+			pos_hint:{'center_x':0.5, 'center_y':0.4}
+			size: (root.size[0]*0.8,50)
+            size_hint: (None,None)
+        MDLabel:
+        	id: error
+        	text:''
+        	font_size:16
+        	pos_hint: {'center_x':0.6, 'center_y':0.34}
+        	theme_text_color: "Custom"
+    		text_color: "red"
+
+		Button:
+			id: action
+			text:'Connect'
+			
+			pos_hint:{'center_x':0.5, 'center_y':0.25}
+			size: (root.size[0]*0.3,60)
+            size_hint: (None,None)
+
+			#on_press:root.do_login_vk(login.text, password.text)
+
+
+#:import Factory kivy.factory.Factory
+<LoginPopup@Popup>:
+
+    title: "Account connection"
+    size_hint: (1,.5)
+
+    MDRelativeLayout:
+    	id: box
+        orientation: 'vertical'
+        
+        Label:
+            text: 'Choose media'
+            font_size: 14
+            pos_hint: {'center_x':0.5, 'center_y':0.9}
+
+        GridLayout:
+            rows: 1			
+            size_hint: (None,None)
+            pos_hint: {'center_x':0.5, 'center_y':0.5}
+            #width: self.minimum_width
+    		Button:
+    			background_normal: "vk60.png"
+    			size: (60,60)
+        		size_hint: (None,None)
+        		
+
+        		on_press: app.switch_to_login(self.background_normal, root)
+        	Button:
+    			background_normal: "ya60.png"
+    			size: (60,60)
+        		size_hint: (None,None)
+        		
+
+        		on_press: app.switch_to_login(self.background_normal, root)
+
+<CaptchaPopup>:
+
+    title: "Account connection"
+    size_hint: (1,.5)
+    on_dismiss: 
+    	self.ids.error.text = ''
+    	self.ids.captcha_key.text = ''
+    	self.ids.action.clear_widgets()
+    MDRelativeLayout:
+    	id: box
+        orientation: 'vertical'
+        
+        Label:
+            text: 'Enter symbols from captcha'
+            font_size: 14
+            pos_hint: {'center_x':0.5, 'center_y':0.9}
+
+        Image:
+        	id: captcha
+			size: (130,50)
+            size_hint: (None,None)
+            #source: ""
+            pos_hint: {'center_x':0.5, 'center_y':0.75}
+
+        TextInput:
+        	id: captcha_key
+        	multiline:False
+        	font_size:20
+			pos_hint:{'center_x':0.5, 'center_y':0.52}
+			size_hint:(.6,.2)
+		MDLabel:
+        	id: error
+        	text:''
+        	font_size:16
+        	pos_hint: {'center_x':0.85, 'center_y':0.37}
+        	theme_text_color: "Custom"
+    		text_color: "red"
+        	haling: "center"
+    	MDRelativeLayout:
+    		id: action
+
+
+<SecureCodePopup>:
+    title: "Account connection"
+    size_hint: (1,.5)
+    on_dismiss: 
+    	self.ids.error.text = ''
+    	self.ids.secure_code.text = ''
+    	self.ids.action.clear_widgets()
+    MDRelativeLayout:
+    	id: box
+        orientation: 'vertical'
+        
+        Label:
+            text: 'Enter secure code'
+            font_size: 14
+            pos_hint: {'center_x':0.5, 'center_y':0.9}
+
+        TextInput:
+        	id: secure_code
+        	multiline:False
+        	font_size:20
+			pos_hint:{'center_x':0.5, 'center_y':0.52}
+			size_hint:(.6,.2)
+		MDLabel:
+        	id: error
+        	text:''
+        	font_size:16
+        	haling: "center"
+        	pos_hint: {'center_x':0.85, 'center_y':0.37}
+        	theme_text_color: "Custom"
+    		text_color: "red"
+
+    	MDRelativeLayout:
+    		id: action
+
+<CreateAlbumPopup>:
+    title: "Create album"
+    size_hint: (1,.5)
+    on_dismiss: self.ids.album_name.text = ''
+
+    MDRelativeLayout:
+    	id: box
+        orientation: 'vertical'
+        
+        Label:
+            text: 'Enter name for our album'
+            font_size: 14
+            pos_hint: {'center_x':0.5, 'center_y':0.9}
+
+        TextInput:
+        	id: album_name
+        	multiline:False
+        	font_size:20
+			pos_hint:{'center_x':0.5, 'center_y':0.52}
+			size_hint:(.6,.2)
+
+    	MDRelativeLayout:
+    		id: action
+
+<RenameAlbumPopup>:
+    title: "Rename album"
+    size_hint: (1,.5)
+    on_dismiss: self.ids.album_name.text = ''
+
+    MDRelativeLayout:
+    	id: box
+        orientation: 'vertical'
+        
+        Label:
+            text: 'Enter name for our album'
+            font_size: 14
+            pos_hint: {'center_x':0.5, 'center_y':0.9}
+
+        TextInput:
+        	id: album_name
+        	multiline:False
+        	font_size:20
+			pos_hint:{'center_x':0.5, 'center_y':0.52}
+			size_hint:(.6,.2)
+
+    	MDRelativeLayout:
+    		id: action
+
+<RenameTrackPopup>:
+    title: "Rename track"
+    size_hint: (1,.5)
+    on_dismiss: 
+    	self.ids.artist.text = ''
+    	self.ids.song.text = ''
+
+    MDRelativeLayout:
+    	id: box
+        orientation: 'vertical'
+        
+        Label:
+            text: 'Artist'
+            font_size: 14
+            pos_hint: {'center_x':0.5, 'center_y':0.9}
+
+        TextInput:
+        	id: artist
+        	multiline:False
+        	font_size:20
+			pos_hint:{'center_x':0.5, 'center_y':0.78}
+			size_hint:(.6,.2)
+		Label:
+            text: 'Song'
+            font_size: 14
+            pos_hint: {'center_x':0.5, 'center_y':0.6}
+
+        TextInput:
+        	id: song
+        	multiline:False
+        	font_size:20
+			pos_hint:{'center_x':0.5, 'center_y':0.48}
+			size_hint:(.6,.2)
+
+    	MDRelativeLayout:
+    		id: action
+
+<AddToAlbumPopup>:
+    title: "Add to album"
+    size_hint: (1,.5)
+    md_bg_color: "#000217"
+
+    MDBoxLayout:
+    	id: box
+        orientation: 'vertical'
+
+        MDScrollView:
+            do_scroll_x: False
+            MDList:
+                adaptive_height: True
+                id: container
+
+<ConfirmationPopup>:
+    title: "Confirmation"
+    size_hint: (1,.5)
+    #on_dismiss: self.ids.album_name.text = ''
+
+    MDRelativeLayout:
+    	id: box
+        orientation: 'vertical'
+        
+        Label:
+        	id: info
+            text: 'Are you shour want to delete album'
+            font_size: 14
+            pos_hint: {'center_x':0.5, 'center_y':0.9}
+
+    	MDRelativeLayout:
+    		id: action
+
+<Start>:
+    MDBoxLayout:
+    	id: box
+        orientation: "vertical"
+        outer_album_container: outer_album_container.__self__
+        outer_track_container: outer_track_container.__self__
+        Widget:        	
+        	pos: 0,0
+        	layout: 'float'
+        	height: '0dp'
+        	size_hint: (None,None)
+
+        MDTopAppBar:
+        	id: menu_row
+        	md_bg_color: "#232217"
+        	specific_text_color: "white"
+            title: "Music manager"
+            left_action_items: [["menu", lambda x: nav_drawer.set_state('toggle')]]
+            elevation: 3
+            right_action_items: []
+
+        MDBoxLayout:
+        	id: outer_album_container
+        	md_bg_color: "#006668"
+            orientation: 'vertical'
+            size_hint: (1,None)
+            size:root.size[0],120
+
+            MDScrollView:
+            	do_scroll_y: False
+
+            	MDBoxLayout:
+            		#orientation: "horizontal"
+            		adaptive_height: True
+            		size_hint_x: None
+
+            		width: self.minimum_width
+            		
+            		GridLayout:
+            			id: album_container
+            			rows: 1
+            			
+            			size_hint_x: None
+            			width: self.minimum_width
+            			
+
+
+        MDBoxLayout:
+        	id: outer_track_container
+            MDScrollView:
+
+            	do_scroll_x: False
+                MDList:
+                    adaptive_height: True
+                    id: container
+
+
+
+
+
+	MDNavigationDrawer:
+		id: nav_drawer
+
+		ContentNavigationDrawer:
+			orientation: 'vertical'
+			Image:
+				size_hint: None, None
+		    	size: 290, 72.5
+		    	source: "logo.png"
+		    	pos_hint: {"center_x": .5, "center_y": .95}
+
+        	Button:
+            	size_hint: None, None
+		    	size: 290, 50
+				pos_hint: {"center_x": .5, "center_y": .85}
+		    	opacity: .1
+            	on_release: app.main_screen.downloaded_audios()
+		    Image:
+				size_hint: None, None
+		    	size: 50, 50
+		    	source: "home.png"
+		    	pos_hint: {"center_x": .1, "center_y": .85}
+		    MDLabel:
+        		text: "View Downloaded Music"
+				pos_hint: {"center_x": .8, "center_y": .85}
+
+
+            MDLabel:
+        		id: accounts
+        		#size_hint: None, None
+        		pos_hint: {"center_x": .5, "center_y": .75}
+				text: "No accounts yet connected"
+            	font_size: 16
+				halign: 'left'
+
+        	MDScrollView:
+        		size: 290, 245
+        		pos_hint: {"center_x": .5, "center_y": .5}
+        		size_hint_y: None
+            	DrawerList:
+            		size_hint_y: None
+        			height: self.minimum_height
+                	MDList:
+                		id: session_container
+                		adaptive_height: True
+                		size_hint_y: None
+        				height: self.minimum_height
+
+            MDRelativeLayout:
+        		Button:
+            		size_hint: None, None
+		    		size: 290, 50
+		    		pos_hint: {"center_x": .5, "center_y": .2}
+		    		opacity: .1
+            		on_release: Factory.LoginPopup().open()
+		    	Image:
+		    		size_hint: None, None
+		    		size: 50, 50
+		    		source: "add.png"
+		    		pos_hint: {"center_x": .5, "center_y": .2}
+		    	MDLabel:
+            		text: "Connect account"
+            		pos_hint: {"center_x": .8, "center_y": .27}
+
+
+		    
+
+            
+            MDLabel:
+            	text: "Version 0.1 beta"
+            	#size_hint: None, None
+            	pos_hint: {"center_y": .1}
+
+<Player>:
+	MDRelativeLayout:
+		md_bg_color: [0.5,0.5,1,1]
+		Button:
+        	pos_hint: {'center_x':0.5, 'center_y':1}
+            
+        	background_color: 0,0,0,0
+    		size: (root.size[0],root.size[1]/5)
+            size_hint: (None,None)
+            on_release: root.close_player()
+
+        Image:
+			size: (60,60)
+            size_hint: (None,None)
+            source: "down60.png"
+            pos_hint: {'center_x':0.5, 'center_y':0.95}
+
+            
+		Label:
+			id: song_name
+			text: "Artist - Song"
+			pos_hint:{'center_x':0.5, 'center_y':.3}
+            size_hint: (1,1)
+            font_size: 18
+        Image:
+        	id: song_image
+        	source: "player_back.png"
+        	pos_hint: {'center_x':0.5, 'center_y':0.65}
+            size_hint: (.8,.75)
+        Label:
+        	id: song_timer
+        	text: "00:00"
+            pos_hint: {'center_x':.16, 'center_y':.2}
+            size_hint: (1,1)
+            font_size: 12
+        Label:
+        	id: song_len
+        	text: "00:00"
+            pos_hint: {'center_x':.84, 'center_y':.2}
+            size_hint: (1,1)
+            font_size: 12
+        MDSlider:
+        	id: song_progress
+        	orientation: "horizontal"
+        	active: False
+        	hint_radius: 10
+        	min: 0
+        	max: 1
+        	value: 0
+
+            pos_hint: {'center_x':0.5, 'center_y':0.22}
+            size: (root.size[0]-100,20)
+            size_hint: (None,None)
+            on_touch_down:
+            	if args[0].collide_point(args[1].x, args[1].y): self.on_touch_up=lambda x: app.audio_play(args)
+            	else: self.on_touch_up=lambda x: x
+
+
+        Button:
+        	pos_hint: {'center_x':0.25, 'center_y':0.1}
+            background_normal: "left60.png"
+            size: (60,60)
+            size_hint: (None,None)
+            on_press: app.prev_to_play()
+
+        Button:
+        	id: song_status
+        	pos_hint: {'center_x':0.5, 'center_y':0.1}
+            background_normal: "play60.png"
+
+    		size: (60,60)
+            size_hint: (None,None)
+            #on_press: self.pre_to_play
+
+        Button:
+        	pos_hint: {'center_x':0.75, 'center_y':0.1}
+            background_normal: "right60.png"
+            size: (60,60)
+            size_hint: (None,None)
+            on_press: app.next_to_play()
