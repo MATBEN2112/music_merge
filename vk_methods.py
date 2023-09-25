@@ -4,8 +4,6 @@ import json
 import pickle
 import time
 import re
-from Crypto.Cipher import AES
-from Crypto.Util.Padding import unpad
 import vk_audio
 from utils import *
 
