@@ -46,7 +46,7 @@ try:
 except FileExistsError:
     pass
 
-meta_start()
+#meta_start()
 #################
 ### Main Screen  ###
 #################
