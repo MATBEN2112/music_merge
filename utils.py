@@ -32,17 +32,17 @@ cursor.execute("PRAGMA foreign_keys = ON")
 def meta_start(x):
     cursor.execute("""CREATE TABLE IF NOT EXISTS AlbumList (
         id          INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
-        path      TEXT GENERATED ALWAYS AS ('./downloads/'||id||'/') VIRTUAL,
+        path      TEXT GENERATED ALWAYS AS (?||'/downloads/'||id||'/') VIRTUAL,
         name    TEXT,
         img       TEXT DEFAULT ('./icons/song.png'));
-    """)
+    """,(x,))
     cursor.execute("""CREATE TABLE IF NOT EXISTS TrackList (
         id                 INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
-        path             TEXT GENERATED ALWAYS AS ('./downloads/'||id||'.mp3') VIRTUAL,
+        path             TEXT GENERATED ALWAYS AS (?||'/downloads/'||id||'.mp3') VIRTUAL,
         artist            TEXT,
         song            TEXT,
         img              TEXT DEFAULT ('./icons/track.png'));
-    """)
+    """,(x,))
     cursor.execute("""CREATE TABLE IF NOT EXISTS Relationship (
         
         track_id            INTEGER NOT NULL,
