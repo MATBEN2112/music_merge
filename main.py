@@ -12,7 +12,7 @@ from kivy.uix.screenmanager import ScreenManager, Screen, SlideTransition
 from kivymd.uix.relativelayout import MDRelativeLayout
 import os
 import shutil
-from utils import *
+#from utils import *
 
 from kivy.uix.textinput import TextInput
 from kivy.core.window import Window
