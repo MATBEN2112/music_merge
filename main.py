@@ -38,11 +38,11 @@ import vk_methods as vk
 from custom_widgets import *
 
 try:
-    os.mkdir('./downloads/')
+    os.mkdir('./Documents/downloads/')
 except FileExistsError:
     pass
 try:
-    os.mkdir('./sessions/')
+    os.mkdir('./Documents/sessions/')
 except FileExistsError:
     pass
 
