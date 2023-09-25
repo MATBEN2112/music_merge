@@ -456,8 +456,8 @@ class LoginApp(MDApp):
     def build(self): # screen loader
         self.app_dir = getattr(self, 'user_data_dir')
         meta_start(self.app_dir)
-        print(app_dir)
-        print(os.listdir(app_dir))
+        print(self.app_dir)
+        print(os.listdir(self.app_dir))
         try:
             os.mkdir(self.app_dir +'/downloads/')
         except FileExistsError:
