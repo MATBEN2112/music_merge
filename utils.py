@@ -24,8 +24,8 @@ from csv import DictWriter, DictReader
 import os
 import sqlite3
 
-#with sqlite3.connect("./Documents/music_meta.db") as db:
-#    cursor = db.cursor()
+with sqlite3.connect("./Documents/music_meta.db") as db:
+    cursor = db.cursor()
     
 cursor.execute("PRAGMA foreign_keys = ON")
 
