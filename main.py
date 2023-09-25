@@ -337,7 +337,7 @@ class Login(Screen):
         self.login = login
         self.password = password
 
-        self.session, captcha_sid, status, auth_hash = vk.login_request(self.app, login, password,
+        self.session, captcha_sid, status, auth_hash = vk.login_request(self.app.app_dir, login, password,
             captcha_sid=captcha_sid,
             captcha_key=captcha_key
         )
@@ -433,7 +433,7 @@ class Login(Screen):
         print('ends')
         
         if vk.pass_security_check(self.session, self.login):
-            vk.save_session(self.app, self.session)
+            vk.save_session(self.app.app_dir, self.session)
             self.app.load_session()
             self.manager.transition = SlideTransition(direction="up")
             self.manager.current = 'start'
