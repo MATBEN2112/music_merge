@@ -455,15 +455,15 @@ class LoginApp(MDApp):
         self.manager.get_screen('login').open_login_page(media)    
     
     def build(self): # screen loader
-        app_dir = getattr(self, 'user_data_dir')
+        self.app_dir = getattr(self, 'user_data_dir')
         print(app_dir)
         print(os.listdir(app_dir))
         try:
-            os.mkdir(app_dir+'/downloads/')
+            os.mkdir(self.app_dir +'/downloads/')
         except FileExistsError:
             pass
         try:
-            os.mkdir(app_dir+'/sessions/')
+            os.mkdir(self.app_dir +'/sessions/')
         except FileExistsError:
             pass
         self.manager = ScreenManager()
@@ -487,7 +487,7 @@ class LoginApp(MDApp):
 
     def load_session(self):
         session_list = DrawerList()
-        session_dir_list = os.listdir(r'./sessions/')
+        session_dir_list = os.listdir(self.app_dir + '/sessions/')
         self.main_screen.ids.session_container.clear_widgets()
         for elem in session_dir_list:
             self.main_screen.ids.session_container.add_widget(SessionListElement(self, elem))
