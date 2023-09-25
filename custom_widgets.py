@@ -416,7 +416,7 @@ class VKTrack(TwoLineAvatarIconListItem):
         )
     def download(self):
         vk.download_audio(
-            self.app.app_dir
+            self.app.app_dir,
             self.session,
             self.u_id, self.id,
             self.text,
