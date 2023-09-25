@@ -1,8 +1,5 @@
 import requests
-from Crypto.Cipher import AES
-from Crypto.Util.Padding import unpad
-import binascii
-
+import pyaes
 
 CHAR_SET = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMN0PQRSTUVWXYZO123456789+/='
 
@@ -37,20 +34,17 @@ def m3u8_parser(url):
 
             i += 1
             
-
-    
     return b''.join(seg)
 
 def decrypt(seg, key):
-    #print(key)
-    iv = seg[:AES.block_size]
+    iv = seg[:16]
+    cipher = seg[16:]
+    aes = pyaes.AESModeOfOperationCBC(key, iv = iv)
+    decrypted = b''
+    for i in range(16,len(cipher),16):
+        decrypted += aes.decrypt(seg[i-16:i])    
 
-    ciphered_data = seg
-
-    cipher = AES.new(key, AES.MODE_CBC, iv=iv)
-    data = cipher.decrypt(ciphered_data[AES.block_size:])
-
-    return data.rstrip(b"\0")
+    return decrypted.rstrip(b"\0")
 
 
 def encode_url(url, uid): # done
