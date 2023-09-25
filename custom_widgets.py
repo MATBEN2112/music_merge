@@ -261,9 +261,9 @@ class SessionListElement(TwoLineAvatarIconListItem):
         )
         if 'vk_' in session_name:
             self.session_name = session_name
-            self.session = vk.load_session(self.session_name)
+            self.session = vk.load_session(self.app.app_dir, self.session_name)
             self.type = 'vk'
-            with open(self.app_dir + fr'/sessions/{session_name}/uid', 'rb') as f:
+            with open(self.app.app_dir + fr'/sessions/{session_name}/uid', 'rb') as f:
                 data = pickle.load(f)
                 self.text = data['u_name']
                 self.secondary_text =data['uid']
@@ -416,6 +416,7 @@ class VKTrack(TwoLineAvatarIconListItem):
         )
     def download(self):
         vk.download_audio(
+            self.app.app_dir
             self.session,
             self.u_id, self.id,
             self.text,
