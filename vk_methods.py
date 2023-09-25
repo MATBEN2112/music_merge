@@ -37,13 +37,13 @@ def clear_string(s):
     if s:
         return s.strip().replace('&nbsp;', '')
 
-def load_session(s):    
+def load_session(x, s):    
     session = requests.Session()
     session.headers['User-agent'] = 'Mozilla/5.0 (Windows NT 10.0; rv:91.0) Gecko/20100101 Firefox/91.0'
     if not s:
         return session
     try:
-        with open(rf'./Documents/sessions/{s}/coockie_Jar', 'rb') as f:
+        with open(x + rf'/sessions/{s}/coockie_Jar', 'rb') as f:
             session.cookies.update(pickle.load(f))
             
     except FileNotFoundError:
@@ -51,23 +51,23 @@ def load_session(s):
     
     return session
 
-def save_session(session):# Save session
+def save_session(x, session):# Save session
     response = session.get('https://vk.com/settings')
 
     u_img_url, u_name= search_re(REGEXP['u_img_name'], response.text).split('" alt="')
     uid = search_re(REGEXP['uid'], response.text)
-    os.mkdir(f'./Documents/sessions/vk_{uid}/')
-    with open(rf'./Documents/sessions/vk_{uid}/coockie_Jar', 'wb') as f:
+    os.mkdir(x + f'/sessions/vk_{uid}/')
+    with open(x + rf'/sessions/vk_{uid}/coockie_Jar', 'wb') as f:
         pickle.dump(session.cookies, f)
         
-    with open(rf'./Documents/sessions/vk_{uid}/u_img.jpg', 'wb') as f:
+    with open(x + rf'/sessions/vk_{uid}/u_img.jpg', 'wb') as f:
         f.write(session.get(u_img_url).content)
         
-    with open(rf'./Documents/sessions/vk_{uid}/uid', 'wb') as f:
+    with open(x + rf'/sessions/vk_{uid}/uid', 'wb') as f:
         pickle.dump({'uid': uid, 'u_name': u_name}, f)
     
-def login_request(login, password, session_name = '', captcha_sid='', captcha_key = ''):
-    session = load_session(session_name)
+def login_request(x, login, password, session_name = '', captcha_sid='', captcha_key = ''):
+    session = load_session(x, session_name)
     response = session.get('https://vk.com/login')
 
     if response.status_code > 299: # Check if request status code is redirect
@@ -341,7 +341,7 @@ def load_playlist_content(session, playlist_data):
     audio_list.update(parse_audio_list(response_json['payload'][1][0]['list']))
     return audio_list
     
-def download_audio(session, uid, audio_id, artist, song, img_link):
+def download_audio(x, session, uid, audio_id, artist, song, img_link):
     payload={
         'al': '1',
         'ids': audio_id
@@ -358,7 +358,7 @@ def download_audio(session, uid, audio_id, artist, song, img_link):
         
     if img_link:
         print('image saved')
-        with open(f'./Documents/images/t/{key}.jpg', 'wb') as f:
+        with open(x + f'/images/t/{key}.jpg', 'wb') as f:
             f.write(requests.get(img_link).content)
 
 def download_album(session, uid, audio_id, name, img_link=None):
