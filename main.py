@@ -309,6 +309,7 @@ class Login(Screen):
         self.manager.current = 'start'
 
     def open_login_page(self,media):
+        self.app = MDApp.get_running_app()
         if media == "./icons/vk60.png": 
             self.secure_code_popup = SecureCodePopup()
             self.captcha_popup = CaptchaPopup()
@@ -336,7 +337,7 @@ class Login(Screen):
         self.login = login
         self.password = password
 
-        self.session, captcha_sid, status, auth_hash = vk.login_request(login, password,
+        self.session, captcha_sid, status, auth_hash = vk.login_request(self.app, login, password,
             captcha_sid=captcha_sid,
             captcha_key=captcha_key
         )
@@ -430,10 +431,10 @@ class Login(Screen):
         self.secure_code_popup.dismiss()
         self.reset_forms()
         print('ends')
-        app = MDApp.get_running_app()
+        
         if vk.pass_security_check(self.session, self.login):
-            vk.save_session(self.session)
-            app.load_session()
+            vk.save_session(self.app, self.session)
+            self.app.load_session()
             self.manager.transition = SlideTransition(direction="up")
             self.manager.current = 'start'
                        
