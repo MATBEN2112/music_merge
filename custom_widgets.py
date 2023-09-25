@@ -263,12 +263,12 @@ class SessionListElement(TwoLineAvatarIconListItem):
             self.session_name = session_name
             self.session = vk.load_session(self.session_name)
             self.type = 'vk'
-            with open(fr'./Documents/sessions/{session_name}/uid', 'rb') as f:
+            with open(self.app_dir + fr'/sessions/{session_name}/uid', 'rb') as f:
                 data = pickle.load(f)
                 self.text = data['u_name']
                 self.secondary_text =data['uid']
             try:
-                self.add_widget(ImageLeftWidgetWithoutTouch(source=rf"./Documents/sessions/{session_name}/u_img.jpg"))
+                self.add_widget(ImageLeftWidgetWithoutTouch(source=self.app_dir + rf"/sessions/{session_name}/u_img.jpg"))
             except:
                 pass
             
