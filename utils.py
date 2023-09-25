@@ -29,7 +29,7 @@ with sqlite3.connect("music_meta.db") as db:
     
 cursor.execute("PRAGMA foreign_keys = ON")
 
-def meta_start():
+def meta_start(x):
     cursor.execute("""CREATE TABLE IF NOT EXISTS AlbumList (
         id          INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
         path      TEXT GENERATED ALWAYS AS ('./downloads/'||id||'/') VIRTUAL,
