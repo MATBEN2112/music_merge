@@ -36,9 +36,7 @@ from kivy.uix.popup import Popup
 from kivy.uix.image import Image, AsyncImage
 import vk_methods as vk
 from custom_widgets import *
-print(os.listdir())
 
-meta_start()
 #################
 ### Main Screen  ###
 #################
@@ -456,6 +454,7 @@ class LoginApp(MDApp):
     
     def build(self): # screen loader
         self.app_dir = getattr(self, 'user_data_dir')
+        meta_start(self.app_dir)
         print(app_dir)
         print(os.listdir(app_dir))
         try:
@@ -634,3 +633,4 @@ class LoginApp(MDApp):
 
 if __name__ == '__main__':
     LoginApp().run()
+    
