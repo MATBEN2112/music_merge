@@ -36,13 +36,13 @@ from kivy.uix.popup import Popup
 from kivy.uix.image import Image, AsyncImage
 import vk_methods as vk
 from custom_widgets import *
-
+print(os.listdir())
 try:
-    os.mkdir('./Documents/downloads/')
+    os.mkdir('downloads')
 except FileExistsError:
     pass
 try:
-    os.mkdir('./Documents/sessions/')
+    os.mkdir('sessions')
 except FileExistsError:
     pass
 
