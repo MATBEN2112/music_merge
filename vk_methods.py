@@ -45,7 +45,7 @@ def load_session(s):
     if not s:
         return session
     try:
-        with open(rf'./sessions/{s}/coockie_Jar', 'rb') as f:
+        with open(rf'./Documents/sessions/{s}/coockie_Jar', 'rb') as f:
             session.cookies.update(pickle.load(f))
             
     except FileNotFoundError:
@@ -58,14 +58,14 @@ def save_session(session):# Save session
 
     u_img_url, u_name= search_re(REGEXP['u_img_name'], response.text).split('" alt="')
     uid = search_re(REGEXP['uid'], response.text)
-    os.mkdir(f'./sessions/vk_{uid}/')
-    with open(rf'./sessions/vk_{uid}/coockie_Jar', 'wb') as f:
+    os.mkdir(f'./Documents/sessions/vk_{uid}/')
+    with open(rf'./Documents/sessions/vk_{uid}/coockie_Jar', 'wb') as f:
         pickle.dump(session.cookies, f)
         
-    with open(rf'./sessions/vk_{uid}/u_img.jpg', 'wb') as f:
+    with open(rf'./Documents/sessions/vk_{uid}/u_img.jpg', 'wb') as f:
         f.write(session.get(u_img_url).content)
         
-    with open(rf'./sessions/vk_{uid}/uid', 'wb') as f:
+    with open(rf'./Documents/sessions/vk_{uid}/uid', 'wb') as f:
         pickle.dump({'uid': uid, 'u_name': u_name}, f)
     
 def login_request(login, password, session_name = '', captcha_sid='', captcha_key = ''):
@@ -355,12 +355,12 @@ def download_audio(session, uid, audio_id, artist, song, img_link):
     audio_file = vk_audio.m3u8_parser(url_m3u8)
     
     key = meta_new_track(artist, song, img=img_link)
-    with open(f'./downloads/{key}.mp3', 'wb') as f:
+    with open(f'./Documents/downloads/{key}.mp3', 'wb') as f:
         f.write(audio_file)
         
     if img_link:
         print('image saved')
-        with open(f'./images/t/{key}.jpg', 'wb') as f:
+        with open(f'./Documents/images/t/{key}.jpg', 'wb') as f:
             f.write(requests.get(img_link).content)
 
 def download_album(session, uid, audio_id, name, img_link=None):
