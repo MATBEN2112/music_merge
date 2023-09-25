@@ -37,14 +37,6 @@ from kivy.uix.image import Image, AsyncImage
 import vk_methods as vk
 from custom_widgets import *
 print(os.listdir())
-try:
-    os.mkdir('downloads')
-except FileExistsError:
-    pass
-try:
-    os.mkdir('sessions')
-except FileExistsError:
-    pass
 
 meta_start()
 #################
@@ -463,6 +455,17 @@ class LoginApp(MDApp):
         self.manager.get_screen('login').open_login_page(media)    
     
     def build(self): # screen loader
+        app_dir = getattr(self, 'user_data_dir')
+        print(app_dir)
+        print(os.listdir(app_dir))
+        try:
+            os.mkdir(app_dir+'/downloads/')
+        except FileExistsError:
+            pass
+        try:
+            os.mkdir(app_dir+'/sessions/')
+        except FileExistsError:
+            pass
         self.manager = ScreenManager()
         self.manager.add_widget(Start(name='start'))
         self.manager.add_widget(Player(name='player'))
