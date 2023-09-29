@@ -1,9 +1,11 @@
 from kivy.core.audio import SoundLoader
 
 import kivy
+kivy.require('1.0.7')
 
 from kivy.app import App
 from kivy.uix.button import Button
+from ffpyplayer.player import MediaPlayer
 
 
 class TestApp(App):
@@ -12,10 +14,10 @@ class TestApp(App):
         # return a Button() as a root widget
         return Button(text='hello world', on_release=self.play_a)
     def play_a(self, o):
-        self.sound = SoundLoader.load('1.mp3')
-        print(self.sound)
+        self.sound = MediaPlayer('1.mp3')
+        #self.sound.play()
+        #print(self.sound.extensions)
         print(dir(self.sound))
-        self.sound.play()
         
 
 
