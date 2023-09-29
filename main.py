@@ -14,8 +14,8 @@ class TestApp(App):
         # return a Button() as a root widget
         return Button(text='hello world', on_release=self.play_a)
     def play_a(self, o):
-        self.sound = MediaPlayer('seg.ts',ff_opts = {'vn': True, 'sn': True})
-        #self.sound.play()
+        self.sound = SoundLoader('seg.ts')
+        self.sound.play()
         #print(self.sound.extensions)
         print(dir(self.sound))
         
