@@ -12,8 +12,10 @@ class TestApp(App):
         # return a Button() as a root widget
         return Button(text='hello world', on_release=self.play_a)
     def play_a(self, o):
-        sound = SoundLoader.load('file_example_MP3_1MG.mp3')
-        sound.play()
+        self.sound = SoundLoader.load('1.mp3')
+        print(self.sound)
+        print(dir(self.sound))
+        self.sound.play()
         
 
 
