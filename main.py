@@ -7,7 +7,7 @@ from kivy.uix.button import Button
 from ffpyplayer.player import MediaPlayer
 
 from kivy.uix.videoplayer import VideoPlayer
-
+from kivy.core.audio import SoundLoader
 class TestApp(App):
 
     def build(self):
@@ -18,8 +18,9 @@ class TestApp(App):
         w.add_widget(Button(text='m4a', on_release=self.play_m4a))
         return w
     def play_mp3(self, o):
+        self.sound = SoundLoader.load('1.mp3')
+        self.sound.play()
 
-        self.sound = MediaPlayer('1.mp3')
 
     def play_ts(self, o):
         self.sound = MediaPlayer('1.ts')
