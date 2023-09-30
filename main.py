@@ -62,5 +62,5 @@ class SoundAvplayer(Sound):
         return super(SoundAvplayer, self)._get_length()
     
     if __name__ == '__main__':
-        sound = SoundAvplayer.load('1.m4a')
+        sound = SoundAvplayer().load('1.m4a')
         sound.play()
