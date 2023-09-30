@@ -22,7 +22,7 @@ class TestApp(App):
         self.sound = MediaPlayer('1.mp3')
 
     def play_ts(self, o):
-        self.sound = MediaPlayer('seg.ts')
+        self.sound = MediaPlayer('1.ts')
 
     def play_m4a(self, o):
 
