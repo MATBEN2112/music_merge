@@ -1,7 +1,7 @@
 import kivy
 from kivymd.uix.boxlayout import MDBoxLayout
 #kivy.require('1.0.7')
-from kivy.core.audio import SoundLoader
+from kivy.core.audio import Sound
 from kivy.app import App
 from kivy.uix.button import Button
 from ffpyplayer.player import MediaPlayer
@@ -22,16 +22,17 @@ class SoundAvplayer(Sound):
     @staticmethod
     def extensions():
         # taken from https://goo.gl/015kvU
-        return ("aac", "adts", "aif", "aiff", "aifc", "caf", "mp3", "mp4",
+        return ("aac", "ts", "aif", "aiff", "aifc", "caf", "mp3", "mp4",
                 "m4a", "snd", "au", "sd2", "wav")
 
-    def __init__(self, **kwargs):
+    def __init__(self, source, **kwargs):
+        self.load(source)
         self._avplayer = None
         super(SoundAvplayer, self).__init__(**kwargs)
 
-    def load(self):
+    def load(self, source):
         self.unload()
-        fn = NSString.alloc().initWithUTF8String_(self.source)
+        fn = NSString.alloc().initWithUTF8String_(source)
         url = NSURL.alloc().initFileURLWithPath_(fn)
         self._avplayer = AVAudioPlayer.alloc().initWithContentsOfURL_error_(
             url, None)
@@ -82,15 +83,15 @@ class TestApp(App):
         w.add_widget(Button(text='m4a', on_release=self.play_m4a))
         return w
     def play_mp3(self, o):
-        self.sound = SoundAvplayer().load('1.m4a')
+        self.sound = SoundAvplayer.load('1.mp3')
         self.sound.play()
 
     def play_ts(self, o):
-        self.sound = SoundAvplayer().load('1.m4a')
+        self.sound = SoundAvplayer.load('1.ts')
         self.sound.play()
     def play_m4a(self, o):
 
-        self.sound = SoundAvplayer().load('1.m4a')
+        self.sound = SoundAvplayer.load('1.m4a')
         self.sound.play()
 
 
