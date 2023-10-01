@@ -83,15 +83,15 @@ class TestApp(App):
         w.add_widget(Button(text='m4a', on_release=self.play_m4a))
         return w
     def play_mp3(self, o):
-        self.sound = SoundAvplayer.load('1.mp3')
+        self.sound = SoundAvplayer('1.mp3')
         self.sound.play()
 
     def play_ts(self, o):
-        self.sound = SoundAvplayer.load('1.ts')
+        self.sound = SoundAvplayer('1.ts')
         self.sound.play()
     def play_m4a(self, o):
 
-        self.sound = SoundAvplayer.load('1.m4a')
+        self.sound = SoundAvplayer('1.m4a')
         self.sound.play()
 
 
