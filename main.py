@@ -26,8 +26,8 @@ class SoundAvplayer(Sound):
                 "m4a", "snd", "au", "sd2", "wav")
 
     def __init__(self, source, **kwargs):
-        self.load(source)
         self._avplayer = None
+        self.load(source)
         super(SoundAvplayer, self).__init__(**kwargs)
 
     def load(self, source):
