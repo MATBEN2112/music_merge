@@ -44,7 +44,6 @@ from custom_widgets import *
 
 
 from CustomSoundLoader import IOSPlayer
-IOSPlayer.test(IOSPlayer)
 
 #################
 ### Main Screen  ###
