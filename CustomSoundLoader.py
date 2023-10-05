@@ -40,32 +40,3 @@ class IOSPlayer(Sound):
     def test(self):
         self.player.test_func()
     
-
-class TestApp(App):
-
-    def build(self):
-        # return a Button() as a root widget
-        w = MDBoxLayout()
-        w.add_widget(Button(text='mp3', on_release=self.play_mp3))
-        w.add_widget(Button(text='ts', on_release=self.play_ts))
-        w.add_widget(Button(text='m4a', on_release=self.play_m4a))
-        return w
-    def play_mp3(self, o):
-        self.sound = SoundAvplayer.load('1.m4a')
-        self.sound.play()
-
-    def play_ts(self, o):
-        self.sound = SoundAvplayer.load('1.m4a')
-        self.sound.play()
-    def play_m4a(self, o):
-
-        self.sound = SoundAvplayer.load('1.m4a')
-        self.sound.play()
-
-
-
-if __name__ == '__main__':
-    TestApp().run()
-
-
-
