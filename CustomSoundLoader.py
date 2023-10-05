@@ -11,7 +11,7 @@ NSString = autoclass('NSString')
 class IOSPlayer(Sound):
     def __init__(self, source, author='author', song='song'):
         IOS_player = autoclass('IOS_player')
-        print(IOS_player.alloc())
+        print(dir(IOS_player.alloc()))
         self.author = NSString.alloc().initWithUTF8String_(author)
         self.song = NSString.alloc().initWithUTF8String_(song)
         self.fn = NSString.alloc().initWithUTF8String_(source)
