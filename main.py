@@ -15,11 +15,14 @@ import shutil
 from utils import *
 
 from kivy.uix.textinput import TextInput
-from kivy.core.window import Window
+
 
 
 from kivymd.uix.button import MDIconButton
-Window.size = (540, 1170)
+from kivy.core.window import Window
+from kivy.utils import platform
+if kivy.utils.platform not in ['android','ios']:
+    Window.size = (540, 1170)
 
 
 from kivymd.theming import ThemableBehavior
@@ -39,6 +42,7 @@ from custom_widgets import *
 
 try:
     from CustomSoundLoader import IOSPlayer
+    IOSPlayer.test()
 except Exception as e:
     print(e)
 
@@ -568,7 +572,7 @@ class LoginApp(MDApp):
                 self.player_screen.ids.song_image.source=track[4]
                 self.player_screen.ids.song_image.reload()
             if 'sound' in dir(self):
-                ###self.sound.stop()
+                #self.sound.pause()
                 self.progressbarEvent.cancel()
                 self.settimeEvent.cancel()
                 
@@ -586,22 +590,24 @@ class LoginApp(MDApp):
                 [rsetattr(i, 'ids.song_name.text',track_name) for i in self.audio_bar]
                 self.player_screen.ids.song_name.text = track_name
                 print(self.audio_bar[0].ids.song_name.text)
-            ###self.sound = IOSPlayer(self.track[1])
-            ###self.sound.play()
+            self.sound = IOSPlayer(self.track[1],author = self.track[2], song=self.track[3])
+            self.sound.play()
             
-            ###[rsetattr(i, 'ids.song_progress.max', self.sound.length) for i in self.audio_bar]
+            [rsetattr(i, 'ids.song_progress.max', self.sound.get_length()) for i in self.audio_bar]
             [rsetattr(i, 'ids.song_progress.value', 0) for i in self.audio_bar]
-            ###self.player_screen.ids.song_progress.max = self.sound.length
+
+            # needed conversion from obj  c double to float
+            self.player_screen.ids.song_progress.max = self.sound.get_length()
             self.player_screen.ids.song_progress.value = 0
-            #self.player_screen.ids.song_progress.sound = self.sound
-            ###self.player_screen.ids.song_len.text = time.strftime('%M:%S', time.gmtime(self.sound.length))
+            #
+            self.player_screen.ids.song_len.text = time.strftime('%M:%S', time.gmtime(self.sound.get_length()))
 
         elif 'sound' in dir(self) and args: # Seek audio row
             if True: #slider.collide_point(touch.x, touch.y):
                 slider.active = False
                 print('seek audio')
                 self.audio_pos = slider.value
-                ###self.sound.seek(slider.value)
+                self.sound.seek(slider.value)
                 [rsetattr(i, 'ids.song_progress.value', self.audio_pos) for i in self.audio_bar]
                 self.main_screen.add_widget(self.audio_bar[0])
                 self.album_screen.add_widget(self.audio_bar[1])
@@ -611,8 +617,8 @@ class LoginApp(MDApp):
         elif 'sound' in dir(self): # Unpause already loaded audio
             print('Unpause already loaded audio')
 
-            ###self.sound.seek(self.audio_pos)
-            
+            ###self.sound.seek(self.audio_pos) no need
+            self.sound.play()
             [rsetattr(i, 'ids.song_progress.value',self.audio_pos) for i in self.audio_bar]
             self.player_screen.ids.song_progress.value = self.audio_pos
             
@@ -632,8 +638,8 @@ class LoginApp(MDApp):
         
         
     def update_progressbar(self,value):
-        ###[rsetattr(i, 'ids.song_progress.value', self.sound.get_pos()) for i in self.audio_bar]
-        ###self.player_screen.ids.song_progress.value = self.sound.get_pos()
+        [rsetattr(i, 'ids.song_progress.value', self.sound.get_pos()) for i in self.audio_bar]
+        self.player_screen.ids.song_progress.value = self.sound.get_pos()
         if self.sound.status == 'stop':
             self.progressbarEvent.cancel()
             self.settimeEvent.cancel()
@@ -676,7 +682,7 @@ class LoginApp(MDApp):
         self.player_screen.ids.song_status.reload()
         self.player_screen.ids.action.on_release = self.audio_play
         
-        ### self.sound.stop()
+        self.sound.pause()
 
     def unload_audio(self):
         if 'sound' not in dir(self):

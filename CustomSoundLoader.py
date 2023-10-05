@@ -37,6 +37,8 @@ class IOSPlayer(Sound):
 
     def get_length(self):
         return self.player.get_len(t)
+    def test(self):
+        self.player.test_func()
     
 
 class TestApp(App):
