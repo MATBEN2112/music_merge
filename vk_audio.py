@@ -44,7 +44,7 @@ def decrypt(seg, key):
     for i in range(16,len(cipher),16):
         decrypted += aes.decrypt(seg[i-16:i])    
 
-    return decrypted.rstrip(b"\0")
+    return decrypted
 
 
 def encode_url(url, uid): # done

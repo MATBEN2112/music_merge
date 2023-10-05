@@ -4,10 +4,16 @@ import json
 import pickle
 import time
 import re
-from Crypto.Cipher import AES
-from Crypto.Util.Padding import unpad
 import vk_audio
 from utils import *
+try:
+    from pyobjus import autoclass
+
+    NSString = autoclass('NSString')
+    Bridge = autoclass('bridge')
+    bridge = Bridge.alloc().init()
+except Exception as e:
+    print(e)
 
 REGEXP = {
     'ascii': re.compile(r'&#([0-9]+);'),
@@ -39,47 +45,223 @@ def clear_string(s):
     if s:
         return s.strip().replace('&nbsp;', '')
 
-def load_session(s):    
-    session = requests.Session()
-    session.headers['User-agent'] = 'Mozilla/5.0 (Windows NT 10.0; rv:91.0) Gecko/20100101 Firefox/91.0'
-    if not s:
-        return session
-    try:
-        with open(rf'./Documents/sessions/{s}/coockie_Jar', 'rb') as f:
-            session.cookies.update(pickle.load(f))
-            
-    except FileNotFoundError:
-        print('No valid session file')
-    
-    return session
+class VK_session(object):
+    def __init__(self, app_path, session_name):
+        self.session_name = session_name
+        self.app_path = app_path
+        self.path = app_path + f'/sessions/{self.session_name}/'
+        
+        self.session = requests.Session()
+        self.session.headers['User-agent'] = 'Mozilla/5.0 (Windows NT 10.0; rv:91.0) Gecko/20100101 Firefox/91.0'
 
-def save_session(session):# Save session
+        try:
+            with open(self.path + 'coockie_Jar', 'rb') as f:
+                self.session.cookies.update(pickle.load(f))
+            
+        except FileNotFoundError:
+            print('No valid session file')
+            shutil.rmtree(self.path)
+
+        try:
+            with open(self.path + 'uid', 'rb') as f:
+                data = pickle.load(f)
+                self.u_id =data['uid']
+                
+        except:
+            print('No user id')
+            shutil.rmtree(self.path)
+        else:
+            try:
+                with open(self.path + 'uid', 'rb') as f:
+                    data = pickle.load(f)
+                    self.u_name = data['u_name']
+            except:
+                self.u_name = self.u_id
+                
+        if 'u_img.jpg' in os.listdir(self.path):
+            self.img = self.path + 'u_img.jpg'
+        else:
+            self.img = './icons/profile.png'
+
+        response = self.session.get('https://vk.com/login')
+
+        if response.status_code == 200: # Check if request status code is redirect
+            self.connected = True
+        else:
+            self.connected = False
+            
+    def parse_audio_list(self, data):
+        audio_list = {}
+        for elem in data:
+            if elem[12] == '[]': # Is it blocked
+                h = elem[13].split('/')
+                audio_id = elem[15]['content_id'] + '_' + h[2] + '_' + h[5]
+                artist = valid_file_name(elem[4])
+                song = valid_file_name(elem[3])
+                audio_list[f'{audio_id}'] = {
+                    'song': convert_ASCII(song),
+                    'artist': convert_ASCII(artist),
+                    'img_link': elem[14].split(',')[-1]}
+        return audio_list
+            
+    def load_user_audios(self):
+        url = f'https://vk.com/audios{self.u_id}?section=all'
+        response = self.session.get(url)
+    
+        section_id_t = search_re(REGEXP['section_id'], response.text)
+    
+        url = 'https://vk.com/audio?act=load_catalog_section'
+        payload = {
+            'al': '1',
+            'section_id': section_id_t
+        }
+        response = self.session.post(url, data=payload)
+        next_from_t = search_re(REGEXP['next_from'], response.text)
+        response_json = json.loads(response.text.lstrip('<!--'))
+        audio_list = self.parse_audio_list(response_json['payload'][1][1]['playlist']['list'])
+
+
+        url = 'https://vk.com/al_audio.php?act=load_catalog_section'
+        payload['start_from'] = next_from_t
+        response = self.session.post(url, data=payload)
+        next_from_t = search_re(REGEXP['next_from'], response.text)
+        response_json = json.loads(response.text.lstrip('<!--'))
+        audio_list.update(self.parse_audio_list(response_json['payload'][1][1]['playlist']['list']))
+    
+        payload['section_id'] = next_from_t.split(' ')[1]
+        payload['start_from'] = next_from_t
+        response = self.session.post(url, data=payload)
+        self.next_from_t = search_re(REGEXP['next_from'], response.text)
+        response_json = json.loads(response.text.lstrip('<!--'))
+        audio_list.update(self.parse_audio_list(response_json['payload'][1][1]['playlist']['list']))
+        self.section_id_t = payload['section_id']
+        
+        return audio_list
+
+    def load_more_t(self):
+        url = 'https://vk.com/al_audio.php?act=load_catalog_section'
+        payload = {
+            'al': '1',
+            'section_id': self.section_id_t,
+            'start_from': self.next_from_t
+        }
+        response = self.session.post(url, data=payload)
+        self.next_from_t = search_re(REGEXP['next_from'], response.text)
+        response_json = json.loads(response.text.lstrip('<!--'))
+        audio_list = self.parse_audio_list(response_json['payload'][1][1]['playlist']['list'])
+        return audio_list
+
+    def parse_album_list(self, data):
+        album_list = {}
+        for playlist in data:
+            if playlist['permissions']['play']:
+                playlist_name = valid_file_name(playlist['title']) + ' - ' + valid_file_name(playlist['authorName'])
+                e = {'playlist_name': convert_ASCII(playlist_name),'img_link': playlist['coverUrl']}
+                playlist_id = str(playlist['ownerId'])+'_'+str(playlist['id'])
+                album_list[playlist_id] = e
+        return album_list
+    
+    def load_playlists(self):
+        url = f'https://vk.com/audios{self.u_id}?block=my_playlists&section=all'
+        response = self.session.get(url)
+        self.section_id_a = search_re(REGEXP['section_id'], response.text)
+        url = 'https://vk.com/audio?act=load_catalog_section'
+        payload = {
+            'al': '1',
+            'section_id': self.section_id_a
+        }
+        response = self.session.post(url, data=payload)
+
+        response_json = json.loads(response.text.lstrip('<!--'))
+        self.next_from_a = search_re(REGEXP['data_next'], response_json['payload'][1][0][0])
+            
+        return self.parse_album_list(response_json['payload'][1][1]['playlists'])
+            
+    def load_more_a(self):
+        url = 'https://vk.com/al_audio.php?act=load_catalog_section'
+        payload = {
+            'al': '1',
+            'section_id': self.section_id_a,
+            'start_from': self.next_from_a
+        }
+        response = self.session.post(url, data=payload)
+        response_json = json.loads(response.text.lstrip('<!--'))
+        self.next_from_a = search_re(REGEXP['section_id'], response_json['payload'][1][0][0])
+        
+        return self.parse_album_list(response_json['payload'][1][1]['playlists'])
+
+    def load_playlist_content(self, playlist_data):
+        audio_list={}
+        owner_id, playlist_id = playlist_data.split('_')
+        url = 'https://vk.com/al_audio.php?act=load_section'
+        payload = {
+            'al': '1',
+            'claim': '0',
+            'from_id': 0,
+            'is_loading_all': '1',
+            'is_preload': '0',
+            'offset': '0',
+            'owner_id': owner_id,
+            'playlist_id': playlist_id,
+            'type': 'playlist'
+        }
+    
+        response = self.session.post(url, data=payload)
+        response_json = json.loads(response.text.lstrip('<!--'))
+        if response_json['payload'][1][0] == False:
+            print('Error load playlist data')
+
+        audio_list.update(self.parse_audio_list(response_json['payload'][1][0]['list']))
+        return audio_list
+    
+    def download_audio(self, audio_id, artist, song, key):
+        payload={
+            'al': '1',
+            'ids': audio_id
+        }
+        response = self.session.post('https://vk.com/al_audio.php?act=reload_audio', data=payload)
+        response_json = json.loads(response.text.lstrip('<!--'))
+        url_mp3 = response_json['payload'][1][0][0][2]
+        url_m3u8 = vk_audio.encode_url(url_mp3, int(self.u_id))
+        audio_file = vk_audio.m3u8_parser(url_m3u8)
+
+        with open(self.app_path + f'/downloads/{key}.ts', 'wb') as f:
+            f.write(audio_file)
+        
+        
+
+    def download_album(self):
+        pass
+
+    def convert_to_mp3(key):
+        fn = NSString.alloc().initWithUTF8String_(self.app_path + '/' + str(key))
+        ext = NSString.alloc().initWithUTF8String_("ts")
+        bridge.converter(fn,ext)
+        os.remove(self.app_path + f'/downloads/{key}.ts')
+        
+
+
+def save_session(app_dir, session):# Save session
     response = session.get('https://vk.com/settings')
 
     u_img_url, u_name= search_re(REGEXP['u_img_name'], response.text).split('" alt="')
     uid = search_re(REGEXP['uid'], response.text)
-    os.mkdir(f'./Documents/sessions/vk_{uid}/')
-    with open(rf'./Documents/sessions/vk_{uid}/coockie_Jar', 'wb') as f:
+    os.mkdir(app_dir + f'/sessions/vk_{uid}/')
+    with open(app_dir + rf'/sessions/vk_{uid}/coockie_Jar', 'wb') as f:
         pickle.dump(session.cookies, f)
         
-    with open(rf'./Documents/sessions/vk_{uid}/u_img.jpg', 'wb') as f:
+    with open(app_dir + rf'/sessions/vk_{uid}/u_img.jpg', 'wb') as f:
         f.write(session.get(u_img_url).content)
         
-    with open(rf'./Documents/sessions/vk_{uid}/uid', 'wb') as f:
+    with open(app_dir + rf'/sessions/vk_{uid}/uid', 'wb') as f:
         pickle.dump({'uid': uid, 'u_name': u_name}, f)
     
-def login_request(login, password, session_name = '', captcha_sid='', captcha_key = ''):
-    session = load_session(session_name)
+def login_request(login, password, captcha_sid='', captcha_key = ''):
+    
+    session = requests.Session()
+    session.headers['User-agent'] = 'Mozilla/5.0 (Windows NT 10.0; rv:91.0) Gecko/20100101 Firefox/91.0'
+
     response = session.get('https://vk.com/login')
-
-    if response.status_code > 299: # Check if request status code is redirect
-        if 400 > response.status_code:
-            response = session.get('https://vk.com/settings')
-            uid = search_re(REGEXP['uid'], response.text)
-            return (session, None, 'Logged in')
-        else:
-            return (None, None, 'Could not connect')
-
     if (not login) or (not password):
         return (None, None, 'Fields should not be empty')
     
@@ -109,7 +291,7 @@ def login_request(login, password, session_name = '', captcha_sid='', captcha_ke
         }
             
     response = session.post('https://login.vk.com/?act=login',data=payload, headers=headers)
-
+    print(response.text)
     if 'onLoginCaptcha(' in response.text: # captcha case
         captcha_sid = search_re(REGEXP['captcha_sid'], response.text)
         return (session, captcha_sid, 'Captcha needed', None)
@@ -126,12 +308,18 @@ def login_request(login, password, session_name = '', captcha_sid='', captcha_ke
         
         return (session, None, 'Secure code', auth_hash)
     
-    else: # Something else went wrong
-        return (None, None, 'Unknow error', None)
+    else:
+        response = session.get('https://vk.com/login')
+        if response.status_code == 200:
+            return (session, None, None, 'Logged in')
+        else: # Something else went wrong
+            return (None, None, 'Unknow error', None)
 
                               
 # 2FA case
-def two_fa(session, code, auth_hash = '', captcha_sid='', captcha_key=''):  
+def two_fa(session, code, auth_hash = '', captcha_sid='', captcha_key=''):
+    if not auth_hash:
+        return (session, None, 'Unknow error')
     payload = {
             'al': '1',
             'code': code,
@@ -192,9 +380,7 @@ def pass_security_check(session, login):
             return True
         else:
             return False
-        
-
-    
+          
 def code_from_number(prefix, postfix, number):
     prefix_len = len(prefix)
     postfix_len = len(postfix)
@@ -221,148 +407,5 @@ def captcha(session=requests.Session(), sid='123'):
     with open('captcha.jpg', 'wb') as f:
         f.write(session.get(captcha_img_link).content)
 
-def parse_audio_list(data):
-    audio_list = {}
-    for elem in data:
-        if elem[12] == '[]': # Is it blocked
-            h = elem[13].split('/')
-            audio_id = elem[15]['content_id'] + '_' + h[2] + '_' + h[5]
-            artist = valid_file_name(elem[4])
-            song = valid_file_name(elem[3])
-            audio_list[f'{audio_id}'] = {
-                'song': convert_ASCII(song),
-                'artist': convert_ASCII(artist),
-                'img_link': elem[14].split(',')[0]}
-    return audio_list
-            
-def load_user_audios(session, uid):
-    audio_list = {}
-    url = f'https://vk.com/audios{uid}?section=all'
-    response = session.get(url)
-    
-    section_id = search_re(REGEXP['section_id'], response.text)
-    
-    url = 'https://vk.com/audio?act=load_catalog_section'
-    payload = {
-        'al': '1',
-        'section_id': section_id
-    }
-    response = session.post(url, data=payload)
-    next_from = search_re(REGEXP['next_from'], response.text)
-    response_json = json.loads(response.text.lstrip('<!--'))
-    audio_list.update(parse_audio_list(response_json['payload'][1][1]['playlist']['list']))
 
-
-    url = 'https://vk.com/al_audio.php?act=load_catalog_section'
-    payload['start_from'] = next_from
-    response = session.post(url, data=payload)
-    next_from = search_re(REGEXP['next_from'], response.text)
-    response_json = json.loads(response.text.lstrip('<!--'))
-    audio_list.update(parse_audio_list(response_json['payload'][1][1]['playlist']['list']))
-    
-    payload['section_id'] = next_from.split(' ')[1]
-    payload['start_from'] = next_from
-    response = session.post(url, data=payload)
-    next_from = search_re(REGEXP['next_from'], response.text)
-    response_json = json.loads(response.text.lstrip('<!--'))
-    audio_list.update(parse_audio_list(response_json['payload'][1][1]['playlist']['list']))
-    
-    return (audio_list, next_from, payload['section_id'])
-
-def load_more(session, next_from, section_id):
-    url = 'https://vk.com/al_audio.php?act=load_catalog_section'
-    payload = {
-        'al': '1',
-        'section_id': section_id,
-        'start_from': next_from
-    }
-    response = session.post(url, data=payload)
-    next_from = search_re(REGEXP['next_from'], response.text)
-    response_json = json.loads(response.text.lstrip('<!--'))
-    audio_list = parse_audio_list(response_json['payload'][1][1]['playlist']['list'])
-    return (audio_list, next_from, section_id)
-    
-def load_playlists(session, uid):
-    album_list = {}
-    url = f'https://vk.com/audios{uid}?block=my_playlists&section=all'
-    response = session.get(url)
-    section_id = search_re(REGEXP['section_id'], response.text)
-    url = 'https://vk.com/audio?act=load_catalog_section'
-    payload = {
-        'al': '1',
-        'section_id': section_id
-    }
-    response = session.post(url, data=payload)
-
-    response_json = json.loads(response.text.lstrip('<!--'))
-    start_from = search_re(REGEXP['data_next'], response_json['payload'][1][0][0])
-    playlists = response_json['payload'][1][1]['playlists']
-    while True: 
-        for playlist in playlists:
-            if playlist['permissions']['play']:
-                playlist_name = valid_file_name(playlist['title']) + ' - ' + valid_file_name(playlist['authorName'])
-                e = {'playlist_name': convert_ASCII(playlist_name),'img_link': playlist['coverUrl']}
-                playlist_id = str(playlist['ownerId'])+'_'+str(playlist['id'])
-                album_list[playlist_id] = e
-            
-        if start_from:
-            url = 'https://vk.com/al_audio.php?act=load_catalog_section'
-            payload = {
-                'al': '1',
-                'section_id': section_id,
-                'start_from': start_from
-            }
-            response = session.post(url, data=payload)
-            response_json = json.loads(response.text.lstrip('<!--'))
-            start_from = search_re(REGEXP['section_id'], response_json['payload'][1][0][0])
-            playlists = response_json['payload'][1][1]['playlists']
-        else:
-            return album_list
-
-def load_playlist_content(session, playlist_data):
-    audio_list={}
-    owner_id, playlist_id = playlist_data.split('_')
-    url = 'https://vk.com/al_audio.php?act=load_section'
-    payload = {
-        'al': '1',
-        'claim': '0',
-        'from_id': 0,
-        'is_loading_all': '1',
-        'is_preload': '0',
-        'offset': '0',
-        'owner_id': owner_id,
-        'playlist_id': playlist_id,
-        'type': 'playlist'
-    }
-    
-    response = session.post(url, data=payload)
-    response_json = json.loads(response.text.lstrip('<!--'))
-    if response_json['payload'][1][0] == False:
-        print('Error load playlist data')
-
-    audio_list.update(parse_audio_list(response_json['payload'][1][0]['list']))
-    return audio_list
-    
-def download_audio(session, uid, audio_id, artist, song, img_link):
-    payload={
-        'al': '1',
-        'ids': audio_id
-        }
-    response = session.post('https://vk.com/al_audio.php?act=reload_audio', data=payload)
-    response_json = json.loads(response.text.lstrip('<!--'))
-    url_mp3 = response_json['payload'][1][0][0][2]
-    url_m3u8 = vk_audio.encode_url(url_mp3, int(uid))
-    audio_file = vk_audio.m3u8_parser(url_m3u8)
-    
-    key = meta_new_track(artist, song, img=img_link)
-    with open(f'./Documents/downloads/{key}.mp3', 'wb') as f:
-        f.write(audio_file)
-        
-    if img_link:
-        print('image saved')
-        with open(f'./Documents/images/t/{key}.jpg', 'wb') as f:
-            f.write(requests.get(img_link).content)
-
-def download_album(session, uid, audio_id, name, img_link=None):
-    pass
 

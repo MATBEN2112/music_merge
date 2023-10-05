@@ -16,10 +16,10 @@ from utils import *
 
 from kivy.uix.textinput import TextInput
 from kivy.core.window import Window
-from kivy.core.audio import SoundLoader
+
 
 from kivymd.uix.button import MDIconButton
-Window.size = (400,600)
+Window.size = (540, 1170)
 
 
 from kivymd.theming import ThemableBehavior
@@ -38,15 +38,10 @@ import vk_methods as vk
 from custom_widgets import *
 
 try:
-    os.mkdir('./Documents/downloads/')
-except FileExistsError:
-    pass
-try:
-    os.mkdir('./Documents/sessions/')
-except FileExistsError:
-    pass
+    from CustomSoundLoader import IOSPlayer
+except Exception as e:
+    print(e)
 
-meta_start()
 #################
 ### Main Screen  ###
 #################
@@ -54,17 +49,22 @@ class Start(Screen):
     def downloaded_audios(self):
         self.ids.nav_drawer.set_state('close')
         self.app = MDApp.get_running_app()
-        self.ids.menu_row.right_action_items = [["./icons/edit.png", lambda x: self.edit_menu()]]
+        self.ids.menu_row.clear_widgets()
+        self.ids.menu_row.add_widget(
+            TopAppBarMenuElem("./icons/edit.png", [0.9, 0.35], func = lambda x: self.edit_menu())
+        )
+        self.ids.menu_row.add_widget(
+            TopAppBarMenuElem("./icons/menu.png", [0.1, 0.35], func = lambda x: self.ids.nav_drawer.set_state('toggle'))
+        )
         self.ids.container.clear_widgets()
         self.ids.album_container.clear_widgets()
-        album_list = meta_album_list() ###
+        album_list = self.app.meta.album_list() ###
         for album in album_list:
             self.ids.album_container.add_widget(AlbumButton(self.app, album))
 
-        track_list = meta_track_list() ###
+        track_list = self.app.meta.track_list() ###
         for track in track_list:
             self.ids.container.add_widget(Track(self.app, track))
-
 
     ### EDIT TOOLS ### 
     def edit_menu(self):
@@ -79,16 +79,19 @@ class Start(Screen):
         self.add_widget(SelectionBottomMenu(self.app, self))
         
     ### VK METHODS ###
-    def vk_audios(self, session, u_id):
-        self.ids.menu_row.right_action_items = []
+    def vk_audios(self, session):
+        self.ids.menu_row.clear_widgets()
+        self.ids.menu_row.add_widget(
+            TopAppBarMenuElem("./icons/menu.png", [0.1, 0.35], func = lambda x: self.ids.nav_drawer.set_state('toggle'))
+        )
+        self.session = session
         # load tracks
         self.ids.container.clear_widgets()
-        self.audio_list, self.next_from, self.section_id = vk.load_user_audios(session, u_id) 
+        self.audio_list = self.session.load_user_audios() 
         for key in self.audio_list.keys():
             self.ids.container.add_widget(
                 VKTrack(
-                    session,
-                    u_id,
+                    self.session,
                     self.app,
                     ID = key,
                     artist = self.audio_list[key]['artist'],
@@ -98,12 +101,11 @@ class Start(Screen):
 
         #load albums     
         self.ids.album_container.clear_widgets()
-        self.album_list = vk.load_playlists(session, u_id)  
+        self.album_list = self.session.load_playlists()  
         for key in self.album_list.keys():
             self.ids.album_container.add_widget(
                 VKAlbumButton(
-                    session,
-                    u_id,
+                    self.session,
                     self.app,
                     ID = key,
                     name = self.album_list[key]['playlist_name'],
@@ -134,18 +136,23 @@ class Player(Screen):
 class Album(Screen):
     ### BASE METHODS ###
     def open_album(self, album, screen_to_return):
-        self.ids.menu_row.right_action_items = [
-            ["./icons/edit.png", lambda x: self.edit_menu()],
-            ["./icons/back.png", lambda x: self.close_album()]
-        ]
+        self.album = album
+        self.ids.menu_row.clear_widgets()
+        self.ids.menu_row.add_widget(
+            TopAppBarMenuElem("./icons/edit.png", [0.9, 0.35], func = lambda x: self.edit_menu())
+        )
+        self.ids.menu_row.add_widget(
+            TopAppBarMenuElem("./icons/back.png", [0.1, 0.35], func = lambda x: self.close_album())
+        )
+
         self.path = album[1]
-        self.ids.menu_row.title = album[2]
+        self.ids.album_name.text = album[2]
         self.ids.album_image.source = album[3]
         self.ids.container.clear_widgets()
         self.key = album[0]
         self.screen_to_return = screen_to_return
         self.app = MDApp.get_running_app()
-        track_list = meta_track_list(key = self.key) ###
+        track_list = self.app.meta.track_list(key = self.key) ###
         for track in track_list:
             self.ids.container.add_widget(Track(self.app, track))
         
@@ -173,10 +180,10 @@ class Album(Screen):
         self.drop_down_menu.dismiss()
         if state == "Confirm":
             try:
-                delete_meta_album(self.key) ###
+                self.app.meta.delete_album(self.key) ###
             except PermissionError: # if file loaded to player 
                 self.app.unload_audio()
-                delete_meta_album(self.key) ###
+                self.app.meta.delete_album(self.key) ###
                 
             self.confirmation_popup.dismiss()
             return self.close_album()
@@ -185,26 +192,27 @@ class Album(Screen):
             return self.confirmation_popup.dismiss()
             
         self.confirmation_popup = ConfirmationPopup()
-        yes = Button(size_hint=(0.35,.2),pos_hint={'center_x':0.8, 'center_y':0.2},text="Confirm")
-        no = Button(size_hint=(0.35,.2),pos_hint={'center_x':0.2, 'center_y':0.2},text="Cancel")
-        yes.bind(on_press = lambda x:self.delete_album(state = "Confirm"))
-        no.bind(on_press = lambda x:self.delete_album(state = "Cancel"))
+        func = lambda :self.delete_album(state = "Confirm")
+        btn1 = PopupActionButton("Confirm", func, 0.2)
+        func = lambda :self.delete_album(state = "Cancel")
+        btn2 = PopupActionButton("Cancel", func, 0.8)
         self.confirmation_popup.ids.action.clear_widgets()
-        self.confirmation_popup.ids.action.add_widget(yes)
-        self.confirmation_popup.ids.action.add_widget(no)
+        self.confirmation_popup.ids.action.add_widget(btn1)
+        self.confirmation_popup.ids.action.add_widget(btn2)
         self.confirmation_popup.open()
     
     def rename_album(self, album_name=None):
         self.drop_down_menu.dismiss()
         if album_name:
-            meta_edit_album(self.key, album_name) ###
+            self.app.meta.edit_album(self.key, album_name) ###
             self.rename_album_popup.dismiss()
             self.ids.menu_row.title = album_name
             return
         
         self.rename_album_popup = RenameAlbumPopup()
-        btn = Button(size_hint=(0.6,.2),pos_hint={'center_x':0.5, 'center_y':0.2},text="Enter")
-        btn.bind(on_press = lambda x:self.rename_album(album_name=self.rename_album_popup.ids.album_name.text))
+
+        func = lambda :self.rename_album(album_name=self.rename_album_popup.ids.album_name.text)
+        btn = PopupActionButton("Enter", func, 0.5)
         self.rename_album_popup.ids.action.clear_widgets()
         self.rename_album_popup.ids.action.add_widget(btn)
         self.rename_album_popup.open()
@@ -217,24 +225,27 @@ class Album(Screen):
         self.add_widget(SelectionBottomMenu(self.app, self))
 
     ### VK METHODS ###
-    def vk_open_album(self, session, u_id, ID, name, img, screen_to_return):
-        self.audio_list = vk.load_playlist_content(session, ID)
+    def vk_open_album(self, session, ID, name, img, screen_to_return):
+        self.session = session
+        self.audio_list = self.session.load_playlist_content(ID)
         
         self.ids.container.clear_widgets()
-        self.ids.menu_row.right_action_items = [["./icons/back.png", lambda x: self.vk_close_album()]]
-        self.ids.menu_row.title=name
+        self.ids.menu_row.clear_widgets()
+        self.ids.menu_row.add_widget(
+            TopAppBarMenuElem("./icons/load.png", [0.9, 0.35], func = lambda x: print(123))
+        )
+        self.ids.menu_row.add_widget(
+            TopAppBarMenuElem("./icons/back.png", [0.1, 0.35], func = lambda x: self.vk_close_album())
+        )
         self.ids.album_image.source = img
         self.screen_to_return = screen_to_return
 
-        self.session = session
-        self.u_id = u_id
         self.app = MDApp.get_running_app()
         
         for key in self.audio_list.keys():
             self.ids.container.add_widget(
                 VKTrack(
-                    session,
-                    u_id,
+                    self.session,
                     self.app,
                     ID = key,
                     artist = self.audio_list[key]['artist'],
@@ -254,13 +265,16 @@ class Album(Screen):
 class AlbumList(Screen):
     ### BASE METHODS ###
     def open_album_list(self):
+        self.ids.menu_row.clear_widgets()
+        self.ids.menu_row.add_widget(
+            TopAppBarMenuElem("./icons/add.png", [0.9, 0.35], func = lambda x: self.add_album())
+        )
+        self.ids.menu_row.add_widget(
+            TopAppBarMenuElem("./icons/back.png", [0.1, 0.35], func = lambda x: self.close_album_list())
+        )
         self.app = MDApp.get_running_app()
-        self.ids.menu_row.right_action_items = [
-            ["./icons/add.png", lambda x: self.add_album()],
-            ["./icons/back.png", lambda x: self.close_album_list()]
-        ]
         self.ids.album_container.clear_widgets()
-        album_list = meta_album_list() ###
+        album_list = self.app.meta.album_list() ###
         for album in album_list:
             self.ids.album_container.add_widget(AlbumButton(self.app, album))
                 
@@ -271,19 +285,20 @@ class AlbumList(Screen):
 
     def add_album(self, album_name=None):
         if album_name:
-            meta_add_album(album_name, img=None) ###
+            self.app.meta.add_album(album_name, img=None) ###
             self.create_album_popup.dismiss()
             return self.open_album_list()
             
         self.create_album_popup = CreateAlbumPopup()
-        btn = Button(size_hint=(0.6,.2),pos_hint={'center_x':0.5, 'center_y':0.2},text="Enter")
-        btn.bind(on_press = lambda x:self.add_album(album_name=self.create_album_popup.ids.album_name.text))
+        func = lambda :self.add_album(album_name=self.create_album_popup.ids.album_name.text)
+        btn = PopupActionButton("Enter", func, 0.5)
         self.create_album_popup.ids.action.clear_widgets()
         self.create_album_popup.ids.action.add_widget(btn)
         self.create_album_popup.open()
         
     ### VK METHODS ### 
-    def vk_open_album_list(self, session, u_id):
+    def vk_open_album_list(self, session):
+        self.session = session
         self.app = MDApp.get_running_app()
         self.ids.menu_row.right_action_items = [
             ["back.png", lambda x: self.vk_close_album_list()]
@@ -291,12 +306,11 @@ class AlbumList(Screen):
         #load albums     
         self.ids.album_container.clear_widgets()
         if 'album_list' not in dir(self):
-            self.album_list = vk.load_playlists(session, u_id)
+            self.album_list = self.session.load_playlists()
         for key in self.album_list.keys():
             self.ids.album_container.add_widget(
                 VKAlbumButton(
-                    session,
-                    u_id,
+                    self.session,
                     self.app,
                     ID = key,
                     name = self.album_list[key]['playlist_name'],
@@ -319,21 +333,33 @@ class Login(Screen):
         self.manager.current = 'start'
 
     def open_login_page(self,media):
-        if media == "./icons/vk60.png": 
+        self.app = MDApp.get_running_app()
+        if media == "./icons/vk.png": 
             self.secure_code_popup = SecureCodePopup()
             self.captcha_popup = CaptchaPopup()
             
-            self.ids.menu_row.title = 'Login VK'
-            self.ids.login_img.source = './icons/vk60.png'
-            self.ids.action.bind(on_press = lambda x: self.do_login_vk(self.ids.login.text, self.ids.password.text))
+            self.ids.login_img.source = './icons/vk.png'
+            self.ids.login_img.reload()
+
+            self.ids.action.clear_widgets()
+            func = lambda : self.do_login_vk(self.ids.login.text, self.ids.password.text)
+            self.ids.action.add_widget(LoginButton(func))
 
             self.captcha_sid = ''
             self.captcha_key = ''
             
             self.reset_forms()
 
-        elif media == "./icons/ya60.png":
-            pass
+        elif media == "./icons/ya.png":
+            self.ids.login_img.source = './icons/ya.png'
+            self.ids.login_img.reload()
+            
+            self.ids.action.clear_widgets()
+            func = lambda : print(123)
+            self.ids.action.add_widget(LoginButton(func))
+            
+            self.reset_forms()
+
         
     def reset_forms(self):
         # reset forms
@@ -342,7 +368,7 @@ class Login(Screen):
         self.ids.error.text = ''
         
     ### VK ###
-    def do_login_vk(self, login, password, captcha_sid='', captcha_key=''):      
+    def do_login_vk(self, login, password, captcha_sid='', captcha_key=''):
         self.login = login
         self.password = password
 
@@ -350,6 +376,7 @@ class Login(Screen):
             captcha_sid=captcha_sid,
             captcha_key=captcha_key
         )
+        print(self.session, captcha_sid, status, auth_hash)
 
         if status == 'Logged in':# done no 2fa case ??????
             self.end_login_vk()
@@ -357,9 +384,12 @@ class Login(Screen):
         elif status == 'Secure code':
             self.captcha_popup.dismiss()
             #popup with secure code appear
-            btn = Button(size_hint=(0.6,.2),pos_hint={'center_x':0.5, 'center_y':0.2},text="Enter")
-            btn.bind(on_press = lambda x:
-                self.do_login_vk_secure_code(self.secure_code_popup.ids.secure_code.text,auth_hash))
+
+            func = lambda : self.do_login_vk_secure_code(
+                self.secure_code_popup.ids.secure_code.text,
+                auth_hash
+            )
+            btn = PopupActionButton("Enter",func, 0.5)
             self.secure_code_popup.ids.action.clear_widgets()
             self.secure_code_popup.ids.action.add_widget(btn)
             self.secure_code_popup.open()
@@ -369,9 +399,12 @@ class Login(Screen):
                 self.captcha_popup.ids.error.text = 'Incorrect captcha'
             vk.captcha(self.session, self.captcha_sid)# load captcha img
             #popup with captcha appear
-            btn = Button(size_hint=(0.6,.2),pos_hint={'center_x':0.5, 'center_y':0.2},text="Enter")
-            btn.bind(on_press = lambda x:
-                self.do_login_vk(login, password, captcha_sid=captcha_sid ,captcha_key=self.captcha_popup.ids.captcha_key.text))
+            func = lambda : self.do_login_vk(
+                login,
+                password,
+                captcha_sid=captcha_sid,
+                captcha_key=self.captcha_popup.ids.captcha_key.text)
+            btn = PopupActionButton("Enter",func, 0.5)
             
             self.captcha_popup.ids.action.clear_widgets()
             self.captcha_popup.ids.action.add_widget(btn)
@@ -393,7 +426,8 @@ class Login(Screen):
             captcha_sid = captcha_sid,
             captcha_key = captcha_key
         )
-            
+        print(self.session, captcha_sid, status)
+        print(secure_code)
         if status == 'Logged in':# done
             print('Logged in')
             self.end_login_vk()
@@ -405,9 +439,13 @@ class Login(Screen):
             self.secure_code_popup.dismiss()
             vk.captcha(self.session, self.captcha_sid) # load captcha img
             #popup with captcha appear
-            btn = Button(size_hint=(0.6,.2),pos_hint={'center_x':0.5, 'center_y':0.2},text="Enter")
-            btn.bind(on_press = lambda x:
-                self.do_login_vk_secure_code(secure_code, auth_hash, captcha_sid=captcha_sid, captcha_key=self.captcha_popup.ids.captcha_key.text))
+            func = lambda : self.do_login_vk_secure_code(
+                secure_code,
+                auth_hash,
+                captcha_sid=captcha_sid,
+                captcha_key=self.captcha_popup.ids.captcha_key.text
+            )
+            btn = PopupActionButton("Enter",func, 0.5)
             self.captcha_popup.ids.action.clear_widgets()
             self.captcha_popup.ids.action.add_widget(btn)
             
@@ -419,9 +457,11 @@ class Login(Screen):
             # show error
             self.secure_code_popup.ids.error.text = 'Incorrect secure code'
             #popup with secure code appear
-            btn = Button(size_hint=(0.6,.2),pos_hint={'center_x':0.5, 'center_y':0.2},text="Enter")
-            btn.bind(on_press = lambda x:
-                self.do_login_vk_secure_code(self.secure_code_popup.ids.secure_code.text,auth_hash))
+            func = lambda : self.do_login_vk_secure_code(
+                self.secure_code_popup.ids.secure_code.text,
+                auth_hash
+            )
+            btn = PopupActionButton("Enter",func, 0.5)
             self.secure_code_popup.ids.action.clear_widgets()
             self.secure_code_popup.ids.action.add_widget(btn)
             
@@ -440,10 +480,10 @@ class Login(Screen):
         self.secure_code_popup.dismiss()
         self.reset_forms()
         print('ends')
-        app = MDApp.get_running_app()
+        
         if vk.pass_security_check(self.session, self.login):
-            vk.save_session(self.session)
-            app.load_session()
+            vk.save_session(self.app.app_dir, self.session)
+            self.app.load_session()
             self.manager.transition = SlideTransition(direction="up")
             self.manager.current = 'start'
                        
@@ -463,6 +503,28 @@ class LoginApp(MDApp):
         self.manager.get_screen('login').open_login_page(media)    
     
     def build(self): # screen loader
+        self.app_dir = getattr(self, 'user_data_dir')
+
+        try:
+            os.mkdir(self.app_dir +'/downloads/')
+        except FileExistsError:
+            pass
+        try:
+            os.mkdir(self.app_dir +'/sessions/')
+        except FileExistsError:
+            pass
+        try:
+            os.mkdir(self.app_dir +'/images/')
+        except FileExistsError:
+            pass
+        try:
+            os.mkdir(self.app_dir +'/images/a/')
+        except FileExistsError:
+            pass
+        try:
+            os.mkdir(self.app_dir +'/images/t/')
+        except FileExistsError:
+            pass
         self.manager = ScreenManager()
         self.manager.add_widget(Start(name='start'))
         self.manager.add_widget(Player(name='player'))
@@ -473,6 +535,7 @@ class LoginApp(MDApp):
         return self.manager
 
     def on_start(self):
+        self.meta = Meta(self.app_dir)
         self.audio_bar = [AudioInfo() for _ in range(3)]
 
         self.main_screen = self.root.screens[0]
@@ -482,15 +545,17 @@ class LoginApp(MDApp):
         self.main_screen.downloaded_audios()
         self.load_session()
 
+
     def load_session(self):
         session_list = DrawerList()
-        session_dir_list = os.listdir(r'./sessions/')
+        session_dir_list = os.listdir(self.app_dir + '/sessions/')
         self.main_screen.ids.session_container.clear_widgets()
         for elem in session_dir_list:
             self.main_screen.ids.session_container.add_widget(SessionListElement(self, elem))
             self.main_screen.ids.accounts.text = 'Connected accounts'
     
-    def audio_play(self, *args, track=None):        
+    def audio_play(self, *args, track=None):
+        print(track)
         if args:
             slider, touch = args[0][0:2]
             
@@ -499,15 +564,18 @@ class LoginApp(MDApp):
         self.album_list_screen.remove_widget(self.audio_bar[2])
         if track: # Play new audio
             print('Play new audio')
+            if track[4] != './icons/track.png':
+                self.player_screen.ids.song_image.source=track[4]
+                self.player_screen.ids.song_image.reload()
             if 'sound' in dir(self):
-                self.sound.stop()
+                ###self.sound.stop()
                 self.progressbarEvent.cancel()
                 self.settimeEvent.cancel()
                 
             self.track = track
             self.album_key = self.album_screen.key if self.manager.current=='album' else None
-            print(f'Album key {self.album_key}')
-            self.track_list = meta_track_list(key = self.album_key) ###
+
+            self.track_list = self.meta.track_list(key = self.album_key) ###
 
             track_name = self.track[2] + ' - ' + self.track[3]
             if len(track_name)> 35:
@@ -518,23 +586,22 @@ class LoginApp(MDApp):
                 [rsetattr(i, 'ids.song_name.text',track_name) for i in self.audio_bar]
                 self.player_screen.ids.song_name.text = track_name
                 print(self.audio_bar[0].ids.song_name.text)
-            self.sound = SoundLoader.load(self.track[1])
-            self.sound.play()
+            ###self.sound = IOSPlayer(self.track[1])
+            ###self.sound.play()
             
-            [rsetattr(i, 'ids.song_progress.max', self.sound.length) for i in self.audio_bar]
+            ###[rsetattr(i, 'ids.song_progress.max', self.sound.length) for i in self.audio_bar]
             [rsetattr(i, 'ids.song_progress.value', 0) for i in self.audio_bar]
-            self.player_screen.ids.song_progress.max = self.sound.length
+            ###self.player_screen.ids.song_progress.max = self.sound.length
             self.player_screen.ids.song_progress.value = 0
             #self.player_screen.ids.song_progress.sound = self.sound
-            self.player_screen.ids.song_len.text = time.strftime('%M:%S', time.gmtime(self.sound.length))
+            ###self.player_screen.ids.song_len.text = time.strftime('%M:%S', time.gmtime(self.sound.length))
 
         elif 'sound' in dir(self) and args: # Seek audio row
-            print(slider.active)
             if True: #slider.collide_point(touch.x, touch.y):
                 slider.active = False
                 print('seek audio')
                 self.audio_pos = slider.value
-                self.sound.seek(slider.value)
+                ###self.sound.seek(slider.value)
                 [rsetattr(i, 'ids.song_progress.value', self.audio_pos) for i in self.audio_bar]
                 self.main_screen.add_widget(self.audio_bar[0])
                 self.album_screen.add_widget(self.audio_bar[1])
@@ -544,17 +611,17 @@ class LoginApp(MDApp):
         elif 'sound' in dir(self): # Unpause already loaded audio
             print('Unpause already loaded audio')
 
-            self.sound.seek(self.audio_pos)
-            self.sound.play()
+            ###self.sound.seek(self.audio_pos)
             
             [rsetattr(i, 'ids.song_progress.value',self.audio_pos) for i in self.audio_bar]
             self.player_screen.ids.song_progress.value = self.audio_pos
             
         if 'sound' in dir(self):
-            [rsetattr(i, 'ids.song_status.background_normal', "./icons/stop60.png") for i in self.audio_bar]
-            [rsetattr(i, 'ids.song_status.on_release', self.audio_stop) for i in self.audio_bar]
-            self.player_screen.ids.song_status.background_normal = "./icons/stop60.png"
-            self.player_screen.ids.song_status.on_release = self.audio_stop
+            [rsetattr(i, 'ids.song_status.source', "./icons/stop60.png") for i in self.audio_bar]
+            [rsetattr(i, 'ids.action.on_release', self.audio_stop) for i in self.audio_bar]
+            self.player_screen.ids.song_status.source = "./icons/stop60.png"
+            self.player_screen.ids.song_status.reload()
+            self.player_screen.ids.action.on_release = self.audio_stop
             # set events
             self.progressbarEvent = Clock.schedule_interval(self.update_progressbar,1)
             self.settimeEvent = Clock.schedule_interval(self.settime,1)
@@ -565,8 +632,8 @@ class LoginApp(MDApp):
         
         
     def update_progressbar(self,value):
-        [rsetattr(i, 'ids.song_progress.value', self.sound.get_pos()) for i in self.audio_bar]
-        self.player_screen.ids.song_progress.value = self.sound.get_pos()
+        ###[rsetattr(i, 'ids.song_progress.value', self.sound.get_pos()) for i in self.audio_bar]
+        ###self.player_screen.ids.song_progress.value = self.sound.get_pos()
         if self.sound.status == 'stop':
             self.progressbarEvent.cancel()
             self.settimeEvent.cancel()
@@ -603,12 +670,13 @@ class LoginApp(MDApp):
         self.progressbarEvent.cancel()
         self.settimeEvent.cancel()
 
-        [rsetattr(i, 'ids.song_status.background_normal', "./icons/play60.png") for i in self.audio_bar]
-        [rsetattr(i, 'ids.song_status.on_release', self.audio_play) for i in self.audio_bar]
-        self.player_screen.ids.song_status.background_normal = "./icons/play60.png"
-        self.player_screen.ids.song_status.on_release = self.audio_play
+        [rsetattr(i, 'ids.song_status.source', "./icons/play60.png") for i in self.audio_bar]
+        [rsetattr(i, 'ids.action.on_release', self.audio_play) for i in self.audio_bar]
+        self.player_screen.ids.song_status.source = "./icons/play60.png"
+        self.player_screen.ids.song_status.reload()
+        self.player_screen.ids.action.on_release = self.audio_play
         
-        self.sound.stop()
+        ### self.sound.stop()
 
     def unload_audio(self):
         if 'sound' not in dir(self):
@@ -617,7 +685,7 @@ class LoginApp(MDApp):
         if self.sound.status != 'stop':
             self.audio_stop()
             
-        self.sound.unload()
+        ###self.sound.unload()
         self.main_screen.remove_widget(self.audio_bar[0])
         self.album_screen.remove_widget(self.audio_bar[1])
         self.album_list_screen.remove_widget(self.audio_bar[2])
@@ -630,4 +698,8 @@ class LoginApp(MDApp):
 
 
 if __name__ == '__main__':
+    #try:
     LoginApp().run()
+    #except:
+        #CustomSnackBar("upsy daisy :(").open())
+    

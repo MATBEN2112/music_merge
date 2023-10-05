@@ -18,13 +18,70 @@ from kivymd.uix.label import MDLabel
 from kivymd.uix.menu import MDDropdownMenu
 from kivy.uix.image import Image, AsyncImage
 from kivy.uix.screenmanager import ScreenManager, Screen, SlideTransition
+from kivy.graphics.context_instructions import Color
+from kivy.graphics.vertex_instructions import RoundedRectangle, Line
 import os
-import vk_methods as vk
+from vk_methods import VK_session
 import shutil
 import pickle
 from kivy.clock import Clock
 from utils import *
 
+
+from kivymd.uix.snackbar.snackbar import BaseSnackbar
+
+class CustomSnackBar(BaseSnackbar):
+    def __init__(self, message):
+        super(CustomSnackBar, self).__init__()
+
+        self.add_widget(MDLabel(
+            text=message,
+            theme_text_color="Custom",
+            text_color="#393231",
+        ))
+
+        self.y="24dp"
+        self.pos_hint={"center_x": 0.5, "center_y": 0.5}
+        self.size_hint_x=0.5
+        self.md_bg_color="#E8D8D7"
+        self.open()
+
+class PopupActionButton(MDRelativeLayout, TouchBehavior):
+    def __init__(self, text, func, x):
+        super(PopupActionButton, self).__init__()
+        self.add_widget(MDLabel(text=text, font_size = "18sp", pos_hint={"center_x": .5, "center_y": 0.5}, halign="center"))
+        self.pos_hint={"center_x": x, "center_y": 0.2}
+        self.size_hint=(None,None)
+        self.size = ("160dp","65dp")
+        self.func = func
+
+        with self.canvas.before:
+            Color(1, 0, 0, .5, mode='rgba')
+            RoundedRectangle(pos=self.pos, size=self.size, radius = [8])
+            Color(1, 0.5, 0, .5, mode='rgba')
+            Line(rounded_rectangle=(self.x, self.y, self.width, self.height, 8))
+    def on_touch_up(self, touch):
+        if self.collide_point(touch.x, touch.y):
+            self.func()
+
+            
+class LoginButton(MDRelativeLayout, TouchBehavior):
+    def __init__(self, func):
+        super(LoginButton, self).__init__()
+        self.add_widget(MDLabel(text='Connect', font_size = '36sp', pos_hint={"center_x": .5, "center_y": 0.5}, halign="center"))
+
+        #self.background_color= 0,0,0,0
+        self.pos_hint={'center_x':0.5, 'center_y':0.1}
+        self.size=("300dp","80dp")
+        self.size_hint=(None,None)
+        self.func = func
+        with self.canvas.before:
+                Color((.4,.4,.4,1), mode='rgba')
+                RoundedRectangle(pos=self.pos, size=self.size, radius=[20])
+    def on_touch_up(self, touch):
+        if self.collide_point(touch.x, touch.y):
+            self.func()
+        
 class ContentNavigationDrawer(MDRelativeLayout):
     pass
 
@@ -101,7 +158,7 @@ class Track(TwoLineAvatarIconListItem):
         self.add_to_album_popup = AddToAlbumPopup()
 
         self.add_to_album_popup.ids.container.clear_widgets()
-        album_list = meta_album_list() ###
+        album_list = self.app.meta.album_list() ###
         for album in album_list:
             self.add_to_album_popup.ids.container.add_widget(
                 AlbumListItem( self.app, album, self.track, self.add_to_album_popup)
@@ -110,23 +167,20 @@ class Track(TwoLineAvatarIconListItem):
         
     def rename_track(self, new_artist=None, new_song=None):
         if new_artist and new_song:
-            meta_edit_track(self.key, new_artist, new_song) ###
+            self.app.meta.edit_track(self.key, new_artist, new_song) ###
             self.text = new_artist
             self.secodary_text = new_song
             return self.rename_track_popup.dismiss()
             
         self.drop_down_menu.dismiss()
-
         self.rename_track_popup = RenameTrackPopup()
-        btn = Button(size_hint=(0.6,.2),pos_hint={'center_x':0.5, 'center_y':0.2},text="Enter")
-        btn.bind(on_press = lambda x:
-            self.rename_track(
-                new_artist=self.rename_track_popup.ids.artist.text,
-                new_song=self.rename_track_popup.ids.song.text
-            )
+        func = lambda : self.rename_track(
+            new_artist=self.rename_track_popup.ids.author.text,
+            new_song=self.rename_track_popup.ids.song.text
         )
+        btn = PopupActionButton("Enter", func, 0.5)
         self.rename_track_popup.ids.action.clear_widgets()
-        self.rename_track_popup.ids.artist.text = self.text
+        self.rename_track_popup.ids.author.text = self.text
         self.rename_track_popup.ids.song.text = self.secondary_text
         self.rename_track_popup.ids.action.add_widget(btn)
         self.rename_track_popup.open()
@@ -134,10 +188,10 @@ class Track(TwoLineAvatarIconListItem):
     def delete_track(self, state=None):
         if state == "Confirm":
             try:
-                delete_meta_track(self.key, key_album=self.album_key)
+                self.app.meta.delete_track(self.key, key_album=self.album_key) ###
             except PermissionError: # if file loaded to player 
                 self.app.unload_audio()
-                delete_meta_track(self.key, key_album=self.album_key)
+                self.app.meta.delete_track(self.key, key_album=self.album_key) ###
             
             return self.confirmation_popup.dismiss()
                     
@@ -147,19 +201,21 @@ class Track(TwoLineAvatarIconListItem):
         self.drop_down_menu.dismiss()
 
         self.confirmation_popup = ConfirmationPopup()
-        no = Button(size_hint=(0.35,.2),pos_hint={'center_x':0.8, 'center_y':0.2},text="Cancel")
-        yes = Button(size_hint=(0.35,.2),pos_hint={'center_x':0.2, 'center_y':0.2},text="Confirm")
-        yes.bind(on_press = lambda x:self.delete_track(state = "Confirm"))
-        no.bind(on_press = lambda x:self.delete_track(state = "Cancel"))
+
+        func = lambda :self.delete_track(state = "Confirm")
+        btn1 = PopupActionButton("Confirm", func, 0.2)
+        func = lambda :self.delete_track(state = "Cancel")
+        btn2 = PopupActionButton("Cancel", func, 0.8)
         self.confirmation_popup.ids.action.clear_widgets()
-        self.confirmation_popup.ids.action.add_widget(yes)
-        self.confirmation_popup.ids.action.add_widget(no)
+        self.confirmation_popup.ids.action.add_widget(btn1)
+        self.confirmation_popup.ids.action.add_widget(btn2)
         self.confirmation_popup.open()
     
     ### TRACK METHODS ###
 class AlbumListItem(OneLineAvatarIconListItem):
     def __init__(self, app, album, track, popup=None):
         super(AlbumListItem, self).__init__()
+        self.app = app
         self.popup = popup
         self.album = album
         self.track = track
@@ -168,7 +224,7 @@ class AlbumListItem(OneLineAvatarIconListItem):
         
     def on_touch_up(self, touch):
         if self.collide_point(touch.x, touch.y):
-            meta_add_to_album(self.track[0], self.album[0]) ###
+            self.app.meta.add_to_album(self.track[0], self.album[0]) ###
             return self.popup.dismiss()
             
         
@@ -179,11 +235,7 @@ class SelectionBottomMenu(MDBoxLayout):
         self.app.unload_audio()
         self.screen = screen
         # change top bar
-        self.name = self.screen.ids.menu_row.title
-        self.screen.ids.menu_row.title="selection menu"
-        self.screen.ids.menu_row.right_action_items=[]
-        self.screen.ids.menu_row.left_action_items=[]
-
+        self.screen.ids.menu_row.clear_widgets()
         # remove album list
         if 'outer_album_container' in self.screen.ids:
             self.album_container = self.screen.ids.outer_album_container
@@ -194,7 +246,6 @@ class SelectionBottomMenu(MDBoxLayout):
         # change container content to checkbox
         children = [*self.screen.ids.container.children]
         self.screen.ids.container.clear_widgets()
-
         for child in children[::-1]:
             
             self.screen.ids.container.add_widget(
@@ -215,17 +266,17 @@ class SelectionBottomMenu(MDBoxLayout):
         
     def create_album(self, album_name=None):
         if album_name:
-            album_key = meta_add_album(album_name, img=None) ###
+            album_key = self.app.meta.add_album(album_name, img=None) ###
             children = [*self.screen.ids.container.children]
             for child in children:
                 child.add_to_album(album_key=album_key)
-                self.create_album_popup.dismiss()
-                
+
+            self.create_album_popup.dismiss()          
             return self.close_selection()
             
         self.create_album_popup = CreateAlbumPopup()
-        btn = Button(size_hint=(0.6,.2),pos_hint={'center_x':0.5, 'center_y':0.2},text="Enter")
-        btn.bind(on_press = lambda x:self.create_album(album_name=self.create_album_popup.ids.album_name.text))
+        func = lambda :self.create_album(album_name=self.create_album_popup.ids.album_name.text)
+        btn = PopupActionButton("Enter", func, 0.5)
         self.create_album_popup.ids.action.clear_widgets()
         self.create_album_popup.ids.action.add_widget(btn)
         self.create_album_popup.open()
@@ -233,22 +284,16 @@ class SelectionBottomMenu(MDBoxLayout):
     def close_selection(self):
         self.screen.remove_widget(self)
         if self.screen.name == 'start':
-            self.screen.ids.menu_row.title = self.name
             temp = self.screen.ids.outer_track_container
             self.screen.ids.box.remove_widget(self.screen.ids.outer_track_container)
             self.screen.ids.box.add_widget(self.album_container)
             self.screen.ids.box.add_widget(temp)
             self.screen.ids.nav_drawer.enable_swiping=True
-            self.screen.ids.menu_row.right_action_items=[["./icons/edit.png", lambda x: self.screen.edit_menu()]]
-            self.screen.ids.menu_row.left_action_items=[["./icons/menu", lambda x: self.screen.ids.nav_drawer.set_state('toggle')]]
             self.screen.downloaded_audios()
+            
         else:
-            self.screen.ids.menu_row.right_action_items=[
-                ["./icons/edit.png", lambda x: self.screen.edit_menu()],
-                ["./icons/back.png", lambda x: self.screen.close_album()]
-            ]
-            self.screen.open_album(self.name, self.screen.ids.album_image.source, self.screen.screen_to_return)
-        
+            self.screen.open_album(self.screen.album, self.screen.screen_to_return)
+            
     ### SELECTION MENU METHODS ###
 
 class SessionListElement(TwoLineAvatarIconListItem):
@@ -260,20 +305,19 @@ class SessionListElement(TwoLineAvatarIconListItem):
             on_release=lambda x: self.mange_session())
         )
         if 'vk_' in session_name:
-            self.session_name = session_name
-            self.session = vk.load_session(self.session_name)
-            self.type = 'vk'
-            with open(fr'./Documents/sessions/{session_name}/uid', 'rb') as f:
-                data = pickle.load(f)
-                self.text = data['u_name']
-                self.secondary_text =data['uid']
-            try:
-                self.add_widget(ImageLeftWidgetWithoutTouch(source=rf"./Documents/sessions/{session_name}/u_img.jpg"))
-            except:
-                pass
+            self.session = VK_session(self.app.app_dir,session_name)
+            
+        self.text = self.session.u_name
+        self.secondary_text =self.session.u_id
+
+        self.add_widget(ImageLeftWidgetWithoutTouch(source=self.session.img))
             
         self.size_hint_y=None
-        self.on_release=lambda :self.open_session()
+
+        if self.session.connected:
+            self.on_release=lambda :self.open_session()
+        else:
+            self.on_release=lambda :self.session_unavalible()
 
     def mange_session(self):
         menu_items = [
@@ -287,8 +331,10 @@ class SessionListElement(TwoLineAvatarIconListItem):
 
     def open_session(self):
         self.app.unload_audio()
-        self.app.main_screen.ids.nav_drawer.set_state('toggle')
-        self.app.main_screen.vk_audios(self.session, self.secondary_text)
+        self.app.main_screen.ids.nav_drawer.set_state('toggle')        
+        self.app.main_screen.vk_audios(self.session)
+    def session_unavalible(self):
+        CustomSnackBar("Session unavalible. Check your internet connection.")
         
     def delete_session(self):
         pass
@@ -316,12 +362,11 @@ class TrackWithCheckBox(TwoLineAvatarIconListItem):
 
     def delete_track(self):
         if self.check_box.active:
-            delete_meta_track(key_track, key_album=self.album_key) ###
+            self.app.meta.delete_track(self.key, key_album=self.album_key) ###
              
     def add_to_album(self, album_key=None):
          if album_key and self.check_box.active:
-            print(album_key)
-            meta_add_to_album(self.key, album_key) ###           
+            self.app.meta.add_to_album(self.key, album_key) ###           
             
 class AlbumButton(MDBoxLayout, TouchBehavior):
     def __init__(self, app, album):
@@ -335,22 +380,30 @@ class AlbumButton(MDBoxLayout, TouchBehavior):
 
             
         self.img = Image(
-            size=(90,90),
+            size=("200dp","200dp"),
             size_hint=(None,None),
             source=self.img
         )
                 
         self.album_name = MDLabel(
-            font_size = 13,
+            size=("160dp","20dp"),
+            size_hint=(None,None),
+            font_size = '14sp',
             text_color = "#232217",
-            halign = "center",
             text = self.name,
-            padding = [-1,26,10,0]
+            halign = "center",
+            pos_hint= {'center_x':.5},
+            shorten = True,
+            shorten_from = "right"
         )
         
         self.orientation= "vertical"
-        self.adaptive_height= True
+
+        self.size_hint_y= None
         self.size_hint_x= None
+        self.md_bg_color= "#3F6668"
+        self.size=("200dp","220dp")
+
         self.add_widget(self.img)
         self.add_widget(self.album_name)
         
@@ -399,14 +452,13 @@ class AlbumButton(MDBoxLayout, TouchBehavior):
             self.app.manager.get_screen('album_list').open_album_list() 
 
 class VKTrack(TwoLineAvatarIconListItem):
-    def __init__(self, session, u_id, app, ID, artist, song, img):
+    def __init__(self, session, app, ID, artist, song, img):
         super(VKTrack, self).__init__()
         self.img = img or "./icons/track.png"
         self.text = artist or 'artist'
         self.secondary_text = song or 'song'
         self.id = ID
         self.app = app
-        self.u_id = u_id
         self.session = session
 
         self.add_widget(ImageLeftWidgetWithoutTouch(source=self.img))
@@ -415,22 +467,22 @@ class VKTrack(TwoLineAvatarIconListItem):
             on_release=lambda x: self.download())
         )
     def download(self):
-        vk.download_audio(
-            self.session,
-            self.u_id, self.id,
+        key = self.app.meta.new_track(self.text, self.secondary_text, self.img) ###
+        self.session.download_audio(
+            self.id,
             self.text,
             self.secondary_text,
-            img_link = self.img if self.img!="./icons/track.png" else None
+            key
         )
+        CustomSnackBar("Track has been loaded to your audio.")
     
 class VKAlbumButton(MDBoxLayout, TouchBehavior):
-    def  __init__(self, session, u_id, app, ID, name, img):
+    def  __init__(self, session, app, ID, name, img):
         super(VKAlbumButton, self).__init__()
         self.img = img or "./icons/song.png"
         self.name = name or "Album"
         self.id = ID
         self.app = app
-        self.u_id = u_id
         self.session = session
         
         self.orientation= "vertical"
@@ -491,7 +543,6 @@ class VKAlbumButton(MDBoxLayout, TouchBehavior):
         self.app.manager.current = 'album'
         self.app.manager.get_screen('album').vk_open_album(
             self.session,
-            self.u_id,
             self.id,
             self.name,
             self.img,
@@ -502,4 +553,26 @@ class VKAlbumButton(MDBoxLayout, TouchBehavior):
         if self.app.manager.current=='start':
             self.app.manager.transition = SlideTransition(direction="up")
             self.app.manager.current = 'album_list'
-            self.app.manager.get_screen('album_list').vk_open_album_list(self.session, self.u_id) 
+            self.app.manager.get_screen('album_list').vk_open_album_list(self.session) 
+
+class TopAppBarMenuElem(MDRelativeLayout):
+    def  __init__(self, img, pos, func=None):
+        super(TopAppBarMenuElem, self).__init__()
+        self.pos_hint = {'center_x':pos[0], 'center_y':pos[1]}
+        self.size_hint = (None,None)
+        self.size = ("40dp","40dp")
+        btn = Button(background_color=[0,0,0,0],
+                     pos_hint = {'center_x':.5, 'center_y':.5},
+                     size = ("60dp","60dp"),
+                     size_hint = (None,None),
+                     on_release = func)
+        self.add_widget(btn)
+        icon = Image(pos_hint = {'center_x':.5, 'center_y':.5},
+                     size = ("40dp","40dp"),
+                     size_hint = (None,None),
+                     source = img)
+        self.add_widget(icon)
+
+        
+
+        

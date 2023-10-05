@@ -2,89 +2,125 @@
 <SelectionBottomMenu>:
 	id: selection_row
     md_bg_color: "#232217"
-    size: root.size[0],65
+    height:"145dp"
     size_hint: 1,None
     MDRelativeLayout:
 		Button:
         	id: create_album
 
-        	background_normal: "album60.png"
+        	background_normal: "./icons/album60.png"
         	size_hint: (None,None)
         	size: (60,60)
-        	pos_hint: {'center_x':0.5, 'center_y':0.5}
+        	pos_hint: {'center_x':0.5, 'center_y':0.75}
     MDRelativeLayout:
     	Button:
         	id: delete_selected
         	#background_color: "#232217"
         	size_hint: (None,None)
-        	pos_hint: {'center_x':0.5, 'center_y':0.5}
+        	pos_hint: {'center_x':0.5, 'center_y':0.75}
         	size: (60,60)
-        	background_normal: "bin60.png"
+        	background_normal: "./icons/bin60.png"
     MDRelativeLayout:
 		Button:
         	id: close_menu
         	#background_color: "#232217"
         	size_hint: (None,None)
-        	pos_hint: {'center_x':0.5, 'center_y':0.5}
+        	pos_hint: {'center_x':0.5, 'center_y':0.75}
         	size: (60,60)
-        	background_normal: "x60.png"
+        	background_normal: "./icons/x60.png"
 
 
 # snackbar !!!
 <AudioInfo>:
 	id: audio_row
 	orientation: 'vertical'
-    md_bg_color: "#232217"
-    size: root.size[0],65
-    size_hint: 1,None
-	MDBoxLayout:
-		size: root.size[0],root.size[1] - 5
-		Button:
-        	id: song_status
-        	background_color: "#232217"
-    		background_normal: "play60.png"
+    #md_bg_color: "#232217"
+    height:"105dp"
+    size_hint: .98,None
 
-    		pos_hint: {'center_x':0.5, 'center_y':0.5}
-    		size: (60,60)
+    pos_hint: {'center_x':0.5, 'center_y':0.06}
+	MDBoxLayout:
+		height:"100dp"
+        canvas.before:
+            Color:
+                rgba: (0,.7,.7,1)  # visual feedback of press
+            RoundedRectangle:
+                pos: self.pos
+                size: self.size
+                radius: [22,]
+
+            Color:
+                rgba: .1, .9, .1, 1
+            Line:
+                width: 1.5
+                rounded_rectangle: (self.x, self.y, self.width, self.height, 22)
+
+        MDRelativeLayout:
+            size: ("100dp", "100dp")
             size_hint: (None,None)
+		    Button:
+                id: action
+        	    background_color: 0,0,0,0
+
+            Image:
+                id: song_status
+                size: ("80dp", "80dp")
+                size_hint: (None,None)
+                source: "./icons/play.png"
+                pos_hint: {'center_x':0.5, 'center_y':0.5}
 
     				
 		Button:
 			id: song_name
 			on_release: app.switch_to_player(self.text)
-			background_color: "#232217"
+			background_color: 0,0,0,0
 
-			#opacity: 0
 			size: root.size
 			text: "Artist - song"
+            font_size: '20sp'
+            shorten: True
 			
 		Button:
 			id: song_timer
 			on_press: app.switch_to_player(root)
 			size_hint: None,None
-			background_color: "#232217"
-			size: 50,root.size[1] - 5
+			background_color: 0,0,0,0
+			size: "70dp","100dp"
 			text: "00:00"
+            font_size: '20sp'
 			haling: "right"
-			
-      			
+            canvas.before:
+
+                Color:
+                    rgba: (0,0,0,0)  # visual feedback of press
+
+                RoundedRectangle:
+                    pos: self.pos
+                    size: self.size
+                    radius: [0,22,22,0]
+                Color:
+                    rgba: 0,1,0,1
+                Line:
+                    width: 1.5
+                    points: self.pos[0],self.pos[1],self.pos[0],self.pos[1]+self.height
+
 	MDProgressBar:
 		id: song_progress
 		size_hint_y:None
-		height:5
+		height:"5dp"
 		max: 1
 		value: 1
+
 <Album>
 	MDBoxLayout:
         orientation: "vertical"
-        id: box
-        MDTopAppBar:
-        	id: menu_row
-        	md_bg_color: "#232217"
-        	specific_text_color: "white"
-            title: "Album"
-            elevation: 3
-            right_action_items: []
+        MDRelativeLayout:
+            id: menu_row
+            orientation: "vertical"
+            size: (root.size[0],"100dp")
+            size_hint: (None,None)
+            pos_hint: {'center_x':0.5, 'center_y':0.95}
+            md_bg_color: "#232217"
 
         MDBoxLayout:
             MDScrollView:
@@ -93,12 +129,51 @@
             		orientation: "vertical"
             		size_hint: 1, None
             		height: self.minimum_height
-            		Image:
-        				id: album_image
-        				source: "song.png"
-        				#pos_hint: {'center_x':0.5, 'center_y':0.65}
-            			size_hint: (1,None)
-            			size: 160,160
+                    MDBoxLayout:
+                        size_hint: (1,None)
+                        height: "10dp"
+
+                        canvas.before:
+
+                            Color:
+                                rgba: (0,0,0,1)
+
+                            Rectangle:
+                                pos: self.pos
+                                size: self.size
+                    MDBoxLayout:
+                        size_hint: (1,None)
+                        height: "160dp"
+                        MDBoxLayout:
+                            md_bg_color: "#231117"
+                            orientation: "vertical"
+                            MDLabel:
+                                id: album_name
+                                text: ""
+                                font_size: '25sp'
+                                padding: "25dp"
+                            MDLabel:
+                                text: str(len(container.children)) + " track in album"
+                                font_size: '14sp'
+                                padding: "35dp"
+
+            		    Image:
+        				    id: album_image
+            			    size_hint: (None,None)
+            			    size: "160dp","160dp"
+
+                    MDBoxLayout:
+                        size_hint: (1,None)
+                        height: "10dp"
+
+                        canvas.before:
+
+                            Color:
+                                rgba: (0,0,0,1)
+
+                            Rectangle:
+                                pos: self.pos
+                                size: self.size
 
                 	MDList:
                     	adaptive_height: True
@@ -108,285 +183,452 @@
 <AlbumList>
 	MDBoxLayout:
         orientation: "vertical"
-        id: box
-        MDTopAppBar:
-        	id: menu_row
-        	md_bg_color: "#232217"
-        	specific_text_color: "white"
-            title: "Album"
-            elevation: 3
-            right_action_items: []
+        MDRelativeLayout:
+            id: menu_row
+            orientation: "vertical"
+            size: (root.size[0],"100dp")
+            size_hint: (None,None)
+            pos_hint: {'center_x':0.5, 'center_y':0.95}
+            md_bg_color: "#232217"
 
-        MDBoxLayout:
 
-            MDScrollView:
-            		
-            	GridLayout:
-            		id: album_container
-            		cols: 3
-            		padding: 10, 10
-            		spacing: 10, 10
-            		size_hint_y: None
-            		height: self.minimum_height
+        MDScrollView:
 
-            			#size_hint_x: None
-            			#width: self.minimum_width
+
+            GridLayout:
+                id: album_container
+                cols: 2
+                padding: "50dp"
+                spacing: "30dp"
+                size_hint_y: None
+                height: self.minimum_height
+                #size_hint_y: None
+
+
+                    
+
 
 
 <Login>:
 	MDRelativeLayout:
 		md_bg_color: [0.5,0.5,1,1]
+
 		id: login_container
-        MDTopAppBar:
+        MDBoxLayout:
         	id: menu_row
-        	pos_hint: {'center_x':0.5, 'center_y':.95}
+            orientation: "vertical"
+            size: (root.size[0],"100dp")
+            size_hint: (None,None)
+            pos_hint: {'center_x':0.5, 'center_y':0.95}
         	md_bg_color: "#232217"
         	specific_text_color: "white"
-            title: ""
-            elevation: 3
-            right_action_items: [["back.png", lambda x: root.close_login_page()]]
+            
+        Image:
+            pos_hint: {'center_x':0.9, 'center_y':0.92} 
+            source: "./icons/back.png"
+            size: ("65dp","65dp")
+            size_hint: (None,None)
+        Button:
+            background_color: 0,0,0,0
+            pos_hint: {'center_x':0.9, 'center_y':0.92} 
+            size: ("65dp","65dp")
+            size_hint: (None,None)
+            on_release: root.close_login_page()
+            
         Image:
         	id: login_img
-			size: (60,60)
+			size: ("80dp","80dp")
             size_hint: (None,None)
             source: ""
-            pos_hint: {'center_x':0.5, 'center_y':0.8}
-        MDLabel:
-        	text:'Login'
-        	font_size:18
-        	pos_hint: {'center_x':0.6, 'center_y':0.665}
-        TextInput:
+            pos_hint: {'center_x':0.5, 'center_y':0.81}
+
+
+        MDTextField:
         	id: login
         	multiline:False
-        	font_size:20
-			pos_hint:{'center_x':0.5, 'center_y':0.6}
-			size: (root.size[0]*0.8,50)
+            hint_text: "Phone"
+        	font_size:'32sp'
+			pos_hint:{'center_x':0.5, 'center_y':0.7}
+			size: (root.size[0]*0.8,"100dp")
             size_hint: (None,None)
-		MDLabel:
-        	text:'Password'
-        	font_size:18
-        	pos_hint: {'center_x':0.6, 'center_y':0.465}
-        TextInput:
+
+        MDTextField:
         	id: password
         	multiline:False
-        	font_size:20
-			pos_hint:{'center_x':0.5, 'center_y':0.4}
-			size: (root.size[0]*0.8,50)
+            hint_text: "Password"
+        	font_size:'32sp'
+			pos_hint:{'center_x':0.5, 'center_y':0.55}
+			size: (root.size[0]*0.8,"100dp")
             size_hint: (None,None)
         MDLabel:
         	id: error
-        	text:''
-        	font_size:16
-        	pos_hint: {'center_x':0.6, 'center_y':0.34}
-        	theme_text_color: "Custom"
-    		text_color: "red"
-
-		Button:
-			id: action
-			text:'Connect'
-			
-			pos_hint:{'center_x':0.5, 'center_y':0.25}
-			size: (root.size[0]*0.3,60)
-            size_hint: (None,None)
-
-			#on_press:root.do_login_vk(login.text, password.text)
+        	text:'fdsfds123dgbdfbdgffdgfdg'
+        	font_size:'180sp'
+        	#pos_hint: {'center_x':0.5, 'center_y':0.4}
+            #haling: "center"
+        	#text_color: "#11b5b1"
+        MDRelativeLayout:
+            id: action
 
 
 #:import Factory kivy.factory.Factory
 <LoginPopup@Popup>:
+    title: ""
+    size_hint: (None, None)
+    size: ("420dp","230dp")
+    separator_height: 0
+    background_color: "#b5b9ba"
 
-    title: "Account connection"
-    size_hint: (1,.5)
+    BoxLayout:
+        orientation: "vertical"
+    	
+        size: root.width, root.height
 
-    MDRelativeLayout:
-    	id: box
-        orientation: 'vertical'
+        canvas.before:
+            Color:
+                rgba: 1, 1, 1, 1
+
+            RoundedRectangle:
+                pos: self.x - 20, self.y - 20
+                size: self.width + 40, self.height + 60
+                radius: [10]
+
+            Color:
+                rgba: .5, .5, .5, 1
+            Line:
+                width: 2
+                rounded_rectangle: (self.x - 20, self.y - 20, self.width + 40, self.height + 60, 10)
+
+        MDRelativeLayout:
         
-        Label:
-            text: 'Choose media'
-            font_size: 14
-            pos_hint: {'center_x':0.5, 'center_y':0.9}
+            Label:
+                text: 'Choose media'
+                font_size: '28sp'
+                color: "#9539ba"
+                size_hint: (None, None)
+                height: self.texture_size[1] + dp(10)
+                pos_hint: {'center_x':0.5, 'center_y':0.99}
 
-        GridLayout:
-            rows: 1			
-            size_hint: (None,None)
-            pos_hint: {'center_x':0.5, 'center_y':0.5}
-            #width: self.minimum_width
-    		Button:
-    			background_normal: "vk60.png"
-    			size: (60,60)
-        		size_hint: (None,None)
-        		
 
-        		on_press: app.switch_to_login(self.background_normal, root)
-        	Button:
-    			background_normal: "ya60.png"
-    			size: (60,60)
-        		size_hint: (None,None)
-        		
 
-        		on_press: app.switch_to_login(self.background_normal, root)
+            Image:
+                id: vk
+                size: ("120dp","120dp")
+                size_hint: (None,None)
+                source: "./icons/vk.png"
+                pos_hint: {'center_x':0.35, 'center_y':0.5}
+
+    	    Button:
+
+                size: ("120dp","120dp")
+                size_hint: (None,None)
+                pos_hint: {'center_x':0.35, 'center_y':0.5}
+                on_press: app.switch_to_login(root.ids.vk.source, root)
+                opacity: 0.1
+
+            Image:
+                id: ya
+                size: ("120dp","120dp")
+                size_hint: (None,None)
+                source:  "./icons/ya.png"
+                pos_hint: {'center_x':0.65, 'center_y':0.5}
+
+            Button:
+
+                size: ("120dp","120dp")
+                size_hint: (None,None)
+                pos_hint: {'center_x':0.65, 'center_y':0.5}
+        	    on_press: app.switch_to_login(root.ids.ya.source, root)
+                opacity: 0.1
+
+
 
 <CaptchaPopup>:
-
-    title: "Account connection"
-    size_hint: (1,.5)
+    title: ""
+    size_hint: (None, None)
+    size: ("420dp","280dp")
+    separator_height: 0
+    pos_hint: {'center_x':0.5}
+    background_color: "#b5b9ba"
     on_dismiss: 
-    	self.ids.error.text = ''
-    	self.ids.captcha_key.text = ''
-    	self.ids.action.clear_widgets()
-    MDRelativeLayout:
-    	id: box
-        orientation: 'vertical'
+        self.ids.error.text = ''
+        self.ids.captcha_key.text = ''
+        self.ids.action.clear_widgets()
+
+    BoxLayout:
+        orientation: "vertical"
         
-        Label:
-            text: 'Enter symbols from captcha'
-            font_size: 14
-            pos_hint: {'center_x':0.5, 'center_y':0.9}
+        size: root.width, root.height
 
-        Image:
-        	id: captcha
-			size: (130,50)
-            size_hint: (None,None)
-            #source: ""
-            pos_hint: {'center_x':0.5, 'center_y':0.75}
+        canvas.before:
+            Color:
+                rgba: 1, 1, 1, 1
 
-        TextInput:
-        	id: captcha_key
-        	multiline:False
-        	font_size:20
-			pos_hint:{'center_x':0.5, 'center_y':0.52}
-			size_hint:(.6,.2)
-		MDLabel:
-        	id: error
-        	text:''
-        	font_size:16
-        	pos_hint: {'center_x':0.85, 'center_y':0.37}
-        	theme_text_color: "Custom"
-    		text_color: "red"
-        	haling: "center"
-    	MDRelativeLayout:
-    		id: action
+            RoundedRectangle:
+                pos: self.x - 20, self.y - 20
+                size: self.width + 40, self.height + 60
+                radius: [10]
+
+            Color:
+                rgba: .5, .5, .5, 1
+            Line:
+                width: 2
+                rounded_rectangle: (self.x - 20, self.y - 20, self.width + 40, self.height + 60, 10)
+
+        MDRelativeLayout:
+            orientation: 'vertical'
+        
+            MDLabel:
+                text: 'Enter symbols from captcha'
+                text_color: "#ffb5b1"
+                font_size: "24sp"
+                pos_hint: {'center_x':0.63, 'center_y':0.97}
+                haling: "center"
+
+            Image:
+        	    id: captcha
+			    size: ("130dp","50dp")
+                size_hint: (None,None)
+                pos_hint: {'center_x':0.5, 'center_y':0.78}
+                source: "captcha.jpg"
+
+
+            MDTextField:
+                id: captcha_key
+                multiline:False
+                hint_text: "Captcha key"
+                font_size:'32sp'
+                pos_hint:{'center_x':0.5, 'center_y':0.5}
+                size: (root.size[0]*0.8,"100dp")
+                size_hint: (None,None)
+
+		    MDLabel:
+        	    id: error
+        	    text:''
+        	    font_size:"18sp"
+        	    pos_hint: {'center_x':0.68, 'center_y':0.33}
+        	    theme_text_color: "Custom"
+    		    text_color: "red"
+        	    haling: "center"
+
+    	    MDRelativeLayout:
+    		    id: action
 
 
 <SecureCodePopup>:
-    title: "Account connection"
-    size_hint: (1,.5)
+    title: ""
+    size_hint: (None, None)
+    size: ("420dp","220dp")
+    separator_height: 0
+    pos_hint: {'center_x':0.5}
+    background_color: "#b5b9ba"
     on_dismiss: 
     	self.ids.error.text = ''
     	self.ids.secure_code.text = ''
     	self.ids.action.clear_widgets()
-    MDRelativeLayout:
-    	id: box
-        orientation: 'vertical'
+    BoxLayout:
+        orientation: "vertical"
         
-        Label:
-            text: 'Enter secure code'
-            font_size: 14
-            pos_hint: {'center_x':0.5, 'center_y':0.9}
+        size: root.width, root.height
 
-        TextInput:
-        	id: secure_code
-        	multiline:False
-        	font_size:20
-			pos_hint:{'center_x':0.5, 'center_y':0.52}
-			size_hint:(.6,.2)
-		MDLabel:
-        	id: error
-        	text:''
-        	font_size:16
-        	haling: "center"
-        	pos_hint: {'center_x':0.85, 'center_y':0.37}
-        	theme_text_color: "Custom"
-    		text_color: "red"
+        canvas.before:
+            Color:
+                rgba: 1, 1, 1, 1
 
-    	MDRelativeLayout:
-    		id: action
+            RoundedRectangle:
+                pos: self.x - 20, self.y - 20
+                size: self.width + 40, self.height + 60
+                radius: [10]
+
+            Color:
+                rgba: .5, .5, .5, 1
+            Line:
+                width: 2
+                rounded_rectangle: (self.x - 20, self.y - 20, self.width + 40, self.height + 60, 10)
+
+        MDRelativeLayout:
+            orientation: 'vertical'
+        
+            MDLabel:
+                text: 'Enter secure code to email or phone'
+                font_size: "24sp"
+                pos_hint: {'center_x':0.5, 'center_y':0.98}
+
+            MDTextField:
+                id: secure_code
+                multiline:False
+                hint_text: "Secure code"
+                font_size:'32sp'
+                pos_hint:{'center_x':0.5, 'center_y':0.65}
+                size: (root.size[0]*0.8,"100dp")
+                size_hint: (None,None)
+
+            MDLabel:
+                id: error
+                text:''
+                font_size:"18sp"
+                pos_hint: {'center_x':0.68, 'center_y':0.37}
+                theme_text_color: "Custom"
+                text_color: "red"
+                haling: "center"
+
+    	    MDRelativeLayout:
+    		    id: action
 
 <CreateAlbumPopup>:
-    title: "Create album"
-    size_hint: (1,.5)
-    on_dismiss: self.ids.album_name.text = ''
-
-    MDRelativeLayout:
-    	id: box
-        orientation: 'vertical'
+    title: ""
+    size_hint: (None, None)
+    size: ("420dp","250dp")
+    separator_height: 0
+    pos_hint: {'center_x':0.5}
+    background_color: "#b5b9ba"
+    on_dismiss: 
+        self.ids.cover.source = "./icons/add-img.png"
+        self.ids.album_name.text = ''
+        self.ids.action.clear_widgets()
+    BoxLayout:
+        orientation: "vertical"
         
-        Label:
-            text: 'Enter name for our album'
-            font_size: 14
-            pos_hint: {'center_x':0.5, 'center_y':0.9}
+        size: root.width, root.height
 
-        TextInput:
-        	id: album_name
-        	multiline:False
-        	font_size:20
-			pos_hint:{'center_x':0.5, 'center_y':0.52}
-			size_hint:(.6,.2)
+        canvas.before:
+            Color:
+                rgba: 1, 1, 1, 1
 
-    	MDRelativeLayout:
-    		id: action
+            RoundedRectangle:
+                pos: self.x - 20, self.y - 20
+                size: self.width + 40, self.height + 60
+                radius: [10]
+
+            Color:
+                rgba: .5, .5, .5, 1
+            Line:
+                width: 2
+                rounded_rectangle: (self.x - 20, self.y - 20, self.width + 40, self.height + 60, 10)
+
+        MDRelativeLayout:
+            orientation: 'vertical'
+            Image:
+                id: cover
+                source: "./icons/add-img.png"
+                pos_hint:{'center_x':0.5, 'center_y':0.95}
+                size: ("90dp","90dp")
+                size_hint: (None,None)
+            Button:
+                pos_hint:{'center_x':0.5, 'center_y':0.95}
+                size: ("90dp","90dp")
+                size_hint: (None,None)
+                opacity: 0
+                on_release: print(123)
+
+            MDTextField:
+                id: album_name
+                multiline:False
+                hint_text: "Album name"
+                font_size:'32sp'
+                pos_hint:{'center_x':0.5, 'center_y':0.5}
+                size: (root.size[0]*0.8,"100dp")
+                size_hint: (None,None)
+
+    	    MDRelativeLayout:
+    		    id: action
 
 <RenameAlbumPopup>:
-    title: "Rename album"
-    size_hint: (1,.5)
-    on_dismiss: self.ids.album_name.text = ''
+    title: ""
+    size_hint: (None, None)
+    size: ("420dp","150dp")
+    separator_height: 0
+    pos_hint: {'center_x':0.5}
+    background_color: "#b5b9ba"
+    on_dismiss: 
+        self.ids.album_name.text = ''
+        self.ids.action.clear_widgets()
 
-    MDRelativeLayout:
-    	id: box
-        orientation: 'vertical'
-        
-        Label:
-            text: 'Enter name for our album'
-            font_size: 14
-            pos_hint: {'center_x':0.5, 'center_y':0.9}
+    BoxLayout:
+        orientation: "vertical"
+        size: root.width, root.height
+        canvas.before:
+            Color:
+                rgba: 1, 1, 1, 1
 
-        TextInput:
-        	id: album_name
-        	multiline:False
-        	font_size:20
-			pos_hint:{'center_x':0.5, 'center_y':0.52}
-			size_hint:(.6,.2)
+            RoundedRectangle:
+                pos: self.x - 20, self.y - 20
+                size: self.width + 40, self.height + 60
+                radius: [10]
 
-    	MDRelativeLayout:
-    		id: action
+            Color:
+                rgba: .5, .5, .5, 1
+            Line:
+                width: 2
+                rounded_rectangle: (self.x - 20, self.y - 20, self.width + 40, self.height + 60, 10)
+
+        MDRelativeLayout:
+            orientation: 'vertical'
+
+            MDTextField:
+        	    id: album_name
+                multiline:False
+                hint_text: "New album name"
+                font_size:'32sp'
+                pos_hint:{'center_x':0.5, 'center_y':0.9}
+                size: (root.size[0]*0.8,"100dp")
+                size_hint: (None,None)
+
+    	    MDRelativeLayout:
+    		    id: action
 
 <RenameTrackPopup>:
-    title: "Rename track"
-    size_hint: (1,.5)
+    title: ""
+    size_hint: (None, None)
+    size: ("420dp","220dp")
+    separator_height: 0
+    pos_hint: {'center_x':0.5}
+    background_color: "#b5b9ba"
     on_dismiss: 
-    	self.ids.artist.text = ''
-    	self.ids.song.text = ''
+        self.ids.author.text = ''
+        self.ids.song.text = ''
+        self.ids.action.clear_widgets()
 
-    MDRelativeLayout:
-    	id: box
-        orientation: 'vertical'
-        
-        Label:
-            text: 'Artist'
-            font_size: 14
-            pos_hint: {'center_x':0.5, 'center_y':0.9}
+    BoxLayout:
+        orientation: "vertical"
+        size: root.width, root.height
+        canvas.before:
+            Color:
+                rgba: 1, 1, 1, 1
 
-        TextInput:
-        	id: artist
-        	multiline:False
-        	font_size:20
-			pos_hint:{'center_x':0.5, 'center_y':0.78}
-			size_hint:(.6,.2)
-		Label:
-            text: 'Song'
-            font_size: 14
-            pos_hint: {'center_x':0.5, 'center_y':0.6}
+            RoundedRectangle:
+                pos: self.x - 20, self.y - 20
+                size: self.width + 40, self.height + 60
+                radius: [10]
 
-        TextInput:
-        	id: song
-        	multiline:False
-        	font_size:20
-			pos_hint:{'center_x':0.5, 'center_y':0.48}
-			size_hint:(.6,.2)
+            Color:
+                rgba: .5, .5, .5, 1
+            Line:
+                width: 2
+                rounded_rectangle: (self.x - 20, self.y - 20, self.width + 40, self.height + 60, 10)
 
-    	MDRelativeLayout:
-    		id: action
+        MDRelativeLayout:
+            orientation: 'vertical'
+
+            MDTextField:
+                id: author
+                multiline:False
+                hint_text: "Author"
+                font_size:'32sp'
+                pos_hint:{'center_x':0.5, 'center_y':0.9}
+                size: (root.size[0]*0.8,"100dp")
+                size_hint: (None,None)
+            MDTextField:
+                id: song
+                multiline:False
+                hint_text: "Song"
+                font_size:'32sp'
+                pos_hint:{'center_x':0.5, 'center_y':0.6}
+                size: (root.size[0]*0.8,"100dp")
+                size_hint: (None,None)
+
+            MDRelativeLayout:
+                id: action
 
 <AddToAlbumPopup>:
     title: "Add to album"
@@ -394,7 +636,6 @@
     md_bg_color: "#000217"
 
     MDBoxLayout:
-    	id: box
         orientation: 'vertical'
 
         MDScrollView:
@@ -404,125 +645,223 @@
                 id: container
 
 <ConfirmationPopup>:
-    title: "Confirmation"
-    size_hint: (1,.5)
-    #on_dismiss: self.ids.album_name.text = ''
+    title: ""
+    size_hint: (None, None)
+    size: ("420dp","150dp")
+    separator_height: 0
+    pos_hint: {'center_x':0.5}
+    background_color: "#b5b9ba"
+    on_dismiss: 
+        self.ids.info.text = ''
+        self.ids.action.clear_widgets()
 
-    MDRelativeLayout:
-    	id: box
-        orientation: 'vertical'
+    BoxLayout:
+        orientation: "vertical"
+        size: root.width, root.height
+        canvas.before:
+            Color:
+                rgba: 1, 1, 1, 1
+
+            RoundedRectangle:
+                pos: self.x - 20, self.y - 20
+                size: self.width + 40, self.height + 60
+                radius: [10]
+
+            Color:
+                rgba: .5, .5, .5, 1
+            Line:
+                width: 2
+                rounded_rectangle: (self.x - 20, self.y - 20, self.width + 40, self.height + 60, 10)
+
+        MDRelativeLayout:
+            orientation: 'vertical'
         
-        Label:
-        	id: info
-            text: 'Are you shour want to delete album'
-            font_size: 14
-            pos_hint: {'center_x':0.5, 'center_y':0.9}
+            MDLabel:
+        	    id: info
+                text: 'Are you shour want to delete album'
+                font_size: "24sp"
+                pos_hint: {'center_x':0.5, 'center_y':0.9}
 
-    	MDRelativeLayout:
-    		id: action
+    	    MDRelativeLayout:
+    		    id: action
 
 <Start>:
     MDBoxLayout:
-    	id: box
         orientation: "vertical"
         outer_album_container: outer_album_container.__self__
         outer_track_container: outer_track_container.__self__
+        #outer_track_container: album_info.__self__
         Widget:        	
         	pos: 0,0
         	layout: 'float'
         	height: '0dp'
         	size_hint: (None,None)
 
-        MDTopAppBar:
-        	id: menu_row
-        	md_bg_color: "#232217"
-        	specific_text_color: "white"
-            title: "Music manager"
-            left_action_items: [["menu", lambda x: nav_drawer.set_state('toggle')]]
-            elevation: 3
-            right_action_items: []
+
+        MDRelativeLayout:
+            id: menu_row
+            orientation: "vertical"
+            size: (root.size[0],"100dp")
+            size_hint: (None,None)
+            pos_hint: {'center_x':0.5, 'center_y':0.95}
+            md_bg_color: "#232217"
+            
 
         MDBoxLayout:
-        	id: outer_album_container
-        	md_bg_color: "#006668"
-            orientation: 'vertical'
-            size_hint: (1,None)
-            size:root.size[0],120
-
+        	
+            orientation: "vertical"
+            size_hint: (None,None)
+            size: (root.size[0],root.size[1]-menu_row.height)
             MDScrollView:
-            	do_scroll_y: False
-
-            	MDBoxLayout:
-            		#orientation: "horizontal"
-            		adaptive_height: True
-            		size_hint_x: None
-
-            		width: self.minimum_width
-            		
-            		GridLayout:
-            			id: album_container
-            			rows: 1
-            			
-            			size_hint_x: None
-            			width: self.minimum_width
-            			
-
-
-        MDBoxLayout:
-        	id: outer_track_container
-            MDScrollView:
-
+                #id: outer_track_container
+                on_scroll_y: if args[1] <= 0: print("End list")
             	do_scroll_x: False
-                MDList:
-                    adaptive_height: True
-                    id: container
+                MDBoxLayout:
+                    id: box
+                    orientation: "vertical"
+                    size_hint: 1, None
+                    height: self.minimum_height
+                    MDBoxLayout:
+                        id: outer_album_container
+                        orientation: "vertical"
+                        size_hint: 1, None
+                        height: self.minimum_height
+                        MDBoxLayout:
+                            id: divide_line1
+                            size_hint: (1,None)
+                            height: "10dp"
+                            canvas.before:
+                                Color:
+                                    rgba: (0,0,0,1)  # visual feedback of press
+                                Rectangle:
+                                    pos: self.pos
+                                    size: self.size
 
+
+                        MDBoxLayout:
+                            md_bg_color: "#006668"
+                            orientation: 'vertical'
+                            size_hint: (1,None)
+                            height: "230dp"
+
+                            MDScrollView:
+                                do_scroll_y: False
+
+                                MDBoxLayout:
+                                    size_hint_x: None
+                                    width: self.minimum_width
+                
+                                    GridLayout:
+                                        id: album_container
+                                        rows: 1
+                                        size_hint_x: None
+                                        width: self.minimum_width
+                                        spacing: "5dp"
+                        MDBoxLayout:
+                            id: album_info
+                            md_bg_color: "#006668"
+                            orientation: 'vertical'
+                            size_hint: (1,None)
+                            height: "30dp"
+
+                            MDLabel:
+                                text: "Double tap to manage list of our albums"
+                                font_size: '12sp'
+                                pos_hint: {'center_x':0.775, 'center_y':0.5}
+
+                        MDBoxLayout:
+                            id: divide_line2
+                            size_hint: (1,None)
+                            height: "10dp"
+
+                            canvas.before:
+
+                                Color:
+                                    rgba: (0,0,0,1)
+
+                                Rectangle:
+                                    pos: self.pos
+                                    size: self.size
+
+                    MDBoxLayout:
+                        id: outer_track_container
+                        size_hint: 1, None
+                        height: self.minimum_height
+                        MDList:
+                            id: container
 
 
 
 
 	MDNavigationDrawer:
 		id: nav_drawer
-
+        md_bg_color: "#006668"
 		ContentNavigationDrawer:
 			orientation: 'vertical'
 			Image:
 				size_hint: None, None
-		    	size: 290, 72.5
+		    	size: ("290dp", "75dp")
 		    	source: "logo.png"
 		    	pos_hint: {"center_x": .5, "center_y": .95}
 
         	Button:
             	size_hint: None, None
-		    	size: 290, 50
+		    	size: ("290dp", "75dp")
 				pos_hint: {"center_x": .5, "center_y": .85}
-		    	opacity: .1
+		    	md_bg_color: "#000008"
             	on_release: app.main_screen.downloaded_audios()
+                canvas.before:
+                    Color:
+                        rgba: 1, 1, 1, 1
+
+                    RoundedRectangle:
+                        pos: self.x, self.y
+                        size: self.width, self.height
+                        radius: [6]
+
+                    Color:
+                        rgba: .5, .5, .5, 1
+                    Line:
+                        width: 2
+                        rounded_rectangle: (self.x, self.y, self.width, self.height, 6)
 		    Image:
 				size_hint: None, None
-		    	size: 50, 50
-		    	source: "home.png"
-		    	pos_hint: {"center_x": .1, "center_y": .85}
+		    	size: ("60dp", "60dp")
+		    	source: "./icons/home.png"
+		    	pos_hint: {"center_x": .12, "center_y": .85}
 		    MDLabel:
-        		text: "View Downloaded Music"
-				pos_hint: {"center_x": .8, "center_y": .85}
+        		text: "Loaded Music"
+                font_size: '32sp'
+				pos_hint: {"center_x": .765, "center_y": .85}
 
 
             MDLabel:
         		id: accounts
         		#size_hint: None, None
-        		pos_hint: {"center_x": .5, "center_y": .75}
+        		pos_hint: {"center_x": .65, "center_y": .785}
 				text: "No accounts yet connected"
-            	font_size: 16
+            	font_size: '20sp'
 				halign: 'left'
 
         	MDScrollView:
-        		size: 290, 245
-        		pos_hint: {"center_x": .5, "center_y": .5}
+        		size: ("290dp", "280dp")
+        		pos_hint: {"center_x": .5, "center_y": .65}
         		size_hint_y: None
+
+                canvas.before:
+                    Color:
+                        rgba: 1, 1, 1, 1
+
+                    RoundedRectangle:
+                        pos: self.x-10, self.y-10
+                        size: self.width+14, self.height+14
+                        radius: [10]
+
+
             	DrawerList:
             		size_hint_y: None
         			height: self.minimum_height
+
                 	MDList:
                 		id: session_container
                 		adaptive_height: True
@@ -532,18 +871,33 @@
             MDRelativeLayout:
         		Button:
             		size_hint: None, None
-		    		size: 290, 50
-		    		pos_hint: {"center_x": .5, "center_y": .2}
-		    		opacity: .1
+		    		size: ("290dp", "70dp")
+		    		pos_hint: {"center_x": .5, "center_y": .4}
+
             		on_release: Factory.LoginPopup().open()
+                    canvas.before:
+                        Color:
+                            rgba: 1, 1, 1, 1
+
+                        RoundedRectangle:
+                            pos: self.x, self.y
+                            size: self.width, self.height
+                            radius: [6]
+
+                        Color:
+                            rgba: .5, .5, .5, 1
+                        Line:
+                            width: 2
+                            rounded_rectangle: (self.x, self.y, self.width, self.height, 6)
 		    	Image:
 		    		size_hint: None, None
-		    		size: 50, 50
-		    		source: "add.png"
-		    		pos_hint: {"center_x": .5, "center_y": .2}
+		    		size: ("70dp", "70dp")
+		    		source: "./icons/add.png"
+		    		pos_hint: {"center_x": .5, "center_y": .4}
 		    	MDLabel:
             		text: "Connect account"
-            		pos_hint: {"center_x": .8, "center_y": .27}
+                    font_size: '20sp'
+            		pos_hint: {"center_x": .7, "center_y": .47}
 
 
 		    
@@ -551,12 +905,13 @@
             
             MDLabel:
             	text: "Version 0.1 beta"
+                font_size: '20sp'
             	#size_hint: None, None
             	pos_hint: {"center_y": .1}
 
 <Player>:
 	MDRelativeLayout:
-		md_bg_color: [0.5,0.5,1,1]
+		md_bg_color: [0.8,0.9,1,1]
 		Button:
         	pos_hint: {'center_x':0.5, 'center_y':1}
             
@@ -566,35 +921,48 @@
             on_release: root.close_player()
 
         Image:
-			size: (60,60)
+			size: ("90dp","90dp")
             size_hint: (None,None)
-            source: "down60.png"
+            source: "./icons/down60.png"
             pos_hint: {'center_x':0.5, 'center_y':0.95}
 
             
 		Label:
 			id: song_name
 			text: "Artist - Song"
-			pos_hint:{'center_x':0.5, 'center_y':.3}
+			pos_hint:{'center_x':0.5, 'center_y':.4}
             size_hint: (1,1)
-            font_size: 18
+            font_size: "28sp"
         Image:
-        	id: song_image
-        	source: "player_back.png"
-        	pos_hint: {'center_x':0.5, 'center_y':0.65}
-            size_hint: (.8,.75)
+            id: song_image
+            pos_hint: {'center_x':0.5, 'center_y':0.65}
+            size: ("400dp","400dp")
+            size_hint: (None,None)
+            source: "./icons/player_back.png"
+            canvas:
+                Color:
+                    rgb: 1,1,1
+
+                RoundedRectangle:
+                    
+                    pos: self.x, self.y
+                    size: self.width, self.height
+                    radius: [20]
+
+                    #source: "./icons/player_back.png"
+
         Label:
         	id: song_timer
         	text: "00:00"
-            pos_hint: {'center_x':.16, 'center_y':.2}
+            pos_hint: {'center_x':.16, 'center_y':.3}
             size_hint: (1,1)
-            font_size: 12
+            font_size: "20sp"
         Label:
         	id: song_len
         	text: "00:00"
-            pos_hint: {'center_x':.84, 'center_y':.2}
+            pos_hint: {'center_x':.84, 'center_y':.3}
             size_hint: (1,1)
-            font_size: 12
+            font_size: "20sp"
         MDSlider:
         	id: song_progress
         	orientation: "horizontal"
@@ -604,33 +972,49 @@
         	max: 1
         	value: 0
 
-            pos_hint: {'center_x':0.5, 'center_y':0.22}
-            size: (root.size[0]-100,20)
+            pos_hint: {'center_x':0.5, 'center_y':0.32}
+            size: (root.size[0]*0.8,"25dp")
             size_hint: (None,None)
             on_touch_down:
             	if args[0].collide_point(args[1].x, args[1].y): self.on_touch_up=lambda x: app.audio_play(args)
             	else: self.on_touch_up=lambda x: x
 
+        Image:
+            pos_hint: {'center_x':0.25, 'center_y':0.2}
+            source: "./icons/left60.png"
+            size: ("90dp","90dp")
+            size_hint: (None,None)
 
         Button:
-        	pos_hint: {'center_x':0.25, 'center_y':0.1}
-            background_normal: "left60.png"
-            size: (60,60)
+        	pos_hint: {'center_x':0.25, 'center_y':0.2}
+            size: ("90dp","90dp")
             size_hint: (None,None)
+            opacity: 0
             on_press: app.prev_to_play()
 
-        Button:
-        	id: song_status
-        	pos_hint: {'center_x':0.5, 'center_y':0.1}
-            background_normal: "play60.png"
-
-    		size: (60,60)
+        Image:
+            id: song_status
+            pos_hint: {'center_x':0.5, 'center_y':0.2}
+            source: "./icons/play60.png"
+            size: ("90dp","90dp")
             size_hint: (None,None)
-            #on_press: self.pre_to_play
 
         Button:
-        	pos_hint: {'center_x':0.75, 'center_y':0.1}
-            background_normal: "right60.png"
-            size: (60,60)
+            id: action
+        	pos_hint: {'center_x':0.5, 'center_y':0.2}
+    		size: ("90dp","90dp")
             size_hint: (None,None)
+            opacity: 0
+
+        Image:
+            pos_hint: {'center_x':0.75, 'center_y':0.2}
+            source: "./icons/right60.png"
+            size: ("90dp","90dp")
+            size_hint: (None,None)
+
+        Button:
+        	pos_hint: {'center_x':0.75, 'center_y':0.2}
+            size: ("90dp","90dp")
+            size_hint: (None,None)
+            opacity: 0
             on_press: app.next_to_play()
