@@ -42,12 +42,9 @@ from kivy.uix.image import Image, AsyncImage
 import vk_methods as vk
 from custom_widgets import *
 
-try:
-    from CustomSoundLoader import IOSPlayer
-    IOSPlayer.test(IOSPlayer)
-except Exception as e:
-    print('---------------IOSPlayer does not loaded---------------------')
-    print(e)
+
+from CustomSoundLoader import IOSPlayer
+IOSPlayer.test(IOSPlayer)
 
 #################
 ### Main Screen  ###
