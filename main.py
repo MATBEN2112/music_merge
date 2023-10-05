@@ -46,6 +46,7 @@ try:
     from CustomSoundLoader import IOSPlayer
     IOSPlayer.test(IOSPlayer)
 except Exception as e:
+    print('---------------IOSPlayer does not loaded---------------------')
     print(e)
 
 #################
