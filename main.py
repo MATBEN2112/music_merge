@@ -1,3 +1,4 @@
+import kivy
 from kivy.lang import Builder
 from kivymd.app import MDApp
 from kivymd.uix.list import OneLineAvatarIconListItem, IconRightWidget, ImageLeftWidget, IRightBodyTouch, TwoLineAvatarListItem, ImageLeftWidgetWithoutTouch, ImageRightWidgetWithoutTouch, TwoLineAvatarIconListItem
@@ -21,6 +22,7 @@ from kivy.uix.textinput import TextInput
 from kivymd.uix.button import MDIconButton
 from kivy.core.window import Window
 from kivy.utils import platform
+
 if kivy.utils.platform not in ['android','ios']:
     Window.size = (540, 1170)
 
@@ -42,7 +44,7 @@ from custom_widgets import *
 
 try:
     from CustomSoundLoader import IOSPlayer
-    IOSPlayer.test()
+    IOSPlayer.test(IOSPlayer)
 except Exception as e:
     print(e)
 
