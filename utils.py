@@ -33,15 +33,14 @@ class Meta(object):
         #self.db.close()
         self.cursor.execute("PRAGMA foreign_keys = ON")
 
-        self.cursor.execute(f"""CREATE TABLE IF NOT EXISTS AlbumList (
+        self.cursor.execute("""CREATE TABLE IF NOT EXISTS AlbumList (
             id          INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
-            path      TEXT GENERATED ALWAYS AS ({"'"+self.app_path+"'"}||'/downloads/'||id||'/') VIRTUAL,
             name    TEXT,
             img       TEXT DEFAULT ('./icons/song.png'));
         """)
-        self.cursor.execute(f"""CREATE TABLE IF NOT EXISTS TrackList (
+        self.cursor.execute("""CREATE TABLE IF NOT EXISTS TrackList (
             id                 INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
-            path             TEXT GENERATED ALWAYS AS ({"'"+self.app_path+"'"}||'/downloads/'||id||'.mp3') VIRTUAL,
+            path             TEXT NOT NULL,
             artist            TEXT,
             song            TEXT,
             img              TEXT DEFAULT ('./icons/track.png'));
@@ -84,8 +83,10 @@ class Meta(object):
     def new_track(self, artist, song, img):
         ''' Function to append track data to existing meta file '''
         self.cursor.execute('''
-            INSERT INTO TrackList (artist, song, img) VALUES (?, ?, ?);''',(artist, song, img,))
+            INSERT INTO TrackList (artist, path, song, img) VALUES (?, ?, ?, ?);''',(artist, 'temp', song, img,))
+        
         last_row_id = self.cursor.lastrowid
+        self.cursor.execute(''' UPDATE TrackList SET path=? WHERE id=?;''',(self.app_path+f'/downloads/{last_row_id}.mp3',last_row_id,))
         if img!="./icons/track.png":
             print('image saved')
             img_path = self.app_path + f'/images/t/{last_row_id}.jpg'
