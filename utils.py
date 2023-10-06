@@ -28,15 +28,15 @@ import sqlite3
 class Meta(object):
     def __init__(self, app_path, dev_mode=True):
         self.app_path = app_path
+        self.db = sqlite3.connect(self.app_path + "/music_meta.db")
+        self.cursor = self.db.cursor()
+        #self.db.close()
         if dev_mode:
             self.hard_reasseble_db()
         self.start_db()
         
 
     def start_db(self):
-        self.db = sqlite3.connect(self.app_path + "/music_meta.db")
-        self.cursor = self.db.cursor()
-        #self.db.close()
         self.cursor.execute("PRAGMA foreign_keys = ON")
 
         self.cursor.execute("""CREATE TABLE IF NOT EXISTS AlbumList (
