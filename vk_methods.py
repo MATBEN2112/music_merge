@@ -228,7 +228,7 @@ class VK_session(object):
         with open(self.app_path + f'/downloads/{key}.ts', 'wb') as f:
             f.write(audio_file)
         
-        
+        convert_to_mp3(key)
 
     def download_album(self):
         pass
@@ -236,6 +236,7 @@ class VK_session(object):
     def convert_to_mp3(key):
         fn = NSString.alloc().initWithUTF8String_(self.app_path + '/' + str(key))
         ext = NSString.alloc().initWithUTF8String_("ts")
+        print(dir(bridge))
         bridge.converter(fn,ext)
         os.remove(self.app_path + f'/downloads/{key}.ts')
         
