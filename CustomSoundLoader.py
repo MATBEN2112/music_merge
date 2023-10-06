@@ -11,7 +11,7 @@ NSString = autoclass('NSString')
 class IOSPlayer(Sound):
     def __init__(self, source, author='author', song='song'):
         IOS_player = autoclass('IOS_player')
-        print(dir(IOS_player.alloc()))
+        #print(dir(IOS_player.alloc()))
         self.author = NSString.alloc().initWithUTF8String_(author)
         self.song = NSString.alloc().initWithUTF8String_(song)
         self.fn = NSString.alloc().initWithUTF8String_(source)
@@ -36,7 +36,10 @@ class IOSPlayer(Sound):
         return self.player.get_pos(t)
 
     def get_length(self):
-        return self.player.get_len(t)
+        lenght = self.player.get_len()
+        print(lenght)
+        print(dir(lenght))
+        return lenght
     def test(self):
         self.player.test_func()
     
