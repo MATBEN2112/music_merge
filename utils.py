@@ -21,13 +21,19 @@ def valid_file_name(string):
     string = re.sub(r'(\s+-\s+)+',lambda x: '-', string)
     return re.sub(r'[^\sA-Za-zА-Яа-я0-9_-]+',lambda x: '', string)
 
-from csv import DictWriter, DictReader
+
 import os
 import sqlite3
 
 class Meta(object):
-    def __init__(self, app_path):
+    def __init__(self, app_path, dev_mode=True):
         self.app_path = app_path
+        if dev_mode:
+            self.hard_reasseble_db()
+        self.start_db()
+        
+
+    def start_db(self, track_list=None):
         self.db = sqlite3.connect(self.app_path + "/music_meta.db")
         self.cursor = self.db.cursor()
         #self.db.close()
@@ -53,10 +59,44 @@ class Meta(object):
             FOREIGN KEY(album_id) REFERENCES AlbumList(id),
             FOREIGN KEY(track_id) REFERENCES TrackList(id));
         """)
+        if track_list and dev_mode:
+            content = os.listdir(self.app_path+'/downloads/')
+            for e in content:
+                path = self.app_path+'/downloads/' + e
+                self.cursor.execute('''
+                    INSERT INTO TrackList (artist, path, song, img) VALUES (?, ?, ?, ?);''',('artist', 'temp', 'song', None,))
+                self.cursor.execute('''INSERT INTO Relationship (track_id, album_id)
+                    SELECT max(id), NULL FROM TrackList;''')
+                
+            self.db.commit()
+            
         
     def reasseble_db(self):
         ''' DB bug fix case '''
-        pass
+        row_to_delete = []
+        row_to_fix = []
+        content = os.listdir(self.app_path+'/downloads/')
+        self.cursor.execute("SELECT * FROM TrackList;")
+        track_list = self.cursor.fetchall()[::-1]
+        for track in track_list:
+            if str(track[0]) +'.mp3' in content:
+                if self.app_path not in track[1]:
+                    row_to_fix.append(track[0])
+            else:
+                row_to_delete.append(track[0])
+
+        ','.join(['?']*len(row_to_delete))
+        self.cursor.execute('DELETE FROM TrackList WHERE id IN (' + ','.join(['?']*len(row_to_delete))');',tuple(row_to_delete))
+        self.cursor.execute('DELETE FROM Relationship WHERE track_id IN (' + ','.join(['?']*len(row_to_delete))');',tuple(row_to_delete))
+        for row in row_to_fix
+            self.cursor.execute('UPDATE TrackList SET path=? WHERE id=?;',(self.app_path+f'/downloads/{row}.mp3',row,))
+
+    def hard_reasseble_db(self):
+        ''' Dev purpose only '''
+        self.cursor.execute("DROP TABLE TrackList;")
+        self.cursor.execute("DROP TABLE AlbumList;")
+        self.cursor.execute("DROP TABLE Relationship;")
+
     
     def album_list(self):
         ''' Return list of albums '''
