@@ -236,7 +236,7 @@ class VK_session(object):
         pass
 
     def convert_to_mp3(self, key):
-        fn = NSString.alloc().initWithUTF8String_(self.app_path + '/' + str(key))
+        fn = NSString.alloc().initWithUTF8String_(self.app_path + '/downloads/' + str(key))
         ext = NSString.alloc().initWithUTF8String_("ts")
         converter.converter_fileExtencion_(fn,ext)
         os.remove(self.app_path + f'/downloads/{key}.ts')
