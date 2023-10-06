@@ -65,7 +65,7 @@ class Meta(object):
             for e in content:
                 path = self.app_path+'/downloads/' + e
                 self.cursor.execute('''
-                    INSERT INTO TrackList (artist, path, song, img) VALUES (?, ?, ?, ?);''',('artist', path, 'song', None,))
+                    INSERT INTO TrackList (artist, path, song) VALUES (?, ?, ?);''',('artist', path, 'song',))
                 self.cursor.execute('''INSERT INTO Relationship (track_id, album_id)
                     SELECT max(id), NULL FROM TrackList;''')
                 
