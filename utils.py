@@ -86,8 +86,8 @@ class Meta(object):
                 row_to_delete.append(track[0])
 
         ','.join(['?']*len(row_to_delete))
-        self.cursor.execute('DELETE FROM TrackList WHERE id IN (' + ','.join(['?']*len(row_to_delete))');',tuple(row_to_delete))
-        self.cursor.execute('DELETE FROM Relationship WHERE track_id IN (' + ','.join(['?']*len(row_to_delete))');',tuple(row_to_delete))
+        self.cursor.execute('DELETE FROM TrackList WHERE id IN (' + ','.join(['?']*len(row_to_delete)) + ');',tuple(row_to_delete))
+        self.cursor.execute('DELETE FROM Relationship WHERE track_id IN (' + ','.join(['?']*len(row_to_delete)) + ');',tuple(row_to_delete))
         for row in row_to_fix
             self.cursor.execute('UPDATE TrackList SET path=? WHERE id=?;',(self.app_path+f'/downloads/{row}.mp3',row,))
 
