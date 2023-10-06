@@ -33,7 +33,7 @@ class Meta(object):
         self.start_db()
         
 
-    def start_db(self, track_list=None):
+    def start_db(self):
         self.db = sqlite3.connect(self.app_path + "/music_meta.db")
         self.cursor = self.db.cursor()
         #self.db.close()
@@ -59,12 +59,12 @@ class Meta(object):
             FOREIGN KEY(album_id) REFERENCES AlbumList(id),
             FOREIGN KEY(track_id) REFERENCES TrackList(id));
         """)
-        if track_list and dev_mode:
+        if dev_mode:
             content = os.listdir(self.app_path+'/downloads/')
             for e in content:
                 path = self.app_path+'/downloads/' + e
                 self.cursor.execute('''
-                    INSERT INTO TrackList (artist, path, song, img) VALUES (?, ?, ?, ?);''',('artist', 'temp', 'song', None,))
+                    INSERT INTO TrackList (artist, path, song, img) VALUES (?, ?, ?, ?);''',('artist', path, 'song', None,))
                 self.cursor.execute('''INSERT INTO Relationship (track_id, album_id)
                     SELECT max(id), NULL FROM TrackList;''')
                 
@@ -88,7 +88,7 @@ class Meta(object):
         ','.join(['?']*len(row_to_delete))
         self.cursor.execute('DELETE FROM TrackList WHERE id IN (' + ','.join(['?']*len(row_to_delete)) + ');',tuple(row_to_delete))
         self.cursor.execute('DELETE FROM Relationship WHERE track_id IN (' + ','.join(['?']*len(row_to_delete)) + ');',tuple(row_to_delete))
-        for row in row_to_fix
+        for row in row_to_fix:
             self.cursor.execute('UPDATE TrackList SET path=? WHERE id=?;',(self.app_path+f'/downloads/{row}.mp3',row,))
 
     def hard_reasseble_db(self):
