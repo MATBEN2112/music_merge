@@ -33,7 +33,7 @@ class IOSPlayer(Sound):
         self.player.seek(t)
 
     def get_pos(self):
-        return self.player.get_pos(t)
+        return self.player.get_pos()
 
     def get_length(self):
         lenght = self.player.get_len()
