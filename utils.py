@@ -32,7 +32,7 @@ class Meta(object):
         self.db = sqlite3.connect(self.app_path + "/music_meta.db")
         self.cursor = self.db.cursor()
         #self.db.close()
-        if dev_mode:
+        if self.dev_mode:
             self.hard_reasseble_db()
         self.start_db()
         
