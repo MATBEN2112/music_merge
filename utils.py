@@ -27,6 +27,7 @@ import sqlite3
 
 class Meta(object):
     def __init__(self, app_path, dev_mode=True):
+        self.dev_mode = dev_mode
         self.app_path = app_path
         self.db = sqlite3.connect(self.app_path + "/music_meta.db")
         self.cursor = self.db.cursor()
@@ -59,7 +60,7 @@ class Meta(object):
             FOREIGN KEY(album_id) REFERENCES AlbumList(id),
             FOREIGN KEY(track_id) REFERENCES TrackList(id));
         """)
-        if dev_mode:
+        if self.dev_mode:
             content = os.listdir(self.app_path+'/downloads/')
             for e in content:
                 path = self.app_path+'/downloads/' + e
