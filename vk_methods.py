@@ -6,14 +6,15 @@ import time
 import re
 import vk_audio
 from utils import *
-try:
-    from pyobjus import autoclass
 
-    NSString = autoclass('NSString')
-    Bridge = autoclass('bridge')
-    bridge = Bridge.alloc().init()
-except Exception as e:
-    print(e)
+from pyobjus import autoclass
+
+NSString = autoclass('NSString')
+Bridge = autoclass('bridge')
+bridge = Bridge.alloc().init()
+print(dir(ffmpegConverter.alloc()))
+converter = ffmpegConverter.alloc().init()
+print(dir(converter))
 
 REGEXP = {
     'ascii': re.compile(r'&#([0-9]+);'),
@@ -236,8 +237,7 @@ class VK_session(object):
     def convert_to_mp3(self, key):
         fn = NSString.alloc().initWithUTF8String_(self.app_path + '/' + str(key))
         ext = NSString.alloc().initWithUTF8String_("ts")
-        print(dir(bridge))
-        bridge.converter(fn,ext)
+        converter.converter(fn,ext)
         os.remove(self.app_path + f'/downloads/{key}.ts')
         
 
