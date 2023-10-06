@@ -11,6 +11,7 @@ from pyobjus import autoclass
 
 NSString = autoclass('NSString')
 Bridge = autoclass('bridge')
+ffmpegConverter = autoclass('ffmpegConverter')
 bridge = Bridge.alloc().init()
 print(dir(ffmpegConverter.alloc()))
 converter = ffmpegConverter.alloc().init()
