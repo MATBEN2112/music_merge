@@ -37,6 +37,8 @@ class IOSPlayer(Sound):
         lenght = self.player.get_len()
         print('Song total lenght')
         print(lenght)
+        print(type(lenght))
+        print(int(lenght))
         return lenght
     def test(self):
         self.player.test_func()
