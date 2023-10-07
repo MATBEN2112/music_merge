@@ -639,11 +639,14 @@ class LoginApp(MDApp):
     def update_progressbar(self,value):
         [rsetattr(i, 'ids.song_progress.value', self.sound.get_pos()) for i in self.audio_bar]
         self.player_screen.ids.song_progress.value = self.sound.get_pos()
+        print(self.sound.status)
+        
+        '''
         if self.sound.status == 'stop':
             self.progressbarEvent.cancel()
             self.settimeEvent.cancel()
             self.next_to_play()
-
+'''
 
     def settime(self, t):
         current_time = time.strftime('%M:%S', time.gmtime(self.audio_bar[0].ids.song_progress.value))
