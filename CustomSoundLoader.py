@@ -27,7 +27,7 @@ class IOSPlayer(Sound):
 
     def seek(self, position):
         t = pyobjus.objc_d(position) # represent double
-        print(t.numberWithFloat)
+        print(t)
         self.player.seek(t)
 
     def get_pos(self):
