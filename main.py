@@ -596,9 +596,11 @@ class LoginApp(MDApp):
             [rsetattr(i, 'ids.song_progress.value', 0) for i in self.audio_bar]
 
             # needed conversion from obj  c double to float
+            print(f'Audio bar max value at start: {self.player_screen.ids.song_progress.max}')
+            print(f'The value: {self.sound.length}')
             self.player_screen.ids.song_progress.max = self.sound.length
             self.player_screen.ids.song_progress.value = 0
-            print(f'Audio bar max value: {self.player_screen.ids.song_progress.max}')
+            print(f'Audio bar max value after init value: {self.player_screen.ids.song_progress.max}')
             #
             self.player_screen.ids.song_len.text = time.strftime('%M:%S', time.gmtime(self.sound.length))
 
