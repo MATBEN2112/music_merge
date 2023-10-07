@@ -598,6 +598,7 @@ class LoginApp(MDApp):
             # needed conversion from obj  c double to float
             self.player_screen.ids.song_progress.max = self.sound.length
             self.player_screen.ids.song_progress.value = 0
+            print(f'Audio bar max value: {self.player_screen.ids.song_progress.max}')
             #
             self.player_screen.ids.song_len.text = time.strftime('%M:%S', time.gmtime(self.sound.length))
 
@@ -640,6 +641,7 @@ class LoginApp(MDApp):
     def update_progressbar(self,value):
         [rsetattr(i, 'ids.song_progress.value', self.sound.get_pos()) for i in self.audio_bar]
         self.player_screen.ids.song_progress.value = self.sound.get_pos()
+        print(f'Audio bar current value: {self.player_screen.ids.song_progress.value}')
         print(self.sound.get_pos())
         
         '''
