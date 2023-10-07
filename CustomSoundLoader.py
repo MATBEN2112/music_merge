@@ -26,10 +26,7 @@ class IOSPlayer(Sound):
 
     def seek(self, position):
         t = pyobjus.objc_d(postion) # represent double
-        try:
-            print(t.numberWithFloat)
-        except Exception as e:
-            print(e)
+        print(t.numberWithFloat)
         self.player.seek(t)
 
     def get_pos(self):
@@ -37,8 +34,8 @@ class IOSPlayer(Sound):
 
     def get_length(self):
         lenght = self.player.get_len()
+        print('Song total lenght')
         print(lenght)
-        print(dir(lenght))
         return lenght
     def test(self):
         self.player.test_func()
