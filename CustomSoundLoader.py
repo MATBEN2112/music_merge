@@ -17,6 +17,7 @@ class IOSPlayer(Sound):
         self.fn = NSString.alloc().initWithUTF8String_(source)
         self.player = IOS_player.alloc().initWithFn_author_song_(self.fn,self.author,self.fn)
         self.player.load()
+        self.lenght = int(self.get_length())
 
     def play(self):
         self.player.play()
