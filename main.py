@@ -628,6 +628,7 @@ class LoginApp(MDApp):
             self.player_screen.ids.song_status.reload()
             self.player_screen.ids.action.on_release = self.audio_stop
             # set events
+            print('set events')
             self.progressbarEvent = Clock.schedule_interval(self.update_progressbar,1)
             self.settimeEvent = Clock.schedule_interval(self.settime,1)
             
@@ -639,7 +640,7 @@ class LoginApp(MDApp):
     def update_progressbar(self,value):
         [rsetattr(i, 'ids.song_progress.value', self.sound.get_pos()) for i in self.audio_bar]
         self.player_screen.ids.song_progress.value = self.sound.get_pos()
-        print(self.sound.status)
+        print(self.sound.get_pos())
         
         '''
         if self.sound.status == 'stop':
@@ -652,6 +653,7 @@ class LoginApp(MDApp):
         current_time = time.strftime('%M:%S', time.gmtime(self.audio_bar[0].ids.song_progress.value))
         [rsetattr(i, 'ids.song_timer.text', current_time) for i in self.audio_bar]
         self.player_screen.ids.song_timer.text = current_time
+        print(current_time)
         
 
     def next_to_play(self):
