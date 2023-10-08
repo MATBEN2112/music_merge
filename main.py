@@ -579,10 +579,10 @@ class LoginApp(MDApp):
         if track: # Play new audio
             print('Play audio')
             # save track to play and playlist where it is stored
-            self.track = track
-            self.album_key = self.album_screen.key if self.manager.current=='album' else None
-            self.track_list = self.meta.track_list(key = self.album_key) ###
-            player.load_playlist(self.track_list, self.track[0])
+            track = track
+            album_key = self.album_screen.key if self.manager.current=='album' else None
+            track_list = self.meta.track_list(key = album_key) ###
+            player.load_playlist(track_list, track[0])
             player.play()
            
         else: # Unpause already loaded audio
@@ -630,6 +630,7 @@ class LoginApp(MDApp):
                 img = "./icons/stop60.png" if info_dict['status'] else "./icons/stop60.png"
                 f = self.audio_stop if info_dict['status'] else self.audio_play
                 [rsetattr(i, 'ids.song_status.source', img) for i in self.audio_bar]
+                [i.ids.song_status.reload() for i in self.audio_bar]
                 [rsetattr(i, 'ids.action.on_release', f) for i in self.audio_bar]
                 self.player_screen.ids.song_status.source = img
                 self.player_screen.ids.song_status.reload()
@@ -637,26 +638,11 @@ class LoginApp(MDApp):
 
         self.info_dict = info_dict
 
-
-
     def next_to_play(self):
-        print('next to play')
-        try:
-            next_track = self.track_list[self.track_list.index(self.track)+1]
-        except:
-            print('list out')
-        else:
-            self.audio_play(track=next_track)
+        player.play_next()
 
     def prev_to_play(self):
-        print('prev to play')
-        try:
-            next_track = self.track_list[self.track_list.index(self.track)-1]
-        except:
-            print('list out')
-        else:
-            self.audio_play(track=next_track)
-
+        player.play_prev()
             
     def audio_stop(self):
         player.pause()
