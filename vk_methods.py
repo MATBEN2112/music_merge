@@ -10,6 +10,7 @@ from utils import *
 from pyobjus import autoclass
 ffmpegConverter = autoclass('ffmpegConverter')
 converter = ffmpegConverter.alloc().init()
+NSString = autoclass('NSString')
 
 REGEXP = {
     'ascii': re.compile(r'&#([0-9]+);'),
