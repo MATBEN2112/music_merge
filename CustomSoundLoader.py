@@ -38,18 +38,15 @@ class IOSPlayer(Sound):
         return self.player.get_len()
     def get_info(self):
         info_dict = self.player.get_info()
-        key = info_dict.objectForKey_(objc_str('key'))
+        key = info_dict.objectForKey_(objc_str('key')).intValue()
         author = info_dict.objectForKey_(objc_str('author')).UTF8String()
         song = info_dict.objectForKey_(objc_str('song')).UTF8String()
         file = info_dict.objectForKey_(objc_str('file')).UTF8String()
         img = info_dict.objectForKey_(objc_str('img')).UTF8String()
-        song_len = info_dict.objectForKey_(objc_str('len'))
-        song_pos = info_dict.objectForKey_(objc_str('pos'))
-        print(info_dict)
-        print(dir(info_dict))
+        song_len = info_dict.objectForKey_(objc_str('len')).floatValue()
+        song_pos = info_dict.objectForKey_(objc_str('pos')).floatValue()
         print(key, author, song, file, img, song_len, song_pos)
-        print(dir(key))
-        print(dir(song_len))
+
         
         
     def test(self):
