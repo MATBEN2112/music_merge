@@ -575,7 +575,7 @@ class LoginApp(MDApp):
         self.album_screen.remove_widget(self.audio_bar[1])
         self.album_list_screen.remove_widget(self.audio_bar[2])
         
-        elif track: # Play new audio
+        if track: # Play new audio
             print('Play audio')
             # save track to play and playlist where it is stored
             self.track = track
