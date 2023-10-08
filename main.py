@@ -72,7 +72,10 @@ class Start(Screen):
 
     ### EDIT TOOLS ### 
     def edit_menu(self):
-        menu_items = [{"viewclass": "OneLineListItem","text": f"Selection","on_release": self.open_selection_menu}, ]
+        menu_items = [
+            {"viewclass": "OneLineListItem","text": f"Selection","on_release": self.open_selection_menu},
+            {"viewclass": "OneLineListItem","text": f"Delete all","on_release": self.app.meta.delete_all},
+        ]
         self.drop_down_menu = MDDropdownMenu(
             caller=self.ids.menu_row, items=menu_items,position="center",width_mult=4
         )
