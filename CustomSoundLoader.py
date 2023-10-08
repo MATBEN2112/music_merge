@@ -33,6 +33,12 @@ class IOSPlayer(Sound):
         
     def stop(self):
         self.player.stop()
+        
+    def play_next(self):
+        self.player.next()
+        
+    def play_prev(self):
+        self.player.prev()
 
     def seek(self, position):
         self.player.seek_(position)
