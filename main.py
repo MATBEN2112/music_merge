@@ -23,9 +23,6 @@ from kivymd.uix.button import MDIconButton
 from kivy.core.window import Window
 from kivy.utils import platform
 
-if kivy.utils.platform not in ['android','ios']:
-    Window.size = (540, 1170)
-
 
 from kivymd.theming import ThemableBehavior
 from kivymd.uix.list import MDList
@@ -44,6 +41,9 @@ from custom_widgets import *
 
 
 from CustomSoundLoader import IOSPlayer
+if kivy.utils.platform not in ['android','ios']:
+    Window.size = (540, 1170)
+    player = IOSPlayer()
 
 #################
 ### Main Screen  ###
@@ -558,99 +558,85 @@ class LoginApp(MDApp):
             self.main_screen.ids.accounts.text = 'Connected accounts'
     
     def audio_play(self, *args, track=None):
+        ''' Function starts music play. Cases '''
+        
         print(track)
-        if args:
+        if args: # seek case
+            print('seek audio')
             slider, touch = args[0][0:2]
-            
-        self.main_screen.remove_widget(self.audio_bar[0])
-        self.album_screen.remove_widget(self.audio_bar[1])
-        self.album_list_screen.remove_widget(self.audio_bar[2])
-        if track: # Play new audio
-            print('Play new audio')
-            if track[4] != './icons/track.png':
-                self.player_screen.ids.song_image.source=track[4]
-                self.player_screen.ids.song_image.reload()
-            if 'sound' in dir(self):
-                #self.sound.pause()
-                self.progressbarEvent.cancel()
-                self.settimeEvent.cancel()
-                
-            self.track = track
-            self.album_key = self.album_screen.key if self.manager.current=='album' else None
-
-            self.track_list = self.meta.track_list(key = self.album_key) ###
-
-            track_name = self.track[2] + ' - ' + self.track[3]
-            if len(track_name)> 35:
-                [rsetattr(i, 'ids.song_name.text', track_name[0:36] + '...') for i in self.audio_bar]
-                self.player_screen.ids.song_name.text = track_name[0:36] + '...'
-
-            else:
-                [rsetattr(i, 'ids.song_name.text',track_name) for i in self.audio_bar]
-                self.player_screen.ids.song_name.text = track_name
-                print(self.audio_bar[0].ids.song_name.text)
-            self.sound = IOSPlayer(self.track_list,self.track[0])
-            self.sound.play()
-            
-            [rsetattr(i, 'ids.song_progress.max', self.sound.get_length()) for i in self.audio_bar]
-            [rsetattr(i, 'ids.song_progress.value', 0) for i in self.audio_bar]
-
-            print(f'Audio bar max value at start: {self.player_screen.ids.song_progress.max}')
-            print(f'The value: {self.sound.get_length()}')
-            self.player_screen.ids.song_progress.max = self.sound.get_length()
-            self.player_screen.ids.song_progress.value = 0
-            print(f'Audio bar max value after init value: {self.player_screen.ids.song_progress.max}')
-            #
-            self.player_screen.ids.song_len.text = time.strftime('%M:%S', time.gmtime(self.sound.get_length()))
-
-        elif 'sound' in dir(self) and args: # Seek audio row
             if True: #slider.collide_point(touch.x, touch.y):
                 slider.active = False
                 print('seek audio')
-                self.audio_pos = slider.value
                 self.sound.seek(slider.value)
-                [rsetattr(i, 'ids.song_progress.value', self.audio_pos) for i in self.audio_bar]
-                self.main_screen.add_widget(self.audio_bar[0])
-                self.album_screen.add_widget(self.audio_bar[1])
-                self.album_list_screen.add_widget(self.audio_bar[2])
             return
-            
-        elif 'sound' in dir(self): # Unpause already loaded audio
-            print('Unpause already loaded audio')
-            self.sound.play()
-            [rsetattr(i, 'ids.song_progress.value',self.audio_pos) for i in self.audio_bar]
-            self.player_screen.ids.song_progress.value = self.audio_pos
-            
-        if 'sound' in dir(self):
-            [rsetattr(i, 'ids.song_status.source', "./icons/stop60.png") for i in self.audio_bar]
-            [rsetattr(i, 'ids.action.on_release', self.audio_stop) for i in self.audio_bar]
-            self.player_screen.ids.song_status.source = "./icons/stop60.png"
-            self.player_screen.ids.song_status.reload()
-            self.player_screen.ids.action.on_release = self.audio_stop
-            # set events
-            print('set events')
-            self.progressbarEvent = Clock.schedule_interval(self.update_progressbar,1)
-            self.settimeEvent = Clock.schedule_interval(self.settime,1)
-            
+
+        # clean old player widgets
+        self.main_screen.remove_widget(self.audio_bar[0])
+        self.album_screen.remove_widget(self.audio_bar[1])
+        self.album_list_screen.remove_widget(self.audio_bar[2])
+        
+        elif track: # Play new audio
+            print('Play audio')
+            # save track to play and playlist where it is stored
+            self.track = track
+            self.album_key = self.album_screen.key if self.manager.current=='album' else None
+            self.track_list = self.meta.track_list(key = self.album_key) ###
+            player.load_playlist(track_list, key)
+            player.play()
+           
+        elif : # Unpause already loaded audio
+            player.play()
+
         self.main_screen.add_widget(self.audio_bar[0])
         self.album_screen.add_widget(self.audio_bar[1])
         self.album_list_screen.add_widget(self.audio_bar[2])
-        
+            
+        # set events
+        if 'progressbarEvent' in dir(self):
+            self.progressbarEvent.cancel()
+            
+        self.progressbarEvent = Clock.schedule_interval(self.update_progressbar,1)
         
     def update_progressbar(self,value):
-        [rsetattr(i, 'ids.song_progress.value', self.sound.get_pos()) for i in self.audio_bar]
-        self.player_screen.ids.song_progress.value = self.sound.get_pos()
-        print(f'Audio bar current value: {self.player_screen.ids.song_progress.value} Ends in: {self.sound.get_length()}')
-        self.sound.get_info()
-        if self.sound.get_pos() > self.sound.get_length()-1:
-            self.progressbarEvent.cancel()
-            self.settimeEvent.cancel()
-            self.next_to_play()
+        ''' Function to update progress bar and timer '''
+        info_dict = player.get_info()
+        if 'info_dict' not in dir(self) or self.info_dict != info_dict: # does track states changed
 
-    def settime(self, t):
-        current_time = time.strftime('%M:%S', time.gmtime(self.audio_bar[0].ids.song_progress.value))
-        [rsetattr(i, 'ids.song_timer.text', current_time) for i in self.audio_bar]
-        self.player_screen.ids.song_timer.text = current_time  
+            if 'info_dict' not in dir(self) or self.info_dict['song_pos'] != info_dict['song_pos']: # progress bar and timers
+                # progress bar
+                [rsetattr(i, 'ids.song_progress.value', info_dict['song_pos']) for i in self.audio_bar]
+                self.player_screen.ids.song_progress.value = info_dict['song_pos']
+                print(f"Audio bar current value: {info_dict['song_pos']} Ends in: {info_dict['song_len']}")
+                # timer
+                current_time = time.strftime('%M:%S', time.gmtime(self.audio_bar[0].ids.song_progress.value))
+                [rsetattr(i, 'ids.song_timer.text', current_time) for i in self.audio_bar]
+                self.player_screen.ids.song_timer.text = current_time  
+                
+            if 'info_dict' not in dir(self) or self.info_dict['file'] != info_dict['file']: # track
+                self.track = (info_dict['key'],info_dict['file'],info_dict['author'],info_dict['song'],info_dict['img'])
+                # player image
+                self.player_screen.ids.song_image.source=info_dict['img']
+                self.player_screen.ids.song_image.reload()       
+                # track name
+                track_name = info_dict['author'] + ' - ' + info_dict['song']
+                [rsetattr(i, 'ids.song_name.text', track_name) for i in self.audio_bar]
+                self.player_screen.ids.song_name.text = track_name
+                # timer len
+                [rsetattr(i, 'ids.song_progress.max', info_dict['song_len']) for i in self.audio_bar]
+                self.player_screen.ids.song_progress.max = info_dict['song_len']
+            
+            if self.info_dict['status'] != info_dict['status']: # play/stop button
+                img = "./icons/stop60.png" if info_dict['status'] else "./icons/stop60.png"
+                f = self.audio_stop if info_dict['status'] else self.audio_play
+                [rsetattr(i, 'ids.song_status.source', img) for i in self.audio_bar]
+                [rsetattr(i, 'ids.action.on_release', f) for i in self.audio_bar]
+                self.player_screen.ids.song_status.source = img
+                self.player_screen.ids.song_status.reload()
+                self.player_screen.ids.action.on_release = f
+
+        self.info_dict = info_dict
+
+
 
     def next_to_play(self):
         print('next to play')
@@ -672,26 +658,14 @@ class LoginApp(MDApp):
 
             
     def audio_stop(self):
-        self.audio_pos = self.player_screen.ids.song_progress.value
-        self.progressbarEvent.cancel()
-        self.settimeEvent.cancel()
-
-        [rsetattr(i, 'ids.song_status.source', "./icons/play60.png") for i in self.audio_bar]
-        [rsetattr(i, 'ids.action.on_release', self.audio_play) for i in self.audio_bar]
-        self.player_screen.ids.song_status.source = "./icons/play60.png"
-        self.player_screen.ids.song_status.reload()
-        self.player_screen.ids.action.on_release = self.audio_play
-        
-        self.sound.pause()
+        player.pause()
 
     def unload_audio(self):
         if 'sound' not in dir(self):
             return
         
-        if self.sound.status != 'stop':
-            self.audio_stop()
-            
-        ###self.sound.unload()
+        player.stop()
+        self.progressbarEvent.cancel()
         self.main_screen.remove_widget(self.audio_bar[0])
         self.album_screen.remove_widget(self.audio_bar[1])
         self.album_list_screen.remove_widget(self.audio_bar[2])
