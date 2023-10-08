@@ -18,8 +18,8 @@ class IOSPlayer(Sound):
         track_arr = NSMutableArray.arrayWithCapacity_(len(track_list))
         for track in track_list:
             img = NSString.alloc().initWithUTF8String_(track[4])
-            author = NSString.alloc().initWithUTF8String_(track[2])
-            song = NSString.alloc().initWithUTF8String_(track[3])
+            author = NSString.alloc().initWithUTF8String_(track[2]).decode()
+            song = NSString.alloc().initWithUTF8String_(track[3]).decode()
             fn = NSString.alloc().initWithUTF8String_(track[1])
             track_arr.addObject_(objc_arr(track[0], fn, author, song, img))
             
