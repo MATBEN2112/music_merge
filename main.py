@@ -584,7 +584,7 @@ class LoginApp(MDApp):
             player.load_playlist(track_list, key)
             player.play()
            
-        elif : # Unpause already loaded audio
+        else: # Unpause already loaded audio
             player.play()
 
         self.main_screen.add_widget(self.audio_bar[0])
