@@ -34,7 +34,8 @@ class Meta(object):
         #self.db.close()
         if self.dev_mode:
             self.hard_reasseble_db()
-        self.start_db()
+        else:
+            self.start_db()
         
 
     def start_db(self):
@@ -60,16 +61,6 @@ class Meta(object):
             FOREIGN KEY(album_id) REFERENCES AlbumList(id),
             FOREIGN KEY(track_id) REFERENCES TrackList(id));
         """)
-        if self.dev_mode:
-            content = os.listdir(self.app_path+'/downloads/')
-            for e in content:
-                path = self.app_path+'/downloads/' + e
-                self.cursor.execute('''
-                    INSERT INTO TrackList (artist, path, song) VALUES (?, ?, ?);''',('artist', path, 'song',))
-                self.cursor.execute('''INSERT INTO Relationship (track_id, album_id)
-                    SELECT max(id), NULL FROM TrackList;''')
-                
-            self.db.commit()
             
         
     def reasseble_db(self):
@@ -97,6 +88,21 @@ class Meta(object):
         self.cursor.execute("DROP TABLE TrackList;")
         self.cursor.execute("DROP TABLE AlbumList;")
         self.cursor.execute("DROP TABLE Relationship;")
+        self.start_db()
+        if self.dev_mode:
+            content = os.listdir(self.app_path+'/downloads/')
+            for e in content:
+                path = self.app_path+'/downloads/' + e
+                if '.mp3' not in e:
+                    os.remove(path)
+                    continue
+                
+                self.cursor.execute('''
+                    INSERT INTO TrackList (artist, path, song) VALUES (?, ?, ?);''',('artist', path, 'song',))
+                self.cursor.execute('''INSERT INTO Relationship (track_id, album_id)
+                    SELECT max(id), NULL FROM TrackList;''')
+                
+            self.db.commit()
 
     
     def album_list(self):
