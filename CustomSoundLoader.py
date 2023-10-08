@@ -19,7 +19,7 @@ class IOSPlayer(Sound):
             fn = NSString.alloc().initWithUTF8String_(track[1])
             track_arr.addObject_(objc_arr(track[0], fn, author, song))
             
-        self.player = IOS_player.alloc().initWithTrackList_key_(track_arr,key)
+        self.player = IOS_player.alloc().initWithtrackList_key_(track_arr,key)
 
     def play(self):
         self.player.play()
