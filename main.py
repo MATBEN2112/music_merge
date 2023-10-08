@@ -595,7 +595,6 @@ class LoginApp(MDApp):
             [rsetattr(i, 'ids.song_progress.max', self.sound.get_length()) for i in self.audio_bar]
             [rsetattr(i, 'ids.song_progress.value', 0) for i in self.audio_bar]
 
-            # needed conversion from obj  c double to float
             print(f'Audio bar max value at start: {self.player_screen.ids.song_progress.max}')
             print(f'The value: {self.sound.get_length()}')
             self.player_screen.ids.song_progress.max = self.sound.get_length()
@@ -618,8 +617,6 @@ class LoginApp(MDApp):
             
         elif 'sound' in dir(self): # Unpause already loaded audio
             print('Unpause already loaded audio')
-
-            ###self.sound.seek(self.audio_pos) no need
             self.sound.play()
             [rsetattr(i, 'ids.song_progress.value',self.audio_pos) for i in self.audio_bar]
             self.player_screen.ids.song_progress.value = self.audio_pos
@@ -643,21 +640,17 @@ class LoginApp(MDApp):
     def update_progressbar(self,value):
         [rsetattr(i, 'ids.song_progress.value', self.sound.get_pos()) for i in self.audio_bar]
         self.player_screen.ids.song_progress.value = self.sound.get_pos()
-        print(f'Audio bar current value: {self.player_screen.ids.song_progress.value}')
-        print(self.sound.get_pos())
-        
+        print(f'Audio bar current value: {self.player_screen.ids.song_progress.value} Ends in: {self.sound.get_length()}')
+ 
         if self.sound.get_pos() > self.sound.get_length()-1:
             self.progressbarEvent.cancel()
             self.settimeEvent.cancel()
             self.next_to_play()
 
-
     def settime(self, t):
         current_time = time.strftime('%M:%S', time.gmtime(self.audio_bar[0].ids.song_progress.value))
         [rsetattr(i, 'ids.song_timer.text', current_time) for i in self.audio_bar]
-        self.player_screen.ids.song_timer.text = current_time
-        print(current_time)
-        
+        self.player_screen.ids.song_timer.text = current_time  
 
     def next_to_play(self):
         print('next to play')
