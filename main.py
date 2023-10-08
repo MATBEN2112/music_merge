@@ -582,7 +582,7 @@ class LoginApp(MDApp):
             self.track = track
             self.album_key = self.album_screen.key if self.manager.current=='album' else None
             self.track_list = self.meta.track_list(key = self.album_key) ###
-            player.load_playlist(track_list, key)
+            player.load_playlist(self.track_list, self.album_key)
             player.play()
            
         else: # Unpause already loaded audio
