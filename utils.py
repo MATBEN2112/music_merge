@@ -99,6 +99,9 @@ class Meta(object):
                 
                 self.cursor.execute('''
                     INSERT INTO TrackList (artist, path, song) VALUES (?, ?, ?);''',('artist', path, 'song',))
+                last_row_id = self.cursor.lastrowid
+                os.rename(path,self.app_path+f'/downloads/{last_row_id}.mp3')
+                self.cursor.execute(''' UPDATE TrackList SET path=? WHERE id=?;''',(self.app_path+f'/downloads/{last_row_id}.mp3',last_row_id,))
                 self.cursor.execute('''INSERT INTO Relationship (track_id, album_id)
                     SELECT max(id), NULL FROM TrackList;''')
                 
