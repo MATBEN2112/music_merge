@@ -589,7 +589,7 @@ class LoginApp(MDApp):
                 [rsetattr(i, 'ids.song_name.text',track_name) for i in self.audio_bar]
                 self.player_screen.ids.song_name.text = track_name
                 print(self.audio_bar[0].ids.song_name.text)
-            self.sound = IOSPlayer(self.track[1],author = self.track[2], song=self.track[3])
+            self.sound = IOSPlayer(self.track_list,self.track[0])
             self.sound.play()
             
             [rsetattr(i, 'ids.song_progress.max', self.sound.get_length()) for i in self.audio_bar]
