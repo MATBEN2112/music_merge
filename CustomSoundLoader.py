@@ -3,18 +3,23 @@ import pyobjus
 from kivy.core.audio import Sound
 from pyobjus import autoclass
 from pyobjus.dylib_manager import load_framework, INCLUDE
+from pyobjus import objc_arr
 
-
+NSMutableArray = autoclass("NSMutableArray")
 NSString = autoclass('NSString')
 
 
 class IOSPlayer(Sound):
-    def __init__(self, source, author='author', song='song'):
+    def __init__(self, track_list, key):
         IOS_player = autoclass('IOS_player')
-        self.author = NSString.alloc().initWithUTF8String_(author)
-        self.song = NSString.alloc().initWithUTF8String_(song)
-        self.fn = NSString.alloc().initWithUTF8String_(source)
-        self.player = IOS_player.alloc().initWithFn_author_song_(self.fn,self.author,self.song)
+        track_arr = NSMutableArray.arrayWithCapacity_(len(track_list))
+        for track in track_list:
+            author = NSString.alloc().initWithUTF8String_(track[2])
+            song = NSString.alloc().initWithUTF8String_(track[3])
+            fn = NSString.alloc().initWithUTF8String_(track[1])
+            track_arr.addObject_(objc_arr(track[0], fn, author, song))
+            
+        self.player = IOS_player.alloc().initWithTrackList_key_(track_arr,key)
 
     def play(self):
         self.player.play()
