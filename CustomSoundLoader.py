@@ -3,7 +3,7 @@ import pyobjus
 from kivy.core.audio import Sound
 from pyobjus import autoclass
 from pyobjus.dylib_manager import load_framework, INCLUDE
-from pyobjus import objc_arr
+from pyobjus import objc_arr, objc_str
 
 NSMutableArray = autoclass("NSMutableArray")
 NSString = autoclass('NSString')
@@ -35,6 +35,17 @@ class IOSPlayer(Sound):
 
     def get_length(self):
         return self.player.get_len()
+    def get_info(self):
+        info_dict = self.player.get_info()
+        key = dictionary.objectForKey_(objc_str('key'))
+        author = dictionary.objectForKey_(objc_str('author')).UTF8String()
+        song = dictionary.objectForKey_(objc_str('song')).UTF8String()
+        file = dictionary.objectForKey_(objc_str('file')).UTF8String()
+        img = dictionary.objectForKey_(objc_str('img')).UTF8String()
+        song_len = dictionary.objectForKey_(objc_str('len'))
+        song_pos = dictionary.objectForKey_(objc_str('pos'))
+        print(key, author, song, file, img, song_len, song_pos)
+        
         
     def test(self):
         self.player.test_func()
