@@ -46,7 +46,10 @@ class IOSPlayer(Sound):
         song_len = info_dict.objectForKey_(objc_str('len'))
         song_pos = info_dict.objectForKey_(objc_str('pos'))
         print(info_dict)
+        print(dir(info_dict))
         print(key, author, song, file, img, song_len, song_pos)
+        print(dir(key))
+        print(dir(song_len))
         
         
     def test(self):
