@@ -568,7 +568,7 @@ class LoginApp(MDApp):
             if True: #slider.collide_point(touch.x, touch.y):
                 slider.active = False
                 print('seek audio')
-                self.sound.seek(slider.value)
+                player.seek(slider.value)
             return
 
         # clean old player widgets
@@ -662,7 +662,7 @@ class LoginApp(MDApp):
         player.pause()
 
     def unload_audio(self):
-        if 'sound' not in dir(self):
+        if 'track' not in dir(self):
             return
         
         player.stop()
