@@ -26,7 +26,7 @@ import os
 import sqlite3
 
 class Meta(object):
-    def __init__(self, app_path, dev_mode=True):
+    def __init__(self, app_path, dev_mode=False):
         self.dev_mode = dev_mode
         self.app_path = app_path
         self.db = sqlite3.connect(self.app_path + "/music_meta.db")
@@ -107,7 +107,15 @@ class Meta(object):
                 
             self.db.commit()
 
-    
+    def delete_all(self):
+        self.cursor.execute("DROP TABLE TrackList;")
+        self.cursor.execute("DROP TABLE AlbumList;")
+        self.cursor.execute("DROP TABLE Relationship;")
+        for e in os.listdir(self.app_path+'/downloads/'):
+            os.remove(self.app_path+'/downloads/' + e)
+            
+        self.start_db()
+        
     def album_list(self):
         ''' Return list of albums '''
         self.cursor.execute("SELECT * FROM AlbumList;")
