@@ -641,7 +641,7 @@ class LoginApp(MDApp):
         [rsetattr(i, 'ids.song_progress.value', self.sound.get_pos()) for i in self.audio_bar]
         self.player_screen.ids.song_progress.value = self.sound.get_pos()
         print(f'Audio bar current value: {self.player_screen.ids.song_progress.value} Ends in: {self.sound.get_length()}')
- 
+        self.sound.get_info()
         if self.sound.get_pos() > self.sound.get_length()-1:
             self.progressbarEvent.cancel()
             self.settimeEvent.cancel()
