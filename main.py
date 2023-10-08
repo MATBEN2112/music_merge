@@ -43,6 +43,7 @@ from custom_widgets import *
 from CustomSoundLoader import IOSPlayer
 if kivy.utils.platform not in ['android','ios']:
     Window.size = (540, 1170)
+else:
     player = IOSPlayer()
 
 #################
