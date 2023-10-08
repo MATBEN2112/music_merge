@@ -626,7 +626,7 @@ class LoginApp(MDApp):
                 [rsetattr(i, 'ids.song_progress.max', info_dict['song_len']) for i in self.audio_bar]
                 self.player_screen.ids.song_progress.max = info_dict['song_len']
             
-            if self.info_dict['status'] != info_dict['status']: # play/stop button
+            if 'info_dict' not in dir(self) or self.info_dict['status'] != info_dict['status']: # play/stop button
                 img = "./icons/stop60.png" if info_dict['status'] else "./icons/stop60.png"
                 f = self.audio_stop if info_dict['status'] else self.audio_play
                 [rsetattr(i, 'ids.song_status.source', img) for i in self.audio_bar]
