@@ -18,8 +18,8 @@ class IOSPlayer(Sound):
         track_arr = NSMutableArray.arrayWithCapacity_(len(track_list))
         for track in track_list:
             img = NSString.alloc().initWithUTF8String_(track[4])
-            author = NSString.alloc().initWithUTF8String_(track[2]).decode()
-            song = NSString.alloc().initWithUTF8String_(track[3]).decode()
+            author = NSString.alloc().initWithUTF8String_(track[2])
+            song = NSString.alloc().initWithUTF8String_(track[3])
             fn = NSString.alloc().initWithUTF8String_(track[1])
             track_arr.addObject_(objc_arr(track[0], fn, author, song, img))
             
@@ -46,8 +46,8 @@ class IOSPlayer(Sound):
     def get_info(self):
         info_dict = self.player.get_info()
         key = info_dict.objectForKey_(objc_str('key')).intValue()
-        author = info_dict.objectForKey_(objc_str('author')).UTF8String()
-        song = info_dict.objectForKey_(objc_str('song')).UTF8String()
+        author = info_dict.objectForKey_(objc_str('author')).UTF8String().decode()
+        song = info_dict.objectForKey_(objc_str('song')).UTF8String().decode()
         file = info_dict.objectForKey_(objc_str('file')).UTF8String()
         img = info_dict.objectForKey_(objc_str('img')).UTF8String()
         song_len = info_dict.objectForKey_(objc_str('len')).floatValue()
