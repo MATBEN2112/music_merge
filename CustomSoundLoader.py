@@ -52,10 +52,18 @@ class IOSPlayer(Sound):
     def get_info(self):
         info_dict = self.player.get_info()
         key = info_dict.objectForKey_(objc_str('key')).intValue()
-        author = info_dict.objectForKey_(objc_str('author')).UTF8String().decode()
+        author = info_dict.objectForKey_(objc_str('author')).UTF8String()
+        if type(author) == bytes:
+            author = author.decode()
         song = info_dict.objectForKey_(objc_str('song')).UTF8String().decode()
+        if type(song) == bytes:
+            song = song.decode()
         file = info_dict.objectForKey_(objc_str('file')).UTF8String()
+        if type(file) == bytes:
+            file = file.decode()
         img = info_dict.objectForKey_(objc_str('img')).UTF8String()
+        if type(img) == bytes:
+            img = img.decode()
         song_len = info_dict.objectForKey_(objc_str('len')).floatValue()
         song_pos = info_dict.objectForKey_(objc_str('pos')).floatValue()
         status = info_dict.objectForKey_(objc_str('status')).boolValue()
