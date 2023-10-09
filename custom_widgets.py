@@ -374,10 +374,8 @@ class AlbumButton(MDBoxLayout, TouchBehavior):
         self.app = app
         self.album = album
         self.key = album[0]
-        self.path = album[1]
-        self.name = album[2]
-        self.img = album[3]
-
+        self.name = album[1]
+        self.img = album[2]
             
         self.img = Image(
             size=("200dp","200dp"),
@@ -486,23 +484,30 @@ class VKAlbumButton(MDBoxLayout, TouchBehavior):
         self.session = session
         
         self.orientation= "vertical"
-        self.adaptive_height= True
+        self.size_hint_y= None
         self.size_hint_x= None
+        self.md_bg_color= "#3F6668"
+        self.size=("200dp","220dp")
+      
         self.add_widget(
             AsyncImage(
-                size=(90,90),
+                size=("200dp","200dp"),
                 size_hint=(None,None),
                 source=self.img
             )
         )
         self.add_widget(
             MDLabel(
-                font_size = 13,
-                text_color = "#232217",
-                halign = "center",
-                text = self.name,
-                padding = [-1,26,10,0]
-            )
+              size=("160dp","20dp"),
+              size_hint=(None,None),
+              font_size = '14sp',
+              text_color = "#232217",
+              text = self.name,
+              halign = "center",
+              pos_hint= {'center_x':.5},
+              shorten = True,
+              shorten_from = "right"
+          )
         )
 
         self.press_state = False
