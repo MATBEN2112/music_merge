@@ -390,7 +390,7 @@ def captcha(session=requests.Session(), sid='123'):
         f.write(session.get(captcha_img_link).content)
 
 
-def download_monitor(to_download_list, session, u_id, app_path):
+def download_monitor(event, to_download_list, session, u_id, app_path):
     #[(audio_id, artist, song, key),...]
     print('Background thread started')
     if len(to_download_list)==1: #single track
