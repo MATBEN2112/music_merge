@@ -108,6 +108,7 @@ class Meta(object):
             self.db.commit()
 
     def delete_all(self):
+        self.cursor.execute("PRAGMA foreign_keys = OFF")
         self.cursor.execute("DROP TABLE TrackList;")
         self.cursor.execute("DROP TABLE AlbumList;")
         self.cursor.execute("DROP TABLE Relationship;")
