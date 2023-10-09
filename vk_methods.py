@@ -6,7 +6,7 @@ import time
 import re
 import vk_audio
 from utils import *
-
+import threading as th
 from pyobjus import autoclass
 ffmpegConverter = autoclass('ffmpegConverter')
 converter = ffmpegConverter.alloc().init()
@@ -212,29 +212,14 @@ class VK_session(object):
         return audio_list
     
     def download_audio(self, audio_id, artist, song, key):
-        payload={
-            'al': '1',
-            'ids': audio_id
-        }
-        response = self.session.post('https://vk.com/al_audio.php?act=reload_audio', data=payload)
-        response_json = json.loads(response.text.lstrip('<!--'))
-        url_mp3 = response_json['payload'][1][0][0][2]
-        url_m3u8 = vk_audio.encode_url(url_mp3, int(self.u_id))
-        audio_file = vk_audio.m3u8_parser(url_m3u8)
-
-        with open(self.app_path + f'/downloads/{key}.ts', 'wb') as f:
-            f.write(audio_file)
+        to_download_list = [(audio_id, artist, song, key)]
+        event = th.Event()
+        thread = th.Thread(target=download_monitor, name='Monitor', args=(event,to_download_list,self.session,self.u_id,self.app_path,))
+        thread.start() # start background thread
         
-        self.convert_to_mp3(key)
-
     def download_album(self):
         pass
 
-    def convert_to_mp3(self, key):
-        fn = NSString.alloc().initWithUTF8String_(self.app_path + '/downloads/' + str(key))
-        ext = NSString.alloc().initWithUTF8String_("ts")
-        converter.converter_fileExtencion_(fn,ext)
-        os.remove(self.app_path + f'/downloads/{key}.ts')
         
 
 
@@ -405,4 +390,35 @@ def captcha(session=requests.Session(), sid='123'):
         f.write(session.get(captcha_img_link).content)
 
 
+def download_monitor(to_download_list, session, u_id, app_path):
+    #[(audio_id, artist, song, key),...]
+    print('Background thread started')
+    if len(to_download_list)==1: #single track
+        e = to_download_list[0]
+        payload={
+            'al': '1',
+            'ids': e[0]
+        }
+        
+        response = session.post('https://vk.com/al_audio.php?act=reload_audio', data=payload)
+        response_json = json.loads(response.text.lstrip('<!--'))
+        url_mp3 = response_json['payload'][1][0][0][2]
+        url_m3u8 = vk_audio.encode_url(url_mp3, int(u_id))
+        audio_file = vk_audio.m3u8_parser(url_m3u8)
 
+        with open(app_path + f'/downloads/{e[3]}.ts', 'wb') as f:
+            f.write(audio_file)
+        
+        fn = NSString.alloc().initWithUTF8String_(app_path + '/downloads/' + str(e[3]))
+        ext = NSString.alloc().initWithUTF8String_("ts")
+        converter.converter_fileExtencion_(fn,ext)
+        os.remove(app_path + f'/downloads/{e[3]}.ts')
+        
+        event.set()
+        thread.join()
+    else:
+        for e in to_download_list:
+            pass
+            
+        event.set()
+        thread.join()
