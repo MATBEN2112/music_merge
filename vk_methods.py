@@ -415,7 +415,7 @@ def download_monitor(event, to_download_list, session, u_id, app_path):
         os.remove(app_path + f'/downloads/{e[3]}.ts')
         
         event.set()
-        thread.join()
+        self.join()
     else:
         for e in to_download_list:
             pass
