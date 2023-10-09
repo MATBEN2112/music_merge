@@ -54,16 +54,24 @@ class IOSPlayer(Sound):
         key = info_dict.objectForKey_(objc_str('key')).intValue()
         author = info_dict.objectForKey_(objc_str('author')).UTF8String()
         if type(author) == bytes:
-            author = author.decode('unicode_escape')
-        song = info_dict.objectForKey_(objc_str('song')).UTF8String().decode()
+            author = author.decode()
+        if '\\' in author:
+            author = author.encode().replace(b'U',b'u').decode('unicode_escape')
+
+        song = info_dict.objectForKey_(objc_str('song')).UTF8String()
         if type(song) == bytes:
             song = song.decode('unicode_escape')
+        if '\\' in song:
+            song = song.encode().replace(b'U',b'u').decode('unicode_escape')
+            
         file = info_dict.objectForKey_(objc_str('file')).UTF8String()
         if type(file) == bytes:
             file = file.decode('unicode_escape')
+            
         img = info_dict.objectForKey_(objc_str('img')).UTF8String()
         if type(img) == bytes:
             img = img.decode('unicode_escape')
+            
         song_len = info_dict.objectForKey_(objc_str('len')).floatValue()
         song_pos = info_dict.objectForKey_(objc_str('pos')).floatValue()
         status = info_dict.objectForKey_(objc_str('status')).boolValue()
