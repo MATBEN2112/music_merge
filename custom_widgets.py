@@ -219,8 +219,8 @@ class AlbumListItem(OneLineAvatarIconListItem):
         self.popup = popup
         self.album = album
         self.track = track
-        self.text = self.album[2]
-        self.add_widget(ImageLeftWidgetWithoutTouch(source=self.album[3]))
+        self.text = self.album[1]
+        self.add_widget(ImageLeftWidgetWithoutTouch(source=self.album[2]))
         
     def on_touch_up(self, touch):
         if self.collide_point(touch.x, touch.y):
