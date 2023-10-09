@@ -152,9 +152,8 @@ class Album(Screen):
             TopAppBarMenuElem("./icons/back.png", [0.1, 0.35], func = lambda x: self.close_album())
         )
 
-        self.path = album[1]
-        self.ids.album_name.text = album[2]
-        self.ids.album_image.source = album[3]
+        self.ids.album_name.text = album[1]
+        self.ids.album_image.source = album[2]
         self.ids.container.clear_widgets()
         self.key = album[0]
         self.screen_to_return = screen_to_return
@@ -582,10 +581,10 @@ class LoginApp(MDApp):
         if track: # Play new audio
             print('Play audio')
             # save track to play and playlist where it is stored
-            track = track
             album_key = self.album_screen.key if self.manager.current=='album' else None
             track_list = self.meta.track_list(key = album_key) ###
-            player.load_playlist(track_list, track[0])
+            
+            player.load_playlist(track_list, track_list.index(track))
             player.play()
            
         else: # Unpause already loaded audio
