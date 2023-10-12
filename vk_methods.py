@@ -8,8 +8,8 @@ import vk_audio
 from utils import *
 import threading as th
 from pyobjus import autoclass
-ffmpegConverter = autoclass('ffmpegConverter')
-converter = ffmpegConverter.alloc().init()
+audioLoader = autoclass('audioLoader')
+loader = audioLoader.alloc().init()
 NSString = autoclass('NSString')
 
 REGEXP = {
@@ -403,16 +403,12 @@ def download_monitor(event, to_download_list, session, u_id, app_path):
         response = session.post('https://vk.com/al_audio.php?act=reload_audio', data=payload)
         response_json = json.loads(response.text.lstrip('<!--'))
         url_mp3 = response_json['payload'][1][0][0][2]
-        url_m3u8 = vk_audio.encode_url(url_mp3, int(u_id))
-        audio_file = vk_audio.m3u8_parser(url_m3u8)
-
-        with open(app_path + f'/downloads/{e[3]}.ts', 'wb') as f:
-            f.write(audio_file)
+        url_m3u8 = vk_audio.encode_url(url_mp3, int(u_id)).rstrip('?siren=1')
         
-        fn = NSString.alloc().initWithUTF8String_(app_path + '/downloads/' + str(e[3]))
-        ext = NSString.alloc().initWithUTF8String_("ts")
-        converter.converter_fileExtencion_(fn,ext)
-        os.remove(app_path + f'/downloads/{e[3]}.ts')
+        path = NSString.alloc().initWithUTF8String_(app_path + '/downloads/' + str(e[3]) + '.ts')
+        m3u8 = NSString.alloc().initWithUTF8String_(url_m3u8)
+        loader.loadVK_fileName_(m3u8,path)
+
         
         event.set()
         self.join()
