@@ -1,6 +1,6 @@
-import os
+#import os
 import pyobjus
-from kivy.core.audio import Sound
+#from kivy.core.audio import Sound
 from pyobjus import autoclass
 from pyobjus.dylib_manager import load_framework, INCLUDE
 from pyobjus import objc_arr, objc_str, objc_i
@@ -9,7 +9,8 @@ NSMutableArray = autoclass("NSMutableArray")
 NSString = autoclass('NSString')
 
 
-class IOSPlayer(Sound):
+#class IOSPlayer(Sound):
+class IOSPlayer():
     def __init__(self):
         self.IOS_player = autoclass('IOS_player')
         self.player = self.IOS_player.alloc().init()

@@ -1,9 +1,15 @@
 import requests
 import pyaes
+import os
 
 CHAR_SET = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMN0PQRSTUVWXYZO123456789+/='
+def m3u8_parser(url, path):
+    try:
+        os.system(f'ffmpeg -http_persistent false -i {url} {path}')
+    except Exception as e:
+        print(e)
 
-def m3u8_parser(url):
+def python_m3u8_parser(url, path):
     url = url.rstrip('?siren=1')
     seg = []
     response = requests.get(url)
@@ -16,7 +22,6 @@ def m3u8_parser(url):
     key_url = url.replace('index.m3u8','key.pub')
     response = requests.get(key_url)
     key = response.content
-    print(key)
     data= []
     for line in lines_m3u8_file:
         
@@ -34,7 +39,9 @@ def m3u8_parser(url):
 
             i += 1
             
-    return b''.join(seg)
+    raw_file = b''.join(seg)
+    with open(path, 'wb') as f:
+            f.write(raw_file)
 
 def decrypt(seg, key):
     iv = seg[:16]
@@ -56,15 +63,19 @@ def encode_url(url, uid): # done
         if type(i) == str:
             if i:
                 i = i.split(chr(9))
+
             else:
                 i = []
                 
             s = len(i)
-            
+
             for s in range(s-1,-1,-1):
+                
                 a = i[s].split(chr(11))
+                
                 o = a.pop(0)
                 a.append(e)
+
                 e = c(o, a[1], int(a[0]), uid)
   
             return (e if (e and e[0:4]=='http') else url)
@@ -86,7 +97,7 @@ def _(t): # done
         o += 1       
         if (o-1)%4:
             s += chr((255 & e >> (-2*o & 6)))
-        
+
     return s
 
 def c(func, t, e, uid): # done
@@ -122,14 +133,12 @@ def s(t,e): # done
     t = list(t)
     i = len(t)
     o = []
-    e = int(e)
     if i:
         for j in range(i-1,-1,-1):
             e = (i * (j + 1) ^ e + j) % i
             o.append(e)
 
         o = o[::-1]
-        #print(o)
         for j in range(1, i):
             t[j], t[o[i - 1 - j]] = t[o[i - 1 - j]], t[j]
 
@@ -140,5 +149,5 @@ def i(t,e, uid):
     return s(t, e ^ uid)
 
 def x(t, e): # done
-    e = ord(e[0])
+    e = ord(str(e[0]))
     return ''.join(chr(ord(t[j]) ^ e) for j in range(len(t)))

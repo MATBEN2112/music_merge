@@ -21,14 +21,33 @@ def valid_file_name(string):
     string = re.sub(r'(\s+-\s+)+',lambda x: '-', string)
     return re.sub(r'[^\sA-Za-zА-Яа-я0-9_-]+',lambda x: '', string)
 
+def search_audio(data, q=''):
+    # TODO implement phonetic algorithm
+    result = []
+    qq = ''
+    for i in q:# escape re meta symbols
+        qq += f'[{i}]'
+        
+    q_regexp = re.compile(rf'(.*){qq}(.*)', re.IGNORECASE)
+    for track in data:
+        if track == 'EOF':
+            break
+        s = q_regexp.search(track[2]+track[3])
+
+        if s:
+            result.append(track)
+
+    return result
+        
 
 import os
 import sqlite3
 
 class Meta(object):
-    def __init__(self, app_path, dev_mode=False):
+    def __init__(self, app, dev_mode=False):
         self.dev_mode = dev_mode
-        self.app_path = app_path
+        self.app = app
+        self.app_path = app.app_dir
         self.db = sqlite3.connect(self.app_path + "/music_meta.db")
         self.cursor = self.db.cursor()
         #self.db.close()
@@ -108,6 +127,7 @@ class Meta(object):
             self.db.commit()
 
     def delete_all(self):
+        self.app.player.stop()
         self.cursor.execute("PRAGMA foreign_keys = OFF")
         self.cursor.execute("DROP TABLE TrackList;")
         self.cursor.execute("DROP TABLE AlbumList;")
@@ -127,7 +147,7 @@ class Meta(object):
         self.cursor.execute('''SELECT * FROM TrackList WHERE id in
             (SELECT track_id FROM Relationship WHERE album_id is ?);''', (key,)
         )
-        return self.cursor.fetchall()[::-1]
+        return self.cursor.fetchall()[::-1] + ['EOF']
         
     def add_album(self, name, img=None):
         ''' Create new album '''

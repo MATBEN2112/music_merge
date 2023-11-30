@@ -1,16 +1,13 @@
 import os
-import requests
+#import requests
 import json
 import pickle
 import time
 import re
+import aiohttp
+import asyncio
 import vk_audio
 from utils import *
-import threading as th
-from pyobjus import autoclass
-audioLoader = autoclass('audioLoader')
-loader = audioLoader.alloc().init()
-NSString = autoclass('NSString')
 
 REGEXP = {
     'ascii': re.compile(r'&#([0-9]+);'),
@@ -33,6 +30,7 @@ REGEXP = {
     }
 
 def search_re(reg, string):
+    print(type(string))
     s = reg.search(string)
     if s:
         groups = s.groups()
@@ -43,17 +41,19 @@ def clear_string(s):
         return s.strip().replace('&nbsp;', '')
 
 class VK_session(object):
-    def __init__(self, app_path, session_name):
+    def __init__(self, session_obj, session_name):
+        self.session_obj = session_obj
         self.session_name = session_name
-        self.app_path = app_path
-        self.path = app_path + f'/sessions/{self.session_name}/'
+        self.path = session_obj.app.app_dir + f'/sessions/{self.session_name}/'
+        headers = {'User-agent': 'Mozilla/5.0 (Windows NT 10.0; rv:91.0) Gecko/20100101 Firefox/91.0'}
+        session_timeout =   aiohttp.ClientTimeout(total=None,sock_connect=5,sock_read=5)
+        self.session = aiohttp.ClientSession(headers = headers, timeout = session_timeout)
         
-        self.session = requests.Session()
-        self.session.headers['User-agent'] = 'Mozilla/5.0 (Windows NT 10.0; rv:91.0) Gecko/20100101 Firefox/91.0'
 
         try:
             with open(self.path + 'coockie_Jar', 'rb') as f:
-                self.session.cookies.update(pickle.load(f))
+                cookies = pickle.load(f)
+                self.read_cookieJar(cookies)
             
         except FileNotFoundError:
             print('No valid session file')
@@ -63,6 +63,7 @@ class VK_session(object):
             with open(self.path + 'uid', 'rb') as f:
                 data = pickle.load(f)
                 self.u_id =data['uid']
+                print(self.u_id)
                 
         except:
             print('No user id')
@@ -80,115 +81,180 @@ class VK_session(object):
         else:
             self.img = './icons/profile.png'
 
-        response = self.session.get('https://vk.com/login')
-
-        if response.status_code == 200: # Check if request status code is redirect
+        asyncio.get_event_loop().create_task(self.connect())
+    
+    async def connect(self):
+        response = await self.send_get_request('https://vk.com/login')
+        
+        if response: # Check if request status code is redirect
+            print('Connected')
             self.connected = True
+            self.session_obj.title.source = self.img
+            self.session_obj.secondary_text = self.u_id
+            self.session_obj.on_release=lambda :self.session_obj.open_session()
+            self.session_obj.bg_color = (1,1,1,1)
+            
         else:
             self.connected = False
+            self.session_obj.title.source = "./icons/problem.png"
+            self.session_obj.secondary_text = 'Could not connect'
+            self.session_obj.on_release=lambda :self.session_obj.session_unavalible()
+
+    
+    async def send_get_request(self,url):
+        #await asyncio.sleep(3)
+        try:
+            async with self.session.get(url, timeout=15) as response:
+                return await response.text()
             
+        except asyncio.exceptions.TimeoutError:
+            return None
+                
+    async def send_post_request(self,url, payload={}):
+        try:
+            async with self.session.post(url,params=payload, timeout=15) as response:
+                return await response.text()
+                
+        except asyncio.exceptions.TimeoutError:
+            return None
+        
+    def read_cookieJar(self, cookies):
+        cookies_list = []
+        self.cookies = cookies
+        for c in cookies:
+            cookies_list.append((c.name, c.value, c.domain, c.path,c.expires))
+
+        self.cookies_list = cookies_list
+        self.session.cookie_jar.update_cookies(self.cookies)
+        
     def parse_audio_list(self, data):
-        audio_list = {}
+        audio_list = []
         for elem in data:
             if elem[12] == '[]': # Is it blocked
                 h = elem[13].split('/')
                 audio_id = elem[15]['content_id'] + '_' + h[2] + '_' + h[5]
-                artist = valid_file_name(elem[4])
-                song = valid_file_name(elem[3])
-                audio_list[f'{audio_id}'] = {
-                    'song': convert_ASCII(song),
-                    'artist': convert_ASCII(artist),
-                    'img_link': elem[14].split(',')[-1]}
+
+                audio_list.append((
+                    None,
+                    audio_id,
+                    convert_ASCII(elem[4]),
+                    convert_ASCII(elem[3]),
+                    elem[14].split(',')[-1],
+                    self
+                ))
         return audio_list
             
-    def load_user_audios(self):
+    async def load_user_audios(self):
+        # GET
         url = f'https://vk.com/audios{self.u_id}?section=all'
-        response = self.session.get(url)
-    
-        section_id_t = search_re(REGEXP['section_id'], response.text)
-    
+        response = await self.send_get_request(url)
+        if not response:
+            return []
+        # POST
+        section_id_t = search_re(REGEXP['section_id'], response)
         url = 'https://vk.com/audio?act=load_catalog_section'
         payload = {
             'al': '1',
             'section_id': section_id_t
         }
-        response = self.session.post(url, data=payload)
-        next_from_t = search_re(REGEXP['next_from'], response.text)
-        response_json = json.loads(response.text.lstrip('<!--'))
+        response = await self.send_post_request(url,payload=payload)
+        if not response:
+            return []
+        # POST
+        next_from_t = search_re(REGEXP['next_from'], response)
+        response_json = json.loads(response.lstrip('<!--'))
         audio_list = self.parse_audio_list(response_json['payload'][1][1]['playlist']['list'])
-
-
+        if not next_from_t:
+            return audio_list + ['EOF']
         url = 'https://vk.com/al_audio.php?act=load_catalog_section'
         payload['start_from'] = next_from_t
-        response = self.session.post(url, data=payload)
-        next_from_t = search_re(REGEXP['next_from'], response.text)
-        response_json = json.loads(response.text.lstrip('<!--'))
-        audio_list.update(self.parse_audio_list(response_json['payload'][1][1]['playlist']['list']))
-    
+        response = await self.send_post_request(url,payload=payload)
+        if not response:
+            return []
+        # POST
+        next_from_t = search_re(REGEXP['next_from'], response)
+        response_json = json.loads(response.lstrip('<!--'))
+        audio_list += self.parse_audio_list(response_json['payload'][1][1]['playlist']['list'])
+        if not next_from_t:
+            return audio_list + ['EOF']
+
         payload['section_id'] = next_from_t.split(' ')[1]
         payload['start_from'] = next_from_t
-        response = self.session.post(url, data=payload)
-        self.next_from_t = search_re(REGEXP['next_from'], response.text)
-        response_json = json.loads(response.text.lstrip('<!--'))
-        audio_list.update(self.parse_audio_list(response_json['payload'][1][1]['playlist']['list']))
-        self.section_id_t = payload['section_id']
-        
-        return audio_list
+        response = await self.send_post_request(url,payload=payload)
+        if not response:
+            return []
 
-    def load_more_t(self):
+        self.next_from_t = search_re(REGEXP['next_from'], response)
+        response_json = json.loads(response.lstrip('<!--'))
+        audio_list += self.parse_audio_list(response_json['payload'][1][1]['playlist']['list'])
+        self.section_id_t = payload['section_id']
+
+        return audio_list if self.next_from_t else audio_list + ['EOF']
+
+    async def load_more_t(self):
         url = 'https://vk.com/al_audio.php?act=load_catalog_section'
         payload = {
             'al': '1',
             'section_id': self.section_id_t,
             'start_from': self.next_from_t
         }
-        response = self.session.post(url, data=payload)
-        self.next_from_t = search_re(REGEXP['next_from'], response.text)
-        response_json = json.loads(response.text.lstrip('<!--'))
+        response = await self.send_post_request(url,payload=payload)
+        if not response:
+            return []
+        #response = self.session.post(url, data=payload)
+        response_json = json.loads(response.lstrip('<!--'))
+        self.next_from_t = response_json['payload'][1][1]['playlist']['nextOffset']
         audio_list = self.parse_audio_list(response_json['payload'][1][1]['playlist']['list'])
-        return audio_list
+        return audio_list if self.next_from_t else audio_list + ['EOF']
 
     def parse_album_list(self, data):
-        album_list = {}
+        album_list = []
         for playlist in data:
             if playlist['permissions']['play']:
                 playlist_name = valid_file_name(playlist['title']) + ' - ' + valid_file_name(playlist['authorName'])
-                e = {'playlist_name': convert_ASCII(playlist_name),'img_link': playlist['coverUrl']}
                 playlist_id = str(playlist['ownerId'])+'_'+str(playlist['id'])
-                album_list[playlist_id] = e
+                album_list.append((playlist_id,convert_ASCII(playlist_name),playlist['coverUrl']))
         return album_list
     
-    def load_playlists(self):
+    async def load_playlists(self):
         url = f'https://vk.com/audios{self.u_id}?block=my_playlists&section=all'
-        response = self.session.get(url)
-        self.section_id_a = search_re(REGEXP['section_id'], response.text)
+        #response = self.session.get(url)
+        response = await self.send_get_request(url)
+        if not response:
+            return []
+        self.section_id_a = search_re(REGEXP['section_id'], response)
         url = 'https://vk.com/audio?act=load_catalog_section'
         payload = {
             'al': '1',
             'section_id': self.section_id_a
         }
-        response = self.session.post(url, data=payload)
+        response = await self.send_post_request(url,payload=payload)
+        if not response:
+            return []
+        #response = self.session.post(url, data=payload)
 
-        response_json = json.loads(response.text.lstrip('<!--'))
+        response_json = json.loads(response.lstrip('<!--'))
         self.next_from_a = search_re(REGEXP['data_next'], response_json['payload'][1][0][0])
             
         return self.parse_album_list(response_json['payload'][1][1]['playlists'])
             
-    def load_more_a(self):
+    async def load_more_a(self):
         url = 'https://vk.com/al_audio.php?act=load_catalog_section'
         payload = {
             'al': '1',
             'section_id': self.section_id_a,
             'start_from': self.next_from_a
         }
-        response = self.session.post(url, data=payload)
-        response_json = json.loads(response.text.lstrip('<!--'))
+        response = await self.send_post_request(url,payload=payload)
+        if not response:
+            return []
+        #response = self.session.post(url, data=payload)
+        response_json = json.loads(response.lstrip('<!--'))
         self.next_from_a = search_re(REGEXP['section_id'], response_json['payload'][1][0][0])
         
         return self.parse_album_list(response_json['payload'][1][1]['playlists'])
 
-    def load_playlist_content(self, playlist_data):
-        audio_list={}
+    async def load_playlist_content(self, playlist_data):
         owner_id, playlist_id = playlist_data.split('_')
         url = 'https://vk.com/al_audio.php?act=load_section'
         payload = {
@@ -202,24 +268,74 @@ class VK_session(object):
             'playlist_id': playlist_id,
             'type': 'playlist'
         }
-    
-        response = self.session.post(url, data=payload)
-        response_json = json.loads(response.text.lstrip('<!--'))
+        response = await self.send_post_request(url, payload=payload)
+        if not response:
+            return []
+        #response = self.session.post(url, data=payload)
+        response_json = json.loads(response.lstrip('<!--'))
         if response_json['payload'][1][0] == False:
             print('Error load playlist data')
 
-        audio_list.update(self.parse_audio_list(response_json['payload'][1][0]['list']))
-        return audio_list
-    
-    def download_audio(self, audio_id, artist, song, key):
-        to_download_list = [(audio_id, artist, song, key)]
-        event = th.Event()
-        thread = th.Thread(target=download_monitor, name='Monitor', args=(event,to_download_list,self.session,self.u_id,self.app_path,))
-        thread.start() # start background thread
+        return self.parse_audio_list(response_json['payload'][1][0]['list'])
         
-    def download_album(self):
-        pass
+    async def get_link(self, audio_id):
+        print(audio_id)
+        url = 'https://vk.com/al_audio.php?act=reload_audio'
+        payload={
+            'al': '1',
+            'ids': audio_id
+        }
+        response = await self.send_post_request(url,payload=payload)
+        if not response:
+            return None
+        #response = self.session.post('https://vk.com/al_audio.php?act=reload_audio', data=payload)
+        response_json = json.loads(response.lstrip('<!--'))
+        url_mp3 = response_json['payload'][1][0][0][2]
+        url_m3u8 = vk_audio.encode_url(url_mp3, int(self.u_id)).rstrip('?siren=1')
+        return url_m3u8
 
+    async def search(self, isglobal, q=''):
+        payload = {
+            'al': 1,
+            'act': 'section',
+            'claim': 0,
+            'is_layer': 0,
+            'owner_id': self.u_id,
+            'section': 'search',
+            'q': q
+        }
+        url = 'https://vk.com/al_audio.php'
+        response = await self.send_post_request(url,payload=payload)
+        if not response:
+            return []
+        #response = self.session.post(url, data = payload)
+        response_json = json.loads(response.lstrip('<!--'))
+
+        if not response_json['payload'][1]: # no permissons
+            return []
+        
+        if isglobal:
+            return self.search_global(response_json)
+        
+        else:
+            return self.search_user(response_json)
+    
+    def search_user(self, response_json):
+        if len(response_json['payload'][1][1]['playlists'])==14:
+            audio_list = self.parse_audio_list(response_json['payload'][1][1]['playlists'][0]['list'])
+            return audio_list
+        else:
+            return []
+    
+        
+    def search_global(self, response_json):
+        if len(response_json['payload'][1][1]['playlists'])==14:
+            audio_list = self.parse_audio_list(response_json['payload'][1][1]['playlists'][1]['list'])
+        
+        else:
+            audio_list = self.parse_audio_list(response_json['payload'][1][1]['playlists'][0]['list'])
+
+        return audio_list
         
 
 
@@ -390,31 +506,5 @@ def captcha(session=requests.Session(), sid='123'):
         f.write(session.get(captcha_img_link).content)
 
 
-def download_monitor(event, to_download_list, session, u_id, app_path):
-    #[(audio_id, artist, song, key),...]
-    print('Background thread started')
-    if len(to_download_list)==1: #single track
-        e = to_download_list[0]
-        payload={
-            'al': '1',
-            'ids': e[0]
-        }
-        
-        response = session.post('https://vk.com/al_audio.php?act=reload_audio', data=payload)
-        response_json = json.loads(response.text.lstrip('<!--'))
-        url_mp3 = response_json['payload'][1][0][0][2]
-        url_m3u8 = vk_audio.encode_url(url_mp3, int(u_id)).rstrip('?siren=1')
-        
-        path = NSString.alloc().initWithUTF8String_(app_path + '/downloads/' + str(e[3]) + '.ts')
-        m3u8 = NSString.alloc().initWithUTF8String_(url_m3u8)
-        loader.loadVK_fileName_(m3u8,path)
 
-        
-        event.set()
-        self.join()
-    else:
-        for e in to_download_list:
-            pass
-            
-        event.set()
-        thread.join()
+
