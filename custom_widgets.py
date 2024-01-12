@@ -11,6 +11,7 @@ from kivymd.uix.list import (OneLineAvatarIconListItem,
 
 from kivymd.uix.selectioncontrol import MDCheckbox
 from kivymd.uix.relativelayout import MDRelativeLayout
+from kivymd.uix.floatlayout import MDFloatLayout
 from kivy.uix.boxlayout import BoxLayout
 from kivymd.uix.boxlayout import MDBoxLayout
 from kivymd.theming import ThemableBehavior
@@ -22,7 +23,6 @@ from kivy.uix.image import Image, AsyncImage
 from kivy.uix.screenmanager import ScreenManager, Screen, SlideTransition
 from kivy.graphics.context_instructions import Color
 from kivy.graphics.vertex_instructions import RoundedRectangle, Line
-from kivy.uix.dropdown import DropDown
 from kivy.uix.behaviors import ButtonBehavior
 from kivy.uix.textinput import TextInput
 from kivymd.uix.button import MDIconButton
@@ -32,27 +32,29 @@ import shutil
 import pickle
 from kivy.clock import Clock
 from utils import *
-import csv
 import re
+import asyncio
 
+from kivy.uix.label import Label
+from kivy.uix.stencilview import StencilView
+from kivy.animation import Animation
+from kivy.properties import (
+    NumericProperty, StringProperty, BooleanProperty)
 
-from kivymd.uix.snackbar.snackbar import BaseSnackbar
+from kivy.uix.carousel import Carousel
 
-class CustomSnackBar(BaseSnackbar):
-    def __init__(self, message):
-        super(CustomSnackBar, self).__init__()
+from drop_down_resent import DropDownResent
+from ticker import Ticker
+from updatable_scrollview import UpdatableScrollView
+from draggablescreenlayout import DraggableScreenLayout
+from animations import LoadSign, CircularProgressBar, LoadingBar
+#from sidemenu import SideMenu
+from kivymd.uix.navigationdrawer import MDNavigationDrawer
+from kivy.properties import ListProperty, OptionProperty, DictProperty, NumericProperty
+from kivy.uix.button import Button
+from kivy.uix.scrollview import ScrollView
 
-        self.add_widget(MDLabel(
-            text=message,
-            theme_text_color="Custom",
-            text_color="#393231",
-        ))
-
-        self.y="24dp"
-        self.pos_hint={"center_x": 0.5, "center_y": 0.5}
-        self.size_hint_x=0.5
-        self.md_bg_color="#E8D8D7"
-        self.open()
+    
 
 class PopupActionButton(MDRelativeLayout, TouchBehavior):
     def __init__(self, text, func, x):
@@ -130,249 +132,45 @@ class RenameTrackPopup(Popup):
     pass
 
 class AudioInfo(MDBoxLayout):
-    pass
+    anim_to_hint = NumericProperty(0.05)
+
+    status = OptionProperty('closed',options=("open", "closed"))
+    
+    ''' The animation kwargs used to construct the animation '''
+    anim_kwargs = DictProperty({'d': .5, 't': 'in_quad'})
+
+    def __init__(self,**kwargs):
+        super(AudioInfo,self).__init__(**kwargs)
+        self.pos_hint= {'center_x':0.5}
+        status = kwargs.get('status')
+        
+        if status == "closed" or not status:
+            self.y = -self.height
+            self.opacity = 0
+            
+        elif status == "open":
+            self.y = self.height
+            self.opacity = 1
+
+    def hide(self):
+        print(self.pos_hint)
+        if self.status == "closed":
+            return
+        
+        self.status = "closed"
+        Animation(y = -self.height/3.5, opacity = 0,**self.anim_kwargs).start(self)
+
+    def show(self):
+        print(self.pos_hint)
+        if self.status == "open":
+            return
+
+        self.status = "open"
+        Animation(y = self.height/3.5, opacity = 1, **self.anim_kwargs).start(self)
 
 class RightCheckbox(IRightBodyTouch, MDCheckbox):
     '''Custom right container.'''
     pass
-
-class SearchFieldLayout(MDBoxLayout):
-    def __init__(self, screen):
-        super(SearchFieldLayout, self).__init__()
-        
-        self.size_hint = (1,None)
-        self.size = (screen.app.root.size[0],"100dp")
-        self.padding = ["10dp","10dp","10dp","10dp"]
-        self.spacing = "10dp"
-        btn = TopAppBarMenuElem("./icons/back.png",[.5,.5],lambda x: screen.close_search())
-        self.add_widget(btn)
-        self.search_box = SearchBox(screen)
-        self.add_widget(self.search_box)
-
-            
-    
-class SearchBox(MDRelativeLayout):
-    def __init__(self, screen):
-        super(SearchBox, self).__init__()
-        self.size = (screen.app.root.size[0]*0.85,"70dp")
-        self.size_hint = (None,None)
-        self.screen = screen
-        self.global_mode = False
-
-        self.search_field = SearchTextField(self, screen)
-        self.add_widget(self.search_field)
-        
-        self.search = MDIconButton(
-            icon= "./icons/search.png",
-            pos_hint= {"center_x": .05,"center_y": .5},
-            on_release = self.switch_mode
-        )
-        self.add_widget(self.search)
-        
-        self.clean = MDIconButton(
-            icon= "./icons/x.png",
-            pos_hint= {"center_x": .95,"center_y": .5},
-            opacity = 0,
-            on_release = self.search_field.clean)
-        self.add_widget(self.clean)
-        
-        with self.canvas.before:
-            self.back_color = Color((1,1,1,1),mode='rgba')
-            self.back = RoundedRectangle(pos=self.pos, size=self.size, radius=[10])
-            self.outline_color = Color(1, 0, 0, 1, mode='rgba')
-            self.outline = Line(rounded_rectangle=(self.x, self.y, self.width, self.height, 10))
-
-    def switch_mode(self,o):
-        if not self.screen.session:
-            return
-        
-        self.global_mode = not self.global_mode
-        if self.global_mode:
-            self.search.icon = "./icons/glob_search.png"
-        else:
-            self.search.icon = "./icons/search.png"
-
-
-class SearchTextField(TextInput):
-    def __init__(self, search_box, screen):
-        super(SearchTextField, self).__init__()
-        self.multiline = False
-        self.search_box = search_box
-        self.screen = screen
-        self.font_size = '28sp'
-        self.padding_y = [self.height / 7, 0] # [fix] make input text centerend by text and texture metrics 
-        self.pos_hint = {"center_x": .5,"center_y": .5}
-        self.size_hint = (None,None)
-        self.cursor_color = (1,0,0,1)
-        self.hint_text = 'Search audio'
-        self.hint_text_color = (1,0,0,1)
-        self.background_color = (0,0,0,0)
-        self.size = (screen.app.root.size[0]*0.7,"60dp")
-        
-        # actions
-        self.bind(focus=self.on_focus)
-        self.bind(text=self.on_text)
-        self.on_text_validate = self.search
-
-        
-    def on_focus(self,obj,value):
-        ''' Dynamic change of text input appearance '''
-        if value: # focused
-            self.hint_text_color = (1,0,0,0)
-            self.dropdown = DropDownResent(self.screen.ids.search_row, self)
-            self.search_box.back_color.rgba = (.9, .9, .9, 1)
-            self.search_box.outline.width = 2
-            self.search_box.outline_color.rgba = (0, 0, 1, 1)
-
-        else:
-            self.hint_text_color = (1,0,0,1)
-            if 'dropdown' in dir(self):
-                self.dropdown.dismiss()
-                
-            self.search_box.back_color.rgba = (1, 1, 1, 1)
-            self.search_box.outline.width = 1
-            self.search_box.outline_color.rgba = (1, 0, 0, 1)    
-        
-    def on_text(self,obj,value):
-        if 'dropdown' in dir(self):
-            self.dropdown.dismiss()
-
-        self.dropdown = DropDownResent(self.screen.ids.search_row,self)
-        if self.text:
-            self.search_box.children[0].opacity = 1
-        else:
-            self.search_box.children[0].opacity = 0
-            
-    def clean(self, x):
-        self.text=''
-
-    def search(self):
-        # save search query to search history
-        if self.text not in self.dropdown.resent:
-            with open(self.screen.app.app_dir + '/resent.csv', 'a', newline='') as f:
-                writer = csv.writer(f, delimiter=' ',quotechar='|', quoting=csv.QUOTE_MINIMAL)
-                writer.writerow([self.text])
-        else:
-            self.dropdown.resent.remove(self.text)
-            self.dropdown.resent.append(self.text)
-            with open(self.screen.app.app_dir + '/resent.csv', 'w', newline='') as f:
-                writer = csv.writer(f, delimiter=' ',quotechar='|', quoting=csv.QUOTE_MINIMAL)
-                for row in self.dropdown.resent:
-                    writer.writerow([row])
-
-        if 'dropdown' in dir(self):
-            self.dropdown.dismiss()
-
-        self.screen.search(q = self.text)        
-
-class DropDownResent(DropDown):
-    def __init__(self, achor_widget, text_field):
-        super(DropDownResent, self).__init__()
-        self.text_field = text_field
-        self.dismiss_on_select = False
-        self.achor_widget = achor_widget
-        self.resent_path = text_field.screen.app.app_dir
-        self.auto_width = False
-        self.width = self.text_field.screen.app.root.size[0]
-        self.dd_layout = MDBoxLayout(
-            md_bg_color = [0.8,0.9,1,1],
-            orientation = "vertical",
-            size_hint_y=None,
-            height="500dp",      
-        )
-        self._create_resent_list()     
-
-    def _create_resent_list(self):
-        self.resent = []
-        count = 0
-        q = ''
-        for i in self.text_field.text:# escape re meta symbols
-            q += f'[{i}]'
-
-        q_regexp = re.compile(rf'(.*){q}(.*)', re.IGNORECASE)
-        self._create_header()
-        with open(self.resent_path + '/resent.csv', newline='') as f:
-            reader = csv.reader(f, delimiter=' ', quotechar='|')
-            for row in reversed(list(reader)):
-                self.resent.append(row[0])
-                s = q_regexp.search(row[0])
-                if s and count<9:
-                    btn = Button(text=f'{row[0]}', size_hint_y=None, height=44)
-                    btn.bind(on_release=self.select_resent)
-                    self.dd_layout.add_widget(btn)
-                    count += 1
-
-        if count:
-            self.dd_layout.add_widget(Widget())
-            if self.text_field.screen.session:
-                self._create_ending()
-
-            self.add_widget(self.dd_layout)
-            self.open(self.achor_widget)
-            
-        
-        
-    def _create_header(self):
-        resent_header = MDBoxLayout(
-            md_bg_color = self.dd_layout.md_bg_color,
-            size_hint_y=None,
-            height="50dp"
-        )
-        label = MDLabel(
-            text='Resent',
-            size_hint_y=None,
-            font_size = '26sp',
-            height="50dp",
-            padding = [20,0,0,0]
-        )
-        resent_header.add_widget(label)
-        clean_btn_box = MDRelativeLayout(size_hint=(None,1), width="150dp",height="50dp")
-        label = MDLabel(
-            text='[color=ff3333]Clean resent[/color]',
-            markup = True,
-            height="50dp",
-            size_hint_y=None,
-            font_size = '26sp',
-            padding = [0,0,20,0],
-            halign= "right"
-        )
-        clean_btn_box.add_widget(label)
-        btn = Button(background_color=[0,0,0,0.1], size_hint_y=None, size = label.size)
-        btn.bind(on_release=self.clean_resent)
-        clean_btn_box.add_widget(btn)
-        resent_header.add_widget(clean_btn_box)
-        self.add_widget(resent_header)
-        
-    def _create_ending(self):
-        resent_ending = MDBoxLayout(
-            md_bg_color = self.dd_layout.md_bg_color,
-            size_hint_y=None,
-            height="50dp"
-        )
-        switch_btn_box = MDRelativeLayout(size_hint=(None,1), width="150dp",height="50dp")
-        label = MDLabel(
-            text='[color=ff3333]Global search[/color]',
-            markup = True,
-            height="50dp",
-            size_hint_y=None,
-            font_size = '26sp'
-        )
-        switch_btn_box.add_widget(label)
-        btn = Button(background_color=[0,0,0,0.1], size_hint_y=None, size = label.size)
-        btn.bind(on_release=self.text_field.search_box.switch_mode)
-        switch_btn_box.add_widget(btn)
-        resent_ending.add_widget(switch_btn_box)
-        self.add_widget(resent_ending)
-            
-    def select_resent(self, obj):
-        self.text_field.text = obj.text
-        self.text_field.search()
-        self.dismiss()
-        
-    def clean_resent(self,o):
-        with open(self.resent_path + '/resent.csv', 'w', newline='') as _:
-            pass
-        self.dismiss()    
     
 class NoAvailableTracks(OneLineAvatarIconListItem):
     def __init__(self):
@@ -386,11 +184,11 @@ class LoadingTracks(OneLineAvatarIconListItem):
         self.add_widget(ImageLeftWidgetWithoutTouch(source="./icons/load.gif"))
         self.text = 'Loading...'
         
-class EndOfTheList(OneLineAvatarIconListItem):
+class EndOfTheList(Widget):
     def __init__(self):
         super(EndOfTheList, self).__init__()     
-        self.add_widget(ImageLeftWidgetWithoutTouch(source="./icons/sadness.png"))
-        self.text = 'This is the end of the list'
+        self.size_hint_y = None
+        self.height = "150dp"
         
 class Track(TwoLineAvatarIconListItem):
     def __init__(self, app, track):
@@ -411,20 +209,19 @@ class Track(TwoLineAvatarIconListItem):
         self.isplaying = False
         
         self.add_widget(ImageLeftWidgetWithoutTouch(source=self.img))
-        #self.on_release = lambda : self.app.audio_play(track=self.track)
         self.on_release = self.play
         
     ### TRACK METHODS ###
     def play(self):
         self.app.player.start_playback(self)
 
-    def hilighte(self):
-        print(f"Track: {self.text} - {self.secondary_text} hilighted")
+    def highlighte(self):
+        print(f"Track: {self.text} - {self.secondary_text} highlighted")
         self.bg_color = "#E6E6E6"
         self.isplaying = True
 
-    def unhilighte(self):
-        print(f"Track: {self.text} - {self.secondary_text} unhilighted")
+    def unhighlighte(self):
+        print(f"Track: {self.text} - {self.secondary_text} unhighlighted")
         self.bg_color = [0,0,0,0]
         self.isplaying = False
         
@@ -453,7 +250,7 @@ class Track(TwoLineAvatarIconListItem):
         self.add_to_album_popup = AddToAlbumPopup()
 
         self.add_to_album_popup.ids.container.clear_widgets()
-        album_list = self.app.meta.album_list() ###
+        album_list = self.app.meta.album_list() # DB class method
         for album in album_list:
             self.add_to_album_popup.ids.container.add_widget(
                 AlbumListItem( self.app, album, self.track, self.add_to_album_popup)
@@ -462,7 +259,7 @@ class Track(TwoLineAvatarIconListItem):
         
     def rename_track(self, new_artist=None, new_song=None):
         if new_artist and new_song:
-            self.app.meta.edit_track(self.key, new_artist, new_song) ###
+            self.app.meta.edit_track(self.key, new_artist, new_song) # DB class method
             self.text = new_artist
             self.secodary_text = new_song
             return self.rename_track_popup.dismiss()
@@ -483,10 +280,10 @@ class Track(TwoLineAvatarIconListItem):
     def delete_track(self, state=None):
         if state == "Confirm":
             try:
-                self.app.meta.delete_track(self.key, key_album=self.album_key) ###
+                self.app.meta.delete_track(self.key, key_album=self.album_key) # DB class method
             except PermissionError: # if file loaded to player 
                 self.app.player.stop()
-                self.app.meta.delete_track(self.key, key_album=self.album_key) ###
+                self.app.meta.delete_track(self.key, key_album=self.album_key) # DB class method
             
             return self.confirmation_popup.dismiss()
                     
@@ -538,10 +335,6 @@ class SelectionBottomMenu(MDBoxLayout):
         # disable menu
         if 'nav_drawer' in self.screen.ids:
             self.screen.ids.nav_drawer.enable_swiping=False
-            
-        self.ids.close_menu.bind(on_press = lambda x: self.close_selection())
-        self.ids.create_album.bind(on_press = lambda x: self.create_album())
-        self.ids.delete_selected.bind(on_press = lambda x: self.delete_selected())
         
         self.app.audio_listing_key = 'selection'
         if self.album:
@@ -553,17 +346,19 @@ class SelectionBottomMenu(MDBoxLayout):
     def delete_selected(self):
         children = [*self.screen.ids.container.children]
         for child in children:
-            child.delete_track()
+            if isinstance(child, TrackWithCheckBox):
+                child.delete_track()
                 
         self.close_selection()
 
         
     def create_album(self, album_name=None):
         if album_name:
-            album_key = self.app.meta.add_album(album_name, img=None) ###
+            album_key = self.app.meta.add_album(album_name, img=None) # [DB class method]
             children = [*self.screen.ids.container.children]
             for child in children:
-                child.add_to_album(album_key=album_key)
+                if isinstance(child, TrackWithCheckBox):
+                    child.add_to_album(album_key=album_key)
 
             self.create_album_popup.dismiss()          
             return self.close_selection()
@@ -597,7 +392,7 @@ class SessionListElement(TwoLineAvatarIconListItem):
             icon="./icons/more.png",
             on_release=lambda x: self.mange_session())
         )
-        print('SessionListElement')
+
         if 'vk_' in session_name:
             self.session = VK_session(self,session_name)
             
@@ -658,17 +453,13 @@ class TrackWithCheckBox(TwoLineAvatarIconListItem):
 
     def delete_track(self):
         if self.check_box.active:
-            self.app.meta.delete_track(self.key, key_album=self.album_key) ###
+            self.app.meta.delete_track(self.key, key_album=self.album_key) # [DB class method]
              
     def add_to_album(self, album_key=None):
          if album_key and self.check_box.active:
-            self.app.meta.add_to_album(self.key, album_key) ###           
+            self.app.meta.add_to_album(self.key, album_key) # [DB class method]      
 
-class LoadingAlbums(MDBoxLayout):
-    def __init__(self):
-        super(LoadingTracks, self).__init__()     
-        self.add_widget(ImageLeftWidgetWithoutTouch(source="./icons/load.gif"))
-        self.text = 'Loading...'            
+
 class AlbumButton(MDBoxLayout, TouchBehavior):
     def __init__(self, app, album):
         super(AlbumButton, self).__init__()
@@ -715,7 +506,6 @@ class AlbumButton(MDBoxLayout, TouchBehavior):
 
 
 class VKTrack(TwoLineAvatarIconListItem):
-#class VKTrack(TwoLineIconListItem):
     def __init__(self, session, app, track):
         super(VKTrack, self).__init__()
         self.img = track[4] or "./icons/track.png"
@@ -735,35 +525,35 @@ class VKTrack(TwoLineAvatarIconListItem):
             on_release=lambda x: self.download())
         )
         self.is_downloaded = False
+        self.progress = None
         
 
     def play(self):
         self.app.player.start_playback(self)
 
-    def hilighte(self):
+    def highlighte(self):
         self.bg_color = "#E6E6E6"
         self.isplaying = True
 
-    def unhilighte(self):
+    def unhighlighte(self):
         self.bg_color = [0,0,0,0]
         self.isplaying = False
         
     def download(self):
         self.children[0].remove_widget(self.children[0].children[0])
 
-        self.add_widget(ImageRightWidgetWithoutTouch(source="./icons/load.gif"))
-        self.downloadEvent = Clock.schedule_interval(self.dowload_status,1)
+        self.progress = CircularProgressBar(
+                thickness = '3dp',
+                widget_size="46dp",
+                progress_clr = self.app.main_clr,
+                hint_clr = self.app.main_clr2,
+                label_clr = (0,0,0,1))
+        self.ids._right_container.add_widget(self.progress)
         
-        key = self.app.meta.new_track(self.text, self.secondary_text, self.img) ###
-        task = ('vk',self.text,self.secondary_text,key,self.session.get_link(self.id),self.app.app_dir,self)
-        self.app.downloader.add_download_task(task)
-
-
-    def dowload_status(self, value):
-        if self.is_downloaded:
-            self.children[0].remove_widget(self.children[0].children[0])
-            self.add_widget(ImageRightWidgetWithoutTouch(source="./icons/done.png"))
-            self.downloadEvent.cancel()
+        key = self.app.meta.new_track(self.text, self.secondary_text) # DB class method
+        
+        task = [(self.text,self.secondary_text,key,self.img,self.session, self.id,self.app,self)]
+        asyncio.get_event_loop().create_task(self.app.downloader.download(task,'vk'))
             
     
 class VKAlbumButton(MDBoxLayout, TouchBehavior):
@@ -828,4 +618,10 @@ class TopAppBarMenuElem(MDRelativeLayout):
                      size_hint = (None,None),
                      source = img)
         self.add_widget(icon)
+
+class SideMenu(MDNavigationDrawer):
+    ''' Child widgets list ignoring bubbling when swipe is triggered
+    (default: prevents unexpected button clicks).
+    Swipe priority is higher than priority of interaction with listed widgets. '''
+    low_priority = ListProperty((ImageLeftWidgetWithoutTouch,UpdatableScrollView,Track))
 

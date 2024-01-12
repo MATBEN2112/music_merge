@@ -1,13 +1,30 @@
 import requests
 import pyaes
 import os
+from subprocess import Popen
+import asyncio
 
 CHAR_SET = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMN0PQRSTUVWXYZO123456789+/='
-def m3u8_parser(url, path):
+
+async def run(cmd):
+    proc = await asyncio.create_subprocess_shell(
+        cmd,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE)
+
+    stdout, stderr = await proc.communicate()
+
+    print(f'[{cmd!r} exited with {proc.returncode}]')
+        
+async def m3u8_parser(url, path):
     try:
-        os.system(f'ffmpeg -http_persistent false -i {url} {path}')
+        print('start process')
+        await run(f'ffmpeg -http_persistent false -i {url} {path}')
+        print('end process')
+
     except Exception as e:
-        print(e)
+        print('Exception',e)
+        python_m3u8_parser(url, path)
 
 def python_m3u8_parser(url, path):
     url = url.rstrip('?siren=1')
@@ -41,7 +58,7 @@ def python_m3u8_parser(url, path):
             
     raw_file = b''.join(seg)
     with open(path, 'wb') as f:
-            f.write(raw_file)
+        f.write(raw_file)
 
 def decrypt(seg, key):
     iv = seg[:16]

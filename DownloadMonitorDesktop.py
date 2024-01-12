@@ -1,39 +1,67 @@
-import threading as th
-import time
 import vk_audio
+from kivymd.uix.list import ImageRightWidgetWithoutTouch
+import asyncio
+import aiohttp        
+import aiofiles
 
 class DownloadMonitorDesktop():
-    def __init__ (self):
-        self.to_download_list = []
-        self.event = th.Event()
-        self.thread = th.Thread(target=self.downloads_monitor, name='Downloads monitor', args=())
-        self.thread.start() # start background thread
+    def __init__(self):
+        self.q = asyncio.Queue()
+        self.exec = False
 
-    def add_download_task(self, task):
-        self.to_download_list.append(task)
-    def downloads_monitor(self):
+    async def downloads_monitor(self):
+        self.exec = True
         while True:
-            if self.to_download_list:
-                print("New download task arrived")
-                self.download()
-            time.sleep(1)
+            item = await self.q.get()
+            await item
+            if item is None:
+                print('end')
+                break
+        self.exec = False
+        
+    async def download(self, tasks, key):
+        # vk download task [0 artist, 1 song, 2 db_key, 3 img, 4 session, 5 audio_hash, 6 app, 7 track UI]
+        if key == 'vk':
+            await self.q.put(self.download_vk(tasks))
+        elif key == 'ya':
+            await self.q.put(self.download_ya(tasks))
+
+        if not self.exec:
+            await self.downloads_monitor()
+        
+    async def download_vk(self, tasks):
+        for task in tasks:
+            print(task)
+            app_path = task[6].app_dir
+            if task[3]!="./icons/track.png":
+                img = app_path + f'/images/t/{task[2]}.jpg'
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(task[3]) as response:
+                        if response.status == 200:
+                            async with aiofiles.open(img, mode='wb') as f:
+                                await f.write(await response.read())
+
+                            print('image saved')
+                            
+                        else:
+                            img = "./icons/track.png"
+            else:
+                img = "./icons/track.png"
+                    
+            path = app_path + '/downloads/' + str(task[2]) + '.mp3'
+            m3u8 = await task[4].get_link(task[5])
+            await vk_audio.m3u8_parser(m3u8, path)
+
+            # change left image widget to downloaded if ui still on screen
+            try:
+                task[7].progress.stop_anim()
+                task[7].children[0].remove_widget(task[7].progress)
+                task[7].add_widget(ImageRightWidgetWithoutTouch(source="./icons/done.png"))
+            except:
+                pass
             
-    def download(self):
-        task = self.to_download_list[0]
-        # task [key, args]
-        if task[0] == 'vk':
-            self.download_vk(task)
-        else:
-            pass
-        
-    def download_vk(self, task):
-        # vk download task [key, artist, song, db_key, url_m3u8, app_path, track UI]
-        
-        path = task[5] + '/downloads/' + str(task[3]) + '.mp3'
-        vk_audio.m3u8_parser(task[4], path)
-        
-        del self.to_download_list[0]
-        # change left image widget to downloaded from main thread
-        task[6].is_downloaded = True
-        print("Task done")
-        
+            task[6].meta.add_new_track(path,img,task[2]) # DB class method
+            print("Task done")
+
+    async def download_ya(self, tasks):
+        pass

@@ -1,56 +1,56 @@
 
 <SelectionBottomMenu>:
 	id: selection_row
-    md_bg_color: "#232217"
+    md_bg_color: app.main_clr
     height:"145dp"
     size_hint: 1,None
     MDRelativeLayout:
 		Button:
         	id: create_album
-
         	background_normal: "./icons/album60.png"
         	size_hint: (None,None)
         	size: (60,60)
         	pos_hint: {'center_x':0.5, 'center_y':0.75}
+            on_release: root.create_album()
+
     MDRelativeLayout:
     	Button:
         	id: delete_selected
-        	#background_color: "#232217"
         	size_hint: (None,None)
         	pos_hint: {'center_x':0.5, 'center_y':0.75}
         	size: (60,60)
         	background_normal: "./icons/bin60.png"
+            on_release: root.delete_selected()
+
     MDRelativeLayout:
 		Button:
         	id: close_menu
-        	#background_color: "#232217"
         	size_hint: (None,None)
         	pos_hint: {'center_x':0.5, 'center_y':0.75}
         	size: (60,60)
         	background_normal: "./icons/x60.png"
+            on_release: root.close_selection()
 
 
-# snackbar !!!
+
 <AudioInfo>:
 	id: audio_row
 	orientation: 'vertical'
-    #md_bg_color: "#232217"
     height:"105dp"
     size_hint: .96,None
 
-    pos_hint: {'center_x':0.5, 'center_y':0.06}
 	MDBoxLayout:
 		height:"100dp"
         canvas.before:
             Color:
-                rgba: (0,.7,.7,1)  # visual feedback of press
+                rgba: app.main_clr2
             RoundedRectangle:
                 pos: self.pos
                 size: self.size
                 radius: [22,]
 
             Color:
-                rgba: .1, .9, .1, 1
+                rgba: app.main_clr
             Line:
                 width: 1.5
                 rounded_rectangle: (self.x, self.y, self.width, self.height, 22)
@@ -69,20 +69,22 @@
                 source: "./icons/play.png"
                 pos_hint: {'center_x':0.5, 'center_y':0.5}
 
-    				
-		Button:
-			id: song_name
-			on_release: app.player.switch_to_player(self.text)
-			background_color: 0,0,0,0
 
-			size: root.size
-			text: "Artist - song"
-            font_size: '20sp'
-            shorten: True
+        Ticker:
+            id: ticker
+            data: {'text': "Artist - song", 'font_size':'20sp'}
+            divider: 30
+            fit_size: True
+
+            Button:
+                id: song_name
+                on_release: app.screen_container.open_screen()
+                background_color: 0,0,0,0
+                    
 			
 		Button:
 			id: song_timer
-			on_press: app.player.switch_to_player(root)
+			on_press: app.screen_container.open_screen()
 			size_hint: None,None
 			background_color: 0,0,0,0
 			size: "70dp","100dp"
@@ -99,7 +101,7 @@
                     size: self.size
                     radius: [0,22,22,0]
                 Color:
-                    rgba: 0,1,0,1
+                    rgba: app.main_clr
                 Line:
                     width: 1.5
                     points: self.pos[0],self.pos[1],self.pos[0],self.pos[1]+self.height
@@ -114,17 +116,30 @@
 <Album>
 	MDBoxLayout:
         orientation: "vertical"
+        canvas.before:
+            Color:
+                rgba: app.load_clr
+
+            Rectangle:
+                pos: self.pos
+                size: self.size
         MDRelativeLayout:
             id: menu_row
             orientation: "vertical"
             size: (root.size[0],"100dp")
             size_hint: (None,None)
             pos_hint: {'center_x':0.5, 'center_y':0.95}
-            md_bg_color: "#232217"
+            md_bg_color: app.main_clr
 
         MDBoxLayout:
-            MDScrollView:
-            	do_scroll_x: False
+            UpdatableScrollView:
+                id: scrollable_container
+                #hide_animation_up: app.upper_anim
+                #hide_animation_down: app.bottom_anim
+                load_sign_up: app.ls_up_album
+                load_sign_down: app.ls_down_album
+                overscroll_up_callback: (root.force_screen_update,(),{})
+                overscroll_down_callback: (root.load_more,(),{})
             	MDBoxLayout:
             		orientation: "vertical"
             		size_hint: 1, None
@@ -145,7 +160,7 @@
                         size_hint: (1,None)
                         height: "160dp"
                         MDBoxLayout:
-                            md_bg_color: "#231117"
+                            md_bg_color: app.main_clr2
                             orientation: "vertical"
                             MDLabel:
                                 id: album_name
@@ -153,7 +168,8 @@
                                 font_size: '25sp'
                                 padding: "25dp"
                             MDLabel:
-                                text: str(len(container.children)) + " track in album"
+                                id: count
+                                text: str(0) + " track in album"
                                 font_size: '14sp'
                                 padding: "35dp"
 
@@ -178,34 +194,50 @@
                 	MDList:
                     	adaptive_height: True
                     	id: container
-                    
-                    
+
+
+
 <AlbumList>
 	MDBoxLayout:
         orientation: "vertical"
+        canvas.before:
+            Color:
+                rgba: app.load_clr
+
+            Rectangle:
+                pos: self.pos
+                size: self.size
         MDRelativeLayout:
             id: menu_row
             orientation: "vertical"
             size: (root.size[0],"100dp")
             size_hint: (None,None)
             pos_hint: {'center_x':0.5, 'center_y':0.95}
-            md_bg_color: "#232217"
+            md_bg_color: app.main_clr
 
 
-        MDScrollView:
+        UpdatableScrollView:
+            id: scrollable_container
+            #hide_animation_up: app.upper_anim
+            #hide_animation_down: app.bottom_anim
+            load_sign_up: app.ls_up_albumlist
+            load_sign_down: app.ls_down_albumlist
+            overscroll_up_callback: (root.force_screen_update,(),{})
+            overscroll_down_callback: (root.load_more,(),{})
             size: root.size
             pos_hint: {'center_x':0.5}
-            GridLayout:
-                id: album_container
-                cols: 2
-                padding: root.size[0]*(1-2/2.5)/3
-                spacing: root.size[0]*(1-2/2.5)/3
+            MDBoxLayout:
                 size_hint_y: None
                 height: self.minimum_height
+                GridLayout:
+                    id: container
+                    cols: 2
+                    padding: root.size[0]*(1-2/2.5)/3
+                    spacing: root.size[0]*(1-2/2.5)/3
+                    size_hint_y: None
+                    height: self.minimum_height
+
                 #size_hint_y: None
-
-
-                    
 
 
 
@@ -685,9 +717,20 @@
     	    MDRelativeLayout:
     		    id: action
 
+
+
+
+
 <Search>:
     MDBoxLayout:
         orientation: "vertical"
+        canvas.before:
+            Color:
+                rgba: app.load_clr
+
+            Rectangle:
+                pos: self.pos
+                size: self.size
 
         MDRelativeLayout:
             id: search_row
@@ -695,13 +738,101 @@
             size: (root.size[0],"160dp")
             size_hint: (None,None)
             pos_hint: {'center_x':0.5, 'center_y':0.9}
-            md_bg_color: "#232217"
-            MDScrollView:
-                id: text_input_scrollview
-                always_overscroll: False
-                do_scroll_x: False
+            md_bg_color: app.main_clr
+            MDBoxLayout:
+                id: search_inner
+                height: "100dp"
+                size_hint: (1,None)
+                padding: ["10dp","10dp","10dp","10dp"]
+                spacing: "5dp"
                 MDRelativeLayout:
-                    id: text_input_box
+                    id: back_btn_layout
+                    pos_hint: {'center_y':.5}
+                    size: ("60dp","60dp")
+                    size_hint: (None,None)
+
+                    Button:
+                        background_color: [0,0,0,0]
+                        pos_hint: {'center_x':.5, 'center_y':.5}
+                        size: ("60dp","60dp")
+                        size_hint: (None,None)
+                        on_release: root.close_search()
+                    Image:
+                        pos_hint: {'center_x':.5, 'center_y':.5}
+                        size: ("40dp","40dp")
+                        size_hint: (None,None)
+                        source: "./icons/back.png"
+
+                MDRelativeLayout:
+                    id: search_input_outer
+                    size: (root.size[0]*0.85,"70dp")
+                    size_hint: (None,None)
+
+                    TextInput:
+                        id: search_input
+                        multiline: False
+                        font_size: '28sp'
+                        padding_y: [(self.height)/4, 0]
+                        pos_hint: {"center_x": .48,"center_y": .5}
+                        size_hint: (None,None)
+                        cursor_color: (1,0,0,1)
+                        hint_text: 'Search audio'
+                        hint_text_color: (1,1,1,1) if self.focus else (0, 1, 0, 1)
+                        background_color: (0,0,0,0)
+                        size: (root.size[0]*0.65,"60dp")
+                        on_text_validate: root.search(self.text)
+                        on_text: root.show_resent(self.text)
+                        on_focus: root.show_resent(self.text)
+
+                        canvas.before:
+                            Color:
+                                rgba: (1, 1, 1, 1) if self.focus else (.9, .9, .9, 1)
+
+                            RoundedRectangle:
+                                pos: self.x - (search_input_outer.width -self.width)/2, self.y
+                                size: search_input_outer.width, self.height
+                                radius: [10]
+
+                            Color:
+                                rgba: (120/255, 120/255, 120/255, .8) if self.focus else (60/255, 60/255, 60/255, .8)
+                            Line:
+                                width: 2 if self.focus else 1.5
+                                rounded_rectangle: (self.x - (search_input_outer.width -self.width)/2, self.y, search_input_outer.width, self.height, 10)
+ 
+
+
+
+                    MDRelativeLayout:
+                        pos_hint: {"center_x": .92,"center_y": .5}
+                        Button:
+                            background_color: [0,0,0,0]
+                            pos_hint: {'center_x':.5, 'center_y':.5}
+                            size: ("60dp","60dp")
+                            size_hint: (None,None)
+                            on_release: root.clean_search()
+
+                        Image:
+                            pos_hint: {'center_x':.5, 'center_y':.5}
+                            size: ("32dp","32dp")
+                            size_hint: (None,None)
+                            source: "./icons/x.png"
+                            opacity: 1 if search_input.text != '' else 0
+
+                    MDRelativeLayout:
+                        id: mode_btn_layout
+                        pos_hint: {"center_x": .05,"center_y": .5}
+                        Button:
+                            background_color: [0,0,0,0]
+                            pos_hint: {'center_x':.5, 'center_y':.5}
+                            size: ("60dp","60dp")
+                            size_hint: (None,None)
+                            on_release: root.switch_search()
+                        Image:
+                            id: mode_btn_img
+                            pos_hint: {'center_x':.5, 'center_y':.5}
+                            size: ("37dp","37dp")
+                            size_hint: (None,None)
+                            source: "./icons/search.png"
 
 
         MDBoxLayout:          
@@ -712,10 +843,6 @@
                 id: scrollable_container
                 #size_hint:(1, None)
                 always_overscroll: False
-                #on_scroll_y:
-                    #if args[1] <= 0 and not root.lock_updates: text_input_scrollview.scroll_y
-                    #elif not root.isend and args[1] >= 0 and root.lock_updates: root.unlock()
-                    #elif args[1] >= 1: print(args)
                 do_scroll_x: False
                 MDBoxLayout:
                     id: box
@@ -732,12 +859,24 @@
                             id: container
 
 
+# from import 
 <Start>:
     MDBoxLayout:
+        id: main_container
         orientation: "vertical"
         outer_track_container: outer_track_container.__self__
         outer_tools_container: outer_tools_container.__self__
         #outer_track_container: album_info.__self__
+        canvas.before:
+            Color:
+                rgba: app.load_clr
+
+            Rectangle:
+                pos: self.pos
+                size: self.size
+
+
+
         Widget:        	
         	pos: 0,0
         	layout: 'float'
@@ -751,7 +890,7 @@
             size: (root.size[0],"100dp")
             size_hint: (None,None)
             pos_hint: {'center_x':0.5, 'center_y':0.95}
-            md_bg_color: "#232217"
+            md_bg_color: app.main_clr
             
 
         MDBoxLayout:
@@ -759,15 +898,17 @@
             orientation: "vertical"
             size_hint: (None,None)
             size: (root.size[0],root.size[1]-menu_row.height)
-            MDScrollView:
+            UpdatableScrollView:
                 id: scrollable_container
-                #size_hint:(1, None)
-                always_overscroll: True
-                on_scroll_y: 
-                    if not root.isend and args[1] <= 0 and not root.lock_updates: root.load_more()
-                    elif not root.isend and args[1] >= 0 and root.lock_updates: root.unlock()
-                    elif args[1] >= 1: print(args)
-            	do_scroll_x: False
+                #hide_animation_up: app.upper_anim
+                #hide_animation_down: app.bottom_anim
+
+                load_sign_up: app.ls_up_start
+                load_sign_down: app.ls_down_start
+                overscroll_up_callback: (root.force_screen_update,(),{})
+                overscroll_down_callback: (root.load_more,(),{})
+                
+
                 MDBoxLayout:
                     id: box
                     orientation: "vertical"
@@ -820,9 +961,11 @@
                             id: container
 
 
-	MDNavigationDrawer:
+	SideMenu:
 		id: nav_drawer
-        md_bg_color: "#006668"
+        md_bg_color: app.main_clr
+        swipe_edge_width: "100dp"
+
 		ContentNavigationDrawer:
 			orientation: 'vertical'
 			Image:
@@ -839,13 +982,13 @@
             	    size_hint: None, None
 		    	    size: ("290dp", "75dp")
 				    pos_hint: {"center_x": .5, "center_y": .8}
-		    	    md_bg_color: "#000008"
+		    	    background_color: 0, 0, 0, 0
             	    on_release: 
                         app.audio_listing_key = 'user'
                         app.main_screen.audios_listing()
                     canvas.before:
                         Color:
-                            rgba: 1, 1, 1, 1
+                            rgba: app.main_clr2
 
                         RoundedRectangle:
                             pos: self.x, self.y
@@ -853,9 +996,9 @@
                             radius: [6]
 
                         Color:
-                            rgba: .5, .5, .5, 1
+                            rgba: 0, 0, 0, 1
                         Line:
-                            width: 2
+                            width: 1.5
                             rounded_rectangle: (self.x, self.y, self.width, self.height, 6)
 		        Image:
 				    size_hint: None, None
@@ -876,19 +1019,19 @@
             	font_size: '20sp'
 				halign: 'left'
 
-        	MDScrollView:
-        		size: ("290dp", "280dp")
-        		pos_hint: {"center_x": .5, "center_y": .6}
-        		size_hint_y: None
-
+            MDScrollView:
+                size: ("290dp", "280dp")
+                pos_hint: {"center_x": .5, "center_y": .6}
+                size_hint: None,None
                 canvas.before:
                     Color:
                         rgba: 1, 1, 1, 1
 
-                    RoundedRectangle:
-                        pos: self.x-10, self.y-10
-                        size: self.width+14, self.height+14
-                        radius: [10]
+                    Rectangle:
+                        pos: self.x, self.y
+                        size: self.width, self.height
+
+
 
 
             	DrawerList:
@@ -909,11 +1052,11 @@
             		size_hint: None, None
 		    		size: ("290dp", "70dp")
 		    		pos_hint: {"center_x": .5, "center_y": .4}
-
+                    background_color: 0, 0, 0, 0
             		on_release: Factory.LoginPopup().open()
                     canvas.before:
                         Color:
-                            rgba: 1, 1, 1, 1
+                            rgba: app.main_clr2
 
                         RoundedRectangle:
                             pos: self.x, self.y
@@ -921,9 +1064,9 @@
                             radius: [6]
 
                         Color:
-                            rgba: .5, .5, .5, 1
+                            rgba: 0, 0, 0, 1
                         Line:
-                            width: 2
+                            width: 1.5
                             rounded_rectangle: (self.x, self.y, self.width, self.height, 6)
 		    	Image:
 		    		size_hint: None, None
@@ -937,14 +1080,18 @@
             		pos_hint: {"center_x": .745, "center_y": .4}
 
 
-		    
-
-            
             MDLabel:
             	text: "Version 0.2 beta"
                 font_size: '20sp'
             	#size_hint: None, None
             	pos_hint: {"center_y": .1}
+
+
+        MDFloatLayout:
+            id: loading_back
+            size_hint: (None,None)
+            pos: (0,0)
+            size: (0,0)
 
 <Player>:
 	MDRelativeLayout:
@@ -955,7 +1102,7 @@
         	background_color: 0,0,0,0
     		size: (root.size[0],root.size[1]/4.7)
             size_hint: (None,None)
-            on_release: root.close_player()
+            on_release: root.parent.close_screen()
 
         Image:
 			size: ("90dp","90dp")
@@ -964,13 +1111,14 @@
             pos_hint: {'center_x':0.5, 'center_y':0.95}
 
             
-		Label:
-			id: song_name
-			text: "Artist - Song"
-			pos_hint:{'center_x':0.5, 'center_y':.4}
-            size_hint: (1,1)
-            font_size: "28sp"
-
+        Ticker:
+            id: ticker
+            width: root.size[0]*.9
+            size_hint: (None,1)
+            pos_hint:{'center_x':0.5, 'center_y':.4}
+            data: {'text': "Artist - song", 'font_size':'28sp'}
+            divider: 30
+            fit_size: True
 
         Label:
         	id: song_timer
@@ -1011,7 +1159,7 @@
             size: ("90dp","90dp")
             size_hint: (None,None)
             opacity: 0
-            on_press: app.player.play_next(-1)
+            on_release: app.player.play_next(-1)
 
         Image:
             id: song_status
@@ -1038,4 +1186,4 @@
             size: ("90dp","90dp")
             size_hint: (None,None)
             opacity: 0
-            on_press: app.player.play_next(1)
+            on_release: app.player.play_next(1)

@@ -1,7 +1,6 @@
 import functools
 import re
-from tempfile import NamedTemporaryFile
-import requests
+import time
 
 def rsetattr(obj, attr, val):
     pre, _, post = attr.rpartition('.')
@@ -37,7 +36,7 @@ def search_audio(data, q=''):
         if s:
             result.append(track)
 
-    return result
+    return result + ['EOF']
         
 
 import os
@@ -133,7 +132,10 @@ class Meta(object):
         self.cursor.execute("DROP TABLE AlbumList;")
         self.cursor.execute("DROP TABLE Relationship;")
         for e in os.listdir(self.app_path+'/downloads/'):
-            os.remove(self.app_path+'/downloads/' + e)
+            try:
+                os.remove(self.app_path+'/downloads/' + e)
+            except PermissionError: # file will be overrided anyway i do not care
+                pass
             
         self.start_db()
         
@@ -159,28 +161,20 @@ class Meta(object):
         self.db.commit()
         return self.cursor.lastrowid
 
-    def new_track(self, artist, song, img):
+    def new_track(self, artist, song):
         ''' Function to append track data to existing meta file '''
         self.cursor.execute('''
-            INSERT INTO TrackList (artist, path, song, img) VALUES (?, ?, ?, ?);''',(artist, 'temp', song, img,))
+            INSERT INTO TrackList (artist, path, song, img) VALUES (?, ?, ?, ?);''',(artist, 'temp', song, 'temp',))
         
         last_row_id = self.cursor.lastrowid
-        self.cursor.execute(''' UPDATE TrackList SET path=? WHERE id=?;''',(self.app_path+f'/downloads/{last_row_id}.mp3',last_row_id,))
-        if img!="./icons/track.png":
-            print('image saved')
-            img_path = self.app_path + f'/images/t/{last_row_id}.jpg'
-            with open(img_path, 'wb') as f:
-                f.write(requests.get(img).content)
-            self.cursor.execute(''' UPDATE TrackList SET img=? WHERE id=?;''',(img_path,last_row_id,))
-        
         self.cursor.execute('''INSERT INTO Relationship (track_id, album_id)
             SELECT max(id), NULL FROM TrackList;''')
-
-        
-        self.db.commit()
         return last_row_id
-
-        
+    
+    def add_new_track(self, path, img, key):
+        self.cursor.execute(''' UPDATE TrackList SET path=?,img=? WHERE id=?;''',(path,img,key,))
+        self.db.commit()
+  
     def add_to_album(self, key_track, key_album):
         self.cursor.execute('''
                 INSERT INTO Relationship (track_id, album_id) VALUES (?,?);
@@ -202,9 +196,15 @@ class Meta(object):
         self.cursor.execute('''SELECT path, img FROM TrackList WHERE id IN (
             SELECT id FROM TrackList WHERE id NOT IN (SELECT track_id FROM Relationship));''')
         for path, img in self.cursor.fetchall():
-            os.remove(path)
+            try:
+                os.remove(path)
+            except PermissionError: # if file loaded to player
+                pass
             if img != './icons/track.png':
-                os.remove(img)
+                try:
+                    os.remove(img)
+                except PermissionError:
+                    pass
     
         self.cursor.execute('''DELETE FROM TrackList WHERE id IN (
             SELECT id FROM TrackList WHERE id NOT IN (SELECT track_id FROM Relationship));''')
@@ -217,9 +217,16 @@ class Meta(object):
         self.cursor.execute('''SELECT path, img FROM TrackList WHERE id IN (
             SELECT id FROM TrackList WHERE id NOT IN (SELECT track_id FROM Relationship));''')
         for path, img in self.cursor.fetchall():
-            os.remove(path)
+            try:
+                os.remove(path)
+            except PermissionError: # if file loaded to player
+                pass
+            
             if img != './icons/track.png':
-                os.remove(img)
+                try:
+                    os.remove(img)
+                except PermissionError:
+                    pass
         self.cursor.execute('''DELETE FROM TrackList WHERE id IN (
             SELECT id FROM TrackList WHERE id NOT IN (SELECT track_id FROM Relationship));''')
         self.db.commit()

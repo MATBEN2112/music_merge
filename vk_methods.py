@@ -1,5 +1,5 @@
 import os
-#import requests
+import requests
 import json
 import pickle
 import time
@@ -102,7 +102,6 @@ class VK_session(object):
 
     
     async def send_get_request(self,url):
-        #await asyncio.sleep(3)
         try:
             async with self.session.get(url, timeout=15) as response:
                 return await response.text()
@@ -149,9 +148,12 @@ class VK_session(object):
         url = f'https://vk.com/audios{self.u_id}?section=all'
         response = await self.send_get_request(url)
         if not response:
-            return []
+            return ['EOF']
         # POST
         section_id_t = search_re(REGEXP['section_id'], response)
+        if not section_id_t:
+            return ['EOF']
+        
         url = 'https://vk.com/audio?act=load_catalog_section'
         payload = {
             'al': '1',
@@ -159,7 +161,7 @@ class VK_session(object):
         }
         response = await self.send_post_request(url,payload=payload)
         if not response:
-            return []
+            return ['EOF']
         # POST
         next_from_t = search_re(REGEXP['next_from'], response)
         response_json = json.loads(response.lstrip('<!--'))
@@ -170,7 +172,7 @@ class VK_session(object):
         payload['start_from'] = next_from_t
         response = await self.send_post_request(url,payload=payload)
         if not response:
-            return []
+            return audio_list + ['EOF']
         # POST
         next_from_t = search_re(REGEXP['next_from'], response)
         response_json = json.loads(response.lstrip('<!--'))
@@ -182,7 +184,7 @@ class VK_session(object):
         payload['start_from'] = next_from_t
         response = await self.send_post_request(url,payload=payload)
         if not response:
-            return []
+            return audio_list + ['EOF']
 
         self.next_from_t = search_re(REGEXP['next_from'], response)
         response_json = json.loads(response.lstrip('<!--'))
@@ -192,6 +194,9 @@ class VK_session(object):
         return audio_list if self.next_from_t else audio_list + ['EOF']
 
     async def load_more_t(self):
+        if not self.next_from_t:
+            return ['EOF']
+        
         url = 'https://vk.com/al_audio.php?act=load_catalog_section'
         payload = {
             'al': '1',
@@ -200,7 +205,7 @@ class VK_session(object):
         }
         response = await self.send_post_request(url,payload=payload)
         if not response:
-            return []
+            return ['EOF']
         #response = self.session.post(url, data=payload)
         response_json = json.loads(response.lstrip('<!--'))
         self.next_from_t = response_json['payload'][1][1]['playlist']['nextOffset']
@@ -221,8 +226,12 @@ class VK_session(object):
         #response = self.session.get(url)
         response = await self.send_get_request(url)
         if not response:
-            return []
+            return ['EOF']
+        
         self.section_id_a = search_re(REGEXP['section_id'], response)
+        if not self.section_id_a:
+            return ['EOF']
+        
         url = 'https://vk.com/audio?act=load_catalog_section'
         payload = {
             'al': '1',
@@ -230,15 +239,21 @@ class VK_session(object):
         }
         response = await self.send_post_request(url,payload=payload)
         if not response:
-            return []
+            return ['EOF']
         #response = self.session.post(url, data=payload)
 
         response_json = json.loads(response.lstrip('<!--'))
         self.next_from_a = search_re(REGEXP['data_next'], response_json['payload'][1][0][0])
+        if not self.next_from_a:
+            return ['EOF']
             
-        return self.parse_album_list(response_json['payload'][1][1]['playlists'])
+        album_list = self.parse_album_list(response_json['payload'][1][1]['playlists'])
+        return album_list if self.next_from_a else album_list + ['EOF']
             
     async def load_more_a(self):
+        if not self.next_from_a:
+            return ['EOF']
+        
         url = 'https://vk.com/al_audio.php?act=load_catalog_section'
         payload = {
             'al': '1',
@@ -247,12 +262,12 @@ class VK_session(object):
         }
         response = await self.send_post_request(url,payload=payload)
         if not response:
-            return []
+            return ['EOF']
         #response = self.session.post(url, data=payload)
         response_json = json.loads(response.lstrip('<!--'))
         self.next_from_a = search_re(REGEXP['section_id'], response_json['payload'][1][0][0])
-        
-        return self.parse_album_list(response_json['payload'][1][1]['playlists'])
+        album_list = self.parse_album_list(response_json['payload'][1][1]['playlists'])
+        return album_list if self.next_from_a else album_list + ['EOF']
 
     async def load_playlist_content(self, playlist_data):
         owner_id, playlist_id = playlist_data.split('_')
@@ -270,13 +285,13 @@ class VK_session(object):
         }
         response = await self.send_post_request(url, payload=payload)
         if not response:
-            return []
+            return ['EOF']
         #response = self.session.post(url, data=payload)
         response_json = json.loads(response.lstrip('<!--'))
         if response_json['payload'][1][0] == False:
             print('Error load playlist data')
 
-        return self.parse_audio_list(response_json['payload'][1][0]['list'])
+        return self.parse_audio_list(response_json['payload'][1][0]['list']) + ['EOF']
         
     async def get_link(self, audio_id):
         print(audio_id)
@@ -307,13 +322,16 @@ class VK_session(object):
         url = 'https://vk.com/al_audio.php'
         response = await self.send_post_request(url,payload=payload)
         if not response:
-            return []
+            return ['EOF']
         #response = self.session.post(url, data = payload)
         response_json = json.loads(response.lstrip('<!--'))
 
         if not response_json['payload'][1]: # no permissons
-            return []
-        
+            return ['EOF']
+
+        if not len(response_json['payload'][1][1]['playlists']): # no matches
+            return ['EOF']
+            
         if isglobal:
             return self.search_global(response_json)
         
@@ -321,21 +339,21 @@ class VK_session(object):
             return self.search_user(response_json)
     
     def search_user(self, response_json):
-        if len(response_json['payload'][1][1]['playlists'])==14:
+        if response_json['payload'][1][1]['playlists'][0]['list'][0][11] == 'search_results:search_owned_audios':
             audio_list = self.parse_audio_list(response_json['payload'][1][1]['playlists'][0]['list'])
-            return audio_list
+            return audio_list + ['EOF']
         else:
-            return []
+            return ['EOF']
     
-        
     def search_global(self, response_json):
-        if len(response_json['payload'][1][1]['playlists'])==14:
+        if response_json['payload'][1][1]['playlists'][0]['list'][0][11] == 'search_results:search_owned_audios':
             audio_list = self.parse_audio_list(response_json['payload'][1][1]['playlists'][1]['list'])
-        
-        else:
+            return audio_list + ['EOF']
+        elif response_json['payload'][1][1]['playlists'][0]['list'][0][11] == 'search_results:search_global_audios':
             audio_list = self.parse_audio_list(response_json['payload'][1][1]['playlists'][0]['list'])
-
-        return audio_list
+            return audio_list + ['EOF']
+        else:
+            return ['EOF']
         
 
 
