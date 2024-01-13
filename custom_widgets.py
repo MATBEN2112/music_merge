@@ -26,6 +26,8 @@ from kivy.graphics.vertex_instructions import RoundedRectangle, Line
 from kivy.uix.behaviors import ButtonBehavior
 from kivy.uix.textinput import TextInput
 from kivymd.uix.button import MDIconButton
+from kivy.core.text import Label as CoreLabel
+from kivy.metrics import sp
 import os
 from vk_methods import VK_session
 import shutil
@@ -547,12 +549,14 @@ class VKTrack(TwoLineAvatarIconListItem):
                 widget_size="46dp",
                 progress_clr = self.app.main_clr,
                 hint_clr = self.app.main_clr2,
-                label_clr = (0,0,0,1))
+                label = CoreLabel(text="{}%", font_size=sp(14)),
+                label_clr = (0,0,0,1),
+                body_clr = (0.56, 0.56, 0.56, 1))
         self.ids._right_container.add_widget(self.progress)
         
         key = self.app.meta.new_track(self.text, self.secondary_text) # DB class method
-        
-        task = [(self.text,self.secondary_text,key,self.img,self.session, self.id,self.app,self)]
+        task = {key:self}
+        #task = [(self.text,self.secondary_text,key,self.img,self.session, self.id,self.app,self)]
         asyncio.get_event_loop().create_task(self.app.downloader.download(task,'vk'))
             
     

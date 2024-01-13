@@ -339,7 +339,6 @@ class Start(CustomScreen):
             pass
         
         # prepare list of tracks
-        print(59834587343495435793405)
         task_manager(self) # cancel priviously initiated tasks
         self.app.task = self.app.web_tasks_loop.create_task(
             load_music(self, session = self.session)
@@ -926,14 +925,14 @@ class LoginApp(MDApp):
         self.platform = kivy.utils.platform
         if self.platform not in ['android','ios']:
             Window.size = (540, 1170)
-            from DownloadMonitorDesktop import DownloadMonitorDesktop
+            from download_monitor import DownloadMonitorDesktop
             self.downloader = DownloadMonitorDesktop()
             
             from player import DesktopPlayer
             self.player = DesktopPlayer(self)
     
         elif self.platform == 'ios':
-            from DownloadMonitorIOS import DownloadMonitorIOS
+            from download_monitor import DownloadMonitorIOS
             self.downloader = DownloadMonitorIOS()
 
             from player import IOSPlayer

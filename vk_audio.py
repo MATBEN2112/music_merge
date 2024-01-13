@@ -1,75 +1,7 @@
 import requests
-import pyaes
 import os
-from subprocess import Popen
-import asyncio
 
 CHAR_SET = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMN0PQRSTUVWXYZO123456789+/='
-
-async def run(cmd):
-    proc = await asyncio.create_subprocess_shell(
-        cmd,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE)
-
-    stdout, stderr = await proc.communicate()
-
-    print(f'[{cmd!r} exited with {proc.returncode}]')
-        
-async def m3u8_parser(url, path):
-    try:
-        print('start process')
-        await run(f'ffmpeg -http_persistent false -i {url} {path}')
-        print('end process')
-
-    except Exception as e:
-        print('Exception',e)
-        python_m3u8_parser(url, path)
-
-def python_m3u8_parser(url, path):
-    url = url.rstrip('?siren=1')
-    seg = []
-    response = requests.get(url)
-    if response.status_code>399:
-        return print('You are not logged in')
-    
-    m3u8_file = response.text
-    lines_m3u8_file = m3u8_file.replace('\n','').split('#')[1:]
-    i = 0
-    key_url = url.replace('index.m3u8','key.pub')
-    response = requests.get(key_url)
-    key = response.content
-    data= []
-    for line in lines_m3u8_file:
-        
-        if line.startswith('EXT-X-KEY'):
-            method = line.replace('EXT-X-KEY:', '')
-        if line.startswith('EXTINF'):
-            seg_url = url.replace('index.m3u8',line.split(',')[1])
-            response = requests.get(seg_url)
-            if method.startswith('METHOD=AES-128'):            
-                seg.append(decrypt(response.content, key))
-
-
-            elif method.startswith('METHOD=NONE'):            
-                seg.append(response.content)
-
-            i += 1
-            
-    raw_file = b''.join(seg)
-    with open(path, 'wb') as f:
-        f.write(raw_file)
-
-def decrypt(seg, key):
-    iv = seg[:16]
-    cipher = seg[16:]
-    aes = pyaes.AESModeOfOperationCBC(key, iv = iv)
-    decrypted = b''
-    for i in range(16,len(cipher),16):
-        decrypted += aes.decrypt(seg[i-16:i])    
-
-    return decrypted
-
 
 def encode_url(url, uid): # done
     if url.find('audio_api_unavailable')!=-1:

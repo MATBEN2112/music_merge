@@ -78,7 +78,7 @@ class PlayerUI:
                 # highlighte
                 try: # if UI element loaded try to highlighte element
                     for track_obj in self.current_track_obj.parent.children:
-                        if not isinstance(track_obj, (Track,VKTrack,)):
+                        if not isinstance(track_obj, (Track,VKTrack)):
                             continue
                         if track_obj.track[1] == info_dict['file']:
                             if self.current_track_obj:
@@ -268,7 +268,6 @@ class IOSPlayer(PlayerUI):
         self.track_list = None
         self.album_key = None
         self.app = app
-        #self.audio_bar = [AudioInfo() for _ in range(3)]
         self.IOS_player = autoclass('IOS_player') # [obj-c class IOS_player]
         self.player = self.IOS_player.alloc().init() # [obj-c method of class IOS_player]
         
