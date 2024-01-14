@@ -348,10 +348,16 @@ class IOSPlayer(PlayerUI):
 
     def get_current_track(self):
         info = self.get_info()
+        ########################################### fix obj-c exception
         return (info['key'], info['file'], info['author'], info['song'], info['img'],) if info else (None,)*5
+        ###########################################
         
     def get_info(self):
         info_dict = self.player.get_info() # obj-c method of class IOS_player
+        if 'objectForKey_' in dir(info_dict):
+            print(dir(info_dict))
+            return
+        
         key = info_dict.objectForKey_(objc_str('key')).intValue()       
         author = info_dict.objectForKey_(objc_str('author')).UTF8String()
         if type(author) == bytes:

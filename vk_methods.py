@@ -47,7 +47,7 @@ class VK_session(object):
         self.path = session_obj.app.app_dir + f'/sessions/{self.session_name}/'
         headers = {'User-agent': 'Mozilla/5.0 (Windows NT 10.0; rv:91.0) Gecko/20100101 Firefox/91.0'}
         session_timeout =   aiohttp.ClientTimeout(total=None,sock_connect=5,sock_read=5)
-        self.session = aiohttp.ClientSession(headers = headers, timeout = session_timeout)
+        self.session = aiohttp.ClientSession(headers = headers, timeout = session_timeout,connector=aiohttp.TCPConnector(verify_ssl=False))
         
 
         try:
