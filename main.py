@@ -46,220 +46,212 @@ from custom_widgets import *
 # 9) track highlight does not work properly sometimes
 # 10) side menu touch event should not trigger scrollview and scrollview elements
 
-async def load_music(
-    screen,
-    track_list = None,
-    offset = 0,
-    album_key = None,
-    session = None,
-    search_query='',
-    global_search=False
-    ):
+
+
+class CustomScreen(Screen):
+    def prevent_loading_same(self,album,session = None):
+        if 'app' not in dir(self):
+            self.app = MDApp.get_running_app()
+                
+        if 'session' in dir(self) and 'track_list' in dir(self): # prevent loading same twise
+            if album:
+                if self.session == session and self.album == album:
+                    return True
+
+            else:
+                if self.session == session:
+                    return True
+            
+        return False
+
+    def task_manager(self):
+        if self.app.task and not self.app.task.done():
+            self.app.task.cancel()
+                
+            for screen in self.app.manager.screens:
+                if 'session' in dir(screen) and screen.name != self.name:
+                    delattr(screen,'session')
+              
+        self.ids.container.clear_widgets()
     
-    app = MDApp.get_running_app()
+    async def load_music(
+        self,
+        track_list = None,
+        offset = 0,
+        album_key = None,
+        search_query='',
+        global_search=False
+        ):
 
-    number_to_load = 50
-    isend = False
-    state = ''
-    if app.audio_listing_key == 'user':
-        if search_query: # search audio
-            app.load_event_start()
-            track_list = search_audio(app.main_screen.track_list,q=search_query)
-            state = 'search user audio'
-            
-        elif not track_list: # load all
-            app.load_event_start()
-            track_list = app.meta.track_list(key = album_key) # [DB class method]
-            state = 'load user audio'
-
-        for track in track_list[offset:offset + number_to_load]:
-            if 'temp' in track:
-                continue
-            if track == 'EOF':
-                isend = True
-
-            else:
-                track_obj = Track(app, track)
-                if album_key == app.player.album_key and app.player.get_current_track()[0:5] == track[0:5]: # Now playing UI update
-                    track_obj.highlighte()
-                    app.player.current_track_obj = track_obj
-                        
-                screen.ids.container.add_widget(track_obj)
+        number_to_load = 50
+        isend = False
+        state = ''
+        if self.app.audio_listing_key == 'user':
+            if search_query: # search audio
+                self.app.load_event_start()
+                track_list = search_audio(self.app.main_screen.track_list,q=search_query)
+                state = 'search user audio'
                 
-    elif app.audio_listing_key == 'vk': # vk api
-        if album_key: # load album
-            app.load_event_start()
-            track_list = await session.load_playlist_content(album_key)
-            state = 'load vk album audio'
+            elif not track_list: # load all
+                self.app.load_event_start()
+                track_list = self.app.meta.track_list(key = album_key) # [DB class method]
+                state = 'load user audio'
 
-        elif search_query: # search audio
-            app.load_event_start()
-            track_list = await session.search(global_search,q = search_query)
-            state = 'search vk audio'
+            for track in track_list[offset:offset + number_to_load]:
+                if 'temp' in track:
+                    continue
+                if track == 'EOF':
+                    isend = True
 
-        elif track_list and len(track_list[offset:offset+number_to_load]) < number_to_load: # load more
-            track_list += await session.load_more_t()
-            state = 'lode more vk audio'
-            
-        elif not track_list: # load user audios
-            app.load_event_start()
-                
-            track_list = await session.load_user_audios()
-            state = 'load vk audio'
-            
-        for track in track_list[offset:offset + number_to_load]:
-            if track == 'EOF': # list is ended
-                isend = True
-                
-            else:
-                track_obj = VKTrack(session,app,track)
-                if album_key == app.player.album_key and app.player.get_current_track()[0:5] == track[0:5]: # Now playing UI update
-                    track_obj.highlighte()
-                    app.player.current_track_obj = track_obj
-                        
-                screen.ids.container.add_widget(track_obj)
-                
-    elif app.audio_listing_key == 'ya':
-        pass
+                else:
+                    track_obj = Track(self.app, track)
+                    if album_key == self.app.player.album_key and self.app.player.get_current_track()[0:5] == track[0:5]: # Now playing UI update
+                        track_obj.highlighte()
+                        self.app.player.current_track_obj = track_obj
+                            
+                    self.ids.container.add_widget(track_obj)
                     
-    elif app.audio_listing_key == 'selection':
-        if not track_list: # load all
-            track_list = app.meta.track_list(key = album_key) # [DB class method]
+        elif self.app.audio_listing_key == 'vk': # vk api
+            if album_key: # load album
+                self.app.load_event_start()
+                track_list = await self.session.load_playlist_content(album_key)
+                state = 'load vk album audio'
+
+            elif search_query: # search audio
+                self.app.load_event_start()
+                track_list = await self.session.search(global_search,q = search_query)
+                state = 'search vk audio'
+
+            elif track_list and len(track_list[offset:offset+number_to_load]) < number_to_load: # load more
+                track_list += await self.session.load_more_t()
+                state = 'lode more vk audio'
+                
+            elif not track_list: # load user audios
+                self.app.load_event_start()
+                    
+                track_list = await self.session.load_user_audios()
+                state = 'load vk audio'
+                
+            for track in track_list[offset:offset + number_to_load]:
+                if track == 'EOF': # list is ended
+                    isend = True
+                    
+                else:
+                    track_obj = VKTrack(self.session,self.app,track)
+                    if album_key == self.app.player.album_key and self.app.player.get_current_track()[0:5] == track[0:5]: # Now playing UI update
+                        track_obj.highlighte()
+                        self.app.player.current_track_obj = track_obj
+                            
+                    self.ids.container.add_widget(track_obj)
+                    
+        elif self.app.audio_listing_key == 'ya':
+            pass
+                        
+        elif self.app.audio_listing_key == 'selection':
+            if not track_list: # load all
+                track_list = self.app.meta.track_list(key = album_key) # [DB class method]
+                
+            for track in track_list[offset:offset + number_to_load]:
+                if 'temp' in track:
+                    continue
+                if track == 'EOF': # list is ended
+                    isend = True
+
+                else:
+                    self.ids.container.add_widget(TrackWithCheckBox(self.app, track))
+
+        if len(track_list)==1: # list container is empty
+            self.ids.container.add_widget(NoAvailableTracks())
             
-        for track in track_list[offset:offset + number_to_load]:
-            if 'temp' in track:
-                continue
-            if track == 'EOF': # list is ended
-                isend = True
-
-            else:
-                screen.ids.container.add_widget(TrackWithCheckBox(app, track))
-
-    if len(track_list)==1: # list container is empty
-        screen.ids.container.add_widget(NoAvailableTracks())
-        
-    elif isend:
-        screen.ids.container.add_widget(EndOfTheList())
-        
-    print(
-        f''''Load user audios.\n
+        elif isend:
+            self.ids.container.add_widget(EndOfTheList())
+            
+        print(
+            f''''Load user audios.\n
 State: {state}
-Screen: {screen.name}
-Listing_key: {app.audio_listing_key}
+Screen: {self.name}
+Listing_key: {self.app.audio_listing_key}
 Album key: {album_key}
 Offset: {offset}
 Search query: {search_query}
 Global search: {global_search}
 Count: {len(track_list)}'''
-        )
-    if screen.name == 'album':
-        screen.ids.count.text = str(len(track_list)) + " track in album"
-    screen.track_list = track_list
-    screen.isend = isend
-    app.load_event_stop()
+            )
+        if self.name == 'album':
+            self.ids.count.text = str(len(track_list)) + " track in album"
+        self.track_list = track_list
+        self.isend = isend
+        self.app.load_event_stop()
 
-async def load_albums(
-    screen,
-    album_list = None,
-    offset = 0,
-    session = None,
-    search_query='',
-    global_search=False
-    ):
-    
-    app = MDApp.get_running_app()
+    async def load_albums(self,
+        album_list = None,
+        offset = 0,
+        search_query='',
+        global_search=False
+        ):
 
-    number_to_load = 12
-    isend = False
-    
-    if app.audio_listing_key == 'user':
-        if search_query: # search audio
+        number_to_load = 12
+        isend = False
+        
+        if self.app.audio_listing_key == 'user':
+            if search_query: # search audio
+                pass
+
+            elif not album_list: # load all
+                self.app.load_event_start()
+                album_list = self.app.meta.album_list() # [DB class method]
+                
+            for album in album_list[offset:offset + number_to_load]:
+                if 'temp' in album:
+                    continue
+
+                if album == 'EOF':
+                    isend = True
+                    
+                else:
+                    self.ids.container.add_widget(AlbumButton(self.app, album))
+
+
+        elif self.app.audio_listing_key == 'vk':
+            if search_query: # search album
+                pass
+
+            elif album_list and len(album_list[offset:offset+number_to_load]) < number_to_load: # load more
+                album_list += await self.session.load_more_a()
+                
+            elif not album_list: # load user albums
+                self.app.load_event_start()
+                album_list = await self.session.load_playlists()
+                
+            for album in album_list[offset:offset + number_to_load]:
+                if album == 'EOF': # list is ended
+                    isend = True
+                    
+                else:
+                    album_obj = VKAlbumButton(self.session, self.app, album)
+                    self.ids.container.add_widget(album_obj)
+
+        elif self.app.audio_listing_key == 'ya':
             pass
 
-        elif not album_list: # load all
-            app.load_event_start()
-            album_list = app.meta.album_list() # [DB class method]
-            
-        for album in album_list[offset:offset + number_to_load]:
-            if 'temp' in album:
-                continue
+        elif self.app.audio_listing_key == 'selection':
+            self.app.load_event_start()
+            album_list = self.app.meta.album_list() # [DB class method]
+            for album in album_list:
+                self.ids.container.add_widget(AlbumButton(self.app, album))
 
-            if album == 'EOF':
-                isend = True
-                
-            else:
-                screen.ids.container.add_widget(AlbumButton(app, album))
-
-
-    elif app.audio_listing_key == 'vk':
-        if search_query: # search album
-            pass
-
-        elif album_list and len(album_list[offset:offset+number_to_load]) < number_to_load: # load more
-            album_list += await session.load_more_a()
-            
-        elif not album_list: # load user albums
-            app.load_event_start()
-            album_list = await session.load_playlists()
-            
-        for album in album_list[offset:offset + number_to_load]:
-            if album == 'EOF': # list is ended
-                isend = True
-                
-            else:
-                album_obj = VKAlbumButton(session, app, album)
-                screen.ids.container.add_widget(album_obj)
-
-    elif app.audio_listing_key == 'ya':
-        pass
-
-    elif app.audio_listing_key == 'selection':
-        app.load_event_start()
-        album_list = app.meta.album_list() # [DB class method]
-        for album in album_list:
-            screen.ids.container.add_widget(AlbumButton(app, album))
-
-    screen.album_list = album_list
-    screen.isend = isend
-    print(
-        f''''Load user albums.\n
-Screen: {screen.name}
+        self.album_list = album_list
+        self.isend = isend
+        print(
+            f''''Load user albums.\n
+Screen: {self.name}
 Offset: {offset}
 Search query: {search_query}
 Global search: {global_search}
 Count: {len(album_list)}'''
-        )
-    app.load_event_stop()
-
-
-def task_manager(root):
-    if root.app.task and not root.app.task.done():
-        root.app.task.cancel()
-                
-        for screen in root.app.manager.screens:
-            if 'session' in dir(screen) and screen.name != root.name:
-                delattr(screen,'session')
-
-                       
-    root.ids.container.clear_widgets()
-
-
-def prevent_loading_same(screen,album,session = None):
-    if 'app' not in dir(screen):
-        screen.app = MDApp.get_running_app()
-                
-    if 'session' in dir(screen) and 'track_list' in dir(screen): # prevent loading same twise
-        if album:
-            if screen.session == session and screen.album == album:
-                return True
-
-        else:
-            if screen.session == session:
-                return True
-            
-    return False
-
-class CustomScreen(Screen):
+            )
+        self.app.load_event_stop()
+        
     async def force_screen_update(self,scroll_view):
         if 'session' not in dir(self):
             return
@@ -267,19 +259,19 @@ class CustomScreen(Screen):
         if self.name == 'start':
             scroll_view.loading_container_up.load_sign.start_anim()
             self.ids.container.clear_widgets()
-            await load_music(self, session = self.session)
+            await self.load_music()
             scroll_view.loading_container_up.load_sign.stop_anim()
         
         elif self.name == 'album':
             scroll_view.loading_container_up.load_sign.start_anim()
             self.ids.container.clear_widgets()
-            await load_music(self, album_key = self.album[0], session = self.session)
+            await self.load_music(album_key = self.album[0])
             scroll_view.loading_container_up.load_sign.stop_anim()
 
         elif self.name == 'album_list':
             scroll_view.loading_container_up.load_sign.start_anim()
             self.ids.container.clear_widgets()
-            await load_albums(self, session = self.session)
+            await self.load_albums()
             scroll_view.loading_container_up.load_sign.stop_anim()
 
 #################
@@ -287,7 +279,7 @@ class CustomScreen(Screen):
 #################
 class Start(CustomScreen):
     def audios_listing(self, session = None):
-        if prevent_loading_same(self, None, session=session):
+        if self.prevent_loading_same(None, session=session):
             print('Already loaded')
             return
              
@@ -339,9 +331,9 @@ class Start(CustomScreen):
             pass
         
         # prepare list of tracks
-        task_manager(self) # cancel priviously initiated tasks
+        self.task_manager() # cancel priviously initiated tasks
         self.app.task = self.app.web_tasks_loop.create_task(
-            load_music(self, session = self.session)
+            self.load_music()
         ) # [async music loader]
 
 
@@ -372,11 +364,9 @@ class Start(CustomScreen):
         scroll_view.loading_container_down.load_sign.start_anim()
         c = len(self.ids.container.children)
    
-        await load_music(
-            self,
+        await self.load_music(
             track_list = self.track_list,
-            offset = c,
-            session = self.session
+            offset = c
         ) # [async music loader]
         scroll_view.loading_container_down.load_sign.stop_anim()
         
@@ -399,7 +389,7 @@ class Player(CustomScreen):
 ##################         
 class Album(CustomScreen):
     def open_album(self, album, session = None):
-        if prevent_loading_same(self, album, session = session):
+        if self.prevent_loading_same(album, session = session):
             print('Already loaded')
             return
 
@@ -439,11 +429,9 @@ class Album(CustomScreen):
             pass
         
         # prepare track listing
-        task_manager(self) # cancel previously initiated tasks
-        self.app.task = self.app.web_tasks_loop.create_task(load_music(
-            self,
-            album_key = self.album[0],
-            session = self.session
+        self.task_manager() # cancel previously initiated tasks
+        self.app.task = self.app.web_tasks_loop.create_task(self.load_music(
+            album_key = self.album[0]
         )) # [async music loader]
         
     def close_album(self):
@@ -511,11 +499,9 @@ class Album(CustomScreen):
         scroll_view.loading_container_down.load_sign.start_anim()
         c = len(self.ids.container.children)
    
-        await load_music(
-            self,
+        await self.load_music(
             track_list = self.track_list,
-            offset = c,
-            session = self.session
+            offset = c
         ) # [async music loader]
         scroll_view.loading_container_down.load_sign.stop_anim()
  
@@ -526,7 +512,7 @@ class Album(CustomScreen):
 class AlbumList(CustomScreen):
     ### BASE METHODS ###
     def open_album_list(self,session=None):
-        if prevent_loading_same(self, None, session=session):
+        if self.prevent_loading_same(None, session=session):
             print('Already loaded')
             return
         
@@ -550,9 +536,9 @@ class AlbumList(CustomScreen):
         elif self.app.audio_listing_key == 'selection':
             pass
         #load albums
-        task_manager(self) # cancel priviously initiated tasks
+        self.task_manager() # cancel priviously initiated tasks
         self.app.task = self.app.web_tasks_loop.create_task(
-            load_albums(self,session = self.session)
+            self.load_albums()
         ) # [async album loader]
                 
     def close_album_list(self):
@@ -577,11 +563,9 @@ class AlbumList(CustomScreen):
         scroll_view.loading_container_down.load_sign.start_anim()
         c = len(self.ids.container.children)
    
-        await load_albums(
-            self,
+        await self.load_albums(
             album_list = self.album_list,
-            offset = c,
-            session = self.session
+            offset = c
         ) # [async music loader]
         scroll_view.loading_container_down.load_sign.stop_anim()
         
@@ -601,17 +585,15 @@ class Search(CustomScreen):
             self.app = MDApp.get_running_app()
 
         # prepare track listing
-        task_manager(self) # cancel priviously initiated tasks
+        self.task_manager() # cancel priviously initiated tasks
         self.app.task = self.app.web_tasks_loop.create_task(
-            load_music(self, session = self.session)
+            self.load_music()
         ) # [async music loader]
         
     def search(self,q):
         self.dd.search(q)
-        task_manager(self) # cancel priviously initiated tasks
-        self.app.task = self.app.web_tasks_loop.create_task(load_music(
-            self,
-            session = self.session,
+        self.task_manager() # cancel priviously initiated tasks
+        self.app.task = self.app.web_tasks_loop.create_task(self.load_music(
             search_query=q,
             global_search=self.global_mode
         )) # [async music loader]
@@ -936,7 +918,7 @@ class LoginApp(MDApp):
             self.downloader = DownloadMonitorIOS()
 
             from player import IOSPlayer
-            self.player = IOSPlayer(self)
+            self.player = IOSPlayer()
     
         elif self.platform == 'android':
             pass
