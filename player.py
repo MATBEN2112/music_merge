@@ -17,6 +17,27 @@ except:
     pass
 
 class PlayerUI:
+    def start_playback(self, track_obj):
+        self.pause()
+        # save album id if audio in album
+        self.album_key = track_obj.album_key
+        # save track data
+        if isinstance(track_obj, Track):
+            if self.album_key:
+                self.track_list = self.app.album_screen.track_list
+            else:
+                self.track_list = self.app.main_screen.track_list
+                    
+        elif isinstance(track_obj, VKTrack):
+            if self.album_key:
+                self.track_list = self.app.album_screen.track_list
+            else:
+                self.track_list = self.app.main_screen.track_list
+                
+        self.current_track = track_obj.track
+        # work with UI and load audio to player
+        self._start_player_session(track_obj)
+        
     def _start_player_session(self, track_obj):
         ''' Function starts music play. Cases '''
         # clean old player widgets if exists
@@ -111,6 +132,41 @@ class PlayerUI:
         if self.app.audio_bar.status == 'open':
             self.app.audio_bar.hide()
 
+    def _next(self,n):
+        for track in self.track_list: 
+            if track[0:5] == self.current_track[0:5]:
+                i = self.track_list.index(track)
+                break
+                
+        if n+i < 0:
+            print("List out of range.")
+            self.pause()
+            self.seek(0.1)
+            return
+        
+        try:
+            if self.track_list[n+i] == 'EOF':
+                print("List out of range.")
+                self.pause()
+                self.seek(0.1)
+                return
+            else:
+                self.current_track = self.track_list[n+i]
+                        
+        except IndexError:
+            print('Track data is not loaded')
+            if isinstance(self.current_track_obj, VKTrack):
+                self.track_list += self.current_track[5].load_more_t()
+                                 
+            if self.track_list[n+i] == 'EOF':
+                print("List out of range.")
+                self.pause()
+                self.seek(0.1)
+                return
+            else:
+                self.current_track = self.track_list[n+i]
+
+
 class DesktopPlayer(PlayerUI):
     def __init__(self, app):
         self.current_track = None
@@ -119,27 +175,6 @@ class DesktopPlayer(PlayerUI):
         self.album_key = None
         self.app = app
         self.player = None
-
-    def start_playback(self, track_obj):
-        self.pause()
-        # save album id if audio in album
-        self.album_key = track_obj.album_key
-        # save track data
-        if isinstance(track_obj, Track):
-            if self.album_key:
-                self.track_list = self.app.album_screen.track_list
-            else:
-                self.track_list = self.app.main_screen.track_list
-                    
-        elif isinstance(track_obj, VKTrack):
-            if self.album_key:
-                self.track_list = self.app.album_screen.track_list
-            else:
-                self.track_list = self.app.main_screen.track_list
-                
-        self.current_track = track_obj.track
-        # work with UI and load audio to player
-        self._start_player_session(track_obj)
 
     def load(self):
         if not self.current_track_obj:
@@ -183,38 +218,7 @@ class DesktopPlayer(PlayerUI):
             self.album_key = None
         
     def play_next(self, n):
-        for track in self.track_list: 
-            if track[0:5] == self.current_track[0:5]:
-                i = self.track_list.index(track)
-                break
-                
-        if n+i < 0:
-            print("List out of range.")
-            self.pause()
-            self.seek(0.1)
-            return
-        
-        try:
-            if self.track_list[n+i] == 'EOF':
-                print("List out of range.")
-                self.pause()
-                self.seek(0.1)
-                return
-            else:
-                self.current_track = self.track_list[n+i]
-                        
-        except IndexError:
-            print('Track data is not loaded')
-            if isinstance(self.current_track_obj, VKTrack):
-                self.track_list += self.current_track[5].load_more_t()
-                                 
-            if self.track_list[n+i] == 'EOF':
-                print("List out of range.")
-                self.pause()
-                self.seek(0.1)
-                return
-            else:
-                self.current_track = self.track_list[n+i]
+        self._next(n)
 
         self.pause()
         self.seek(0.1)
@@ -272,29 +276,11 @@ class IOSPlayer(PlayerUI):
         self.app = app
         self.IOS_player = autoclass('IOS_player') # [obj-c class IOS_player]
         self.player = self.IOS_player.alloc().init() # [obj-c method of class IOS_player]
-        
-    def start_playback(self, track_obj):
-        self.stop()
-        # save album id if audio in album
-        self.album_key = track_obj.album_key
-        # save track data
-        if isinstance(track_obj, Track):
-            if self.album_key:
-                self.track_list = self.app.album_screen.track_list
-            else:
-                self.track_list = self.app.main_screen.track_list
-                    
-        elif isinstance(track_obj, VKTrack):
-            if self.album_key:
-                self.track_list = self.app.album_screen.track_list
-            else:
-                self.track_list = self.app.main_screen.track_list
-                
-        self.current_track = track_obj.track
-        # work with UI and load audio to player
-        self._start_player_session(track_obj)
 
     def load(self):
+        if not self.current_track_obj:
+            return
+        
         track_arr = NSMutableArray.arrayWithCapacity_(len(self.track_list))
         for track in self.track_list:
             if track == 'EOF':
@@ -306,12 +292,17 @@ class IOSPlayer(PlayerUI):
                 fn = NSString.alloc().initWithUTF8String_(track[1])
                 track_arr.addObject_(objc_arr(fn, author, song, img))
 
-        key = self.track_list.index(self.current_track[0:5])
+        key = self.track_list.index(self.current_track)
         if isinstance(self.current_track_obj, Track):
             self.player.loadPlaylist_key_(track_arr,key) # obj-c method of class IOS_player
             
         elif isinstance(self.current_track_obj, VKTrack):
             uid = self.current_track[5].u_id
+            if self.current_track.album_key:
+                section_id,next_from = None,None
+            else:
+                section_id,next_from = self.current_track[5].section_id_t, self.current_track[5].next_from_t
+                
             cookies_list = self.current_track[5].cookies_list
             cookies_arr = NSMutableArray.arrayWithCapacity_(len(cookies_list))
             for cookie in cookies_list:
@@ -321,7 +312,7 @@ class IOSPlayer(PlayerUI):
                 path = NSString.alloc().initWithUTF8String_(cookie[3])
                 cookies_arr.addObject_(objc_arr(name, value, domain, path))
 
-            self.player.loadVKPlaylist_key_cookies_uid(track_arr, key, cookies_arr,uid) # obj-c method of class IOS_player
+            self.player.loadVKPlaylist_key_cookies_uid_sectionID_nextFrom_(track_arr, key, cookies_arr,uid,section_id,next_from) # obj-c method of class IOS_player
             
         
     def play(self):
@@ -333,7 +324,9 @@ class IOSPlayer(PlayerUI):
     def stop(self):
         self.player.stop() # obj-c method of class IOS_player
 
-    def play_next(self, n): 
+    def play_next(self, n):
+        self._next(n)
+        
         if n > 0:
             self.player.next() # obj-c method of class IOS_player
         elif n < 0:
@@ -350,9 +343,7 @@ class IOSPlayer(PlayerUI):
 
     def get_current_track(self):
         info = self.get_info()
-        ########################################### fix obj-c exception
         return (info['key'], info['file'], info['author'], info['song'], info['img'],) if info else (None,)*5
-        ###########################################
         
     def get_info(self):
         info_dict = self.player.get_info() # obj-c method of class IOS_player
@@ -384,8 +375,5 @@ class IOSPlayer(PlayerUI):
         song_pos = info_dict.objectForKey_(objc_str('pos')).floatValue()
         status = info_dict.objectForKey_(objc_str('status')).boolValue()
         info_dict = {'key':key, 'author':author, 'song':song, 'file':file, 'img':img, 'song_len':song_len, 'song_pos':song_pos,'status':status}
-        #print(info_dict)
+        print(info_dict)
         return info_dict
-
-    def test(self):
-        self.player.test_func() # obj-c method of class IOS_player

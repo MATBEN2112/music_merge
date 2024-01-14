@@ -890,7 +890,7 @@ class LoginApp(MDApp):
             direction = 'bottom',
             border = 0,
             low_priority=(Button,ScrollView,SideMenu),
-            swipe_threshold = 0.5)
+            swipe_threshold = 0.7)
         
         self.main_screen = Start(name='start')
         self.player_screen = Player(name='player')
