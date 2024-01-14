@@ -43,8 +43,6 @@ from kivy.animation import Animation
 from kivy.properties import (
     NumericProperty, StringProperty, BooleanProperty)
 
-from kivy.uix.carousel import Carousel
-
 from drop_down_resent import DropDownResent
 from ticker import Ticker
 from updatable_scrollview import UpdatableScrollView
@@ -147,11 +145,11 @@ class AudioInfo(MDBoxLayout):
         status = kwargs.get('status')
         
         if status == "closed" or not status:
-            self.y = -self.height
+            self.y = -self.height*3
             self.opacity = 0
             
         elif status == "open":
-            self.y = self.height
+            self.y = self.height/3.5
             self.opacity = 1
 
     def hide(self):
@@ -160,7 +158,7 @@ class AudioInfo(MDBoxLayout):
             return
         
         self.status = "closed"
-        Animation(y = -self.height/3.5, opacity = 0,**self.anim_kwargs).start(self)
+        Animation(y = -self.height*3, opacity = 0,**self.anim_kwargs).start(self)
 
     def show(self):
         print(self.pos_hint)
@@ -605,12 +603,12 @@ class VKAlbumButton(MDBoxLayout, TouchBehavior):
             self.app.manager.get_screen('album').open_album(self.album,session = self.session)
 
 class TopAppBarMenuElem(MDRelativeLayout):
-    def  __init__(self, img, pos, func=None):
+    def  __init__(self,app, img, pos, func=None):
         super(TopAppBarMenuElem, self).__init__()
         self.pos_hint = {'center_x':pos[0], 'center_y':pos[1]}
         self.size_hint = (None,None)
         self.size = ("40dp","40dp")
-        self.md_bg_color= "#3F6668"
+        self.md_bg_color= app.btn_hitbox_clr
         btn = Button(background_color=[0,0,0,0],
                      pos_hint = {'center_x':.5, 'center_y':.5},
                      size = ("60dp","60dp"),
@@ -624,8 +622,5 @@ class TopAppBarMenuElem(MDRelativeLayout):
         self.add_widget(icon)
 
 class SideMenu(MDNavigationDrawer):
-    ''' Child widgets list ignoring bubbling when swipe is triggered
-    (default: prevents unexpected button clicks).
-    Swipe priority is higher than priority of interaction with listed widgets. '''
-    low_priority = ListProperty((ImageLeftWidgetWithoutTouch,UpdatableScrollView,Track))
-
+    # FIX on opening clicking children
+    pass

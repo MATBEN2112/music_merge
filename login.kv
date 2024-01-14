@@ -1,4 +1,5 @@
-
+#:import sp kivy.metrics.sp
+#:import dp kivy.metrics.dp
 <SelectionBottomMenu>:
 	id: selection_row
     md_bg_color: app.main_clr
@@ -242,72 +243,86 @@
 
 
 <Login>:
-	MDRelativeLayout:
-		md_bg_color: [0.5,0.5,1,1]
+    MDBoxLayout:
+        id: login_container
+        orientation: "vertical"
+        canvas.before:
+            Color:
+                rgba: app.main_clr2
 
-		id: login_container
-        MDBoxLayout:
-        	id: menu_row
+            Rectangle:
+                pos: self.pos
+                size: self.size
+
+        MDRelativeLayout:
+            id: menu_row
             orientation: "vertical"
             size: (root.size[0],"100dp")
             size_hint: (None,None)
             pos_hint: {'center_x':0.5, 'center_y':0.95}
-        	md_bg_color: "#232217"
-        	specific_text_color: "white"
+            md_bg_color: app.main_clr
+
+            MDRelativeLayout:
+                size: ("40dp","40dp")
+                size_hint: (None,None)
+                pos_hint: {'center_x':0.1, 'center_y':0.35} 
+
+                Image:
+                    pos_hint: {'center_x':0.5, 'center_y':0.5} 
+                    source: "./icons/back.png"
+                    size: ("40dp","40dp")
+                    size_hint: (None,None)
+                Button:
+                    background_color: 0,0,0,0
+                    pos_hint: {'center_x':0.5, 'center_y':0.5} 
+                    size: ("60dp","60dp")
+                    size_hint: (None,None)
+                    on_release: root.close_login_page()
             
-        Image:
-            pos_hint: {'center_x':0.9, 'center_y':0.92} 
-            source: "./icons/back.png"
-            size: ("65dp","65dp")
-            size_hint: (None,None)
-        Button:
-            background_color: 0,0,0,0
-            pos_hint: {'center_x':0.9, 'center_y':0.92} 
-            size: ("65dp","65dp")
-            size_hint: (None,None)
-            on_release: root.close_login_page()
-            
-        Image:
-        	id: login_img
-			size: ("80dp","80dp")
-            size_hint: (None,None)
-            source: ""
-            pos_hint: {'center_x':0.5, 'center_y':0.81}
-
-
-        MDTextField:
-        	id: login
-        	multiline:False
-            hint_text: "Phone"
-        	font_size:'32sp'
-			pos_hint:{'center_x':0.5, 'center_y':0.7}
-			size: (root.size[0]*0.8,"100dp")
-            size_hint: (None,None)
-
-        MDTextField:
-        	id: password
-        	multiline:False
-            hint_text: "Password"
-        	font_size:'32sp'
-			pos_hint:{'center_x':0.5, 'center_y':0.55}
-			size: (root.size[0]*0.8,"100dp")
-            size_hint: (None,None)
-        MDLabel:
-        	id: error
-        	text:'fdsfds123dgbdfbdgffdgfdg'
-        	font_size:'180sp'
-        	#pos_hint: {'center_x':0.5, 'center_y':0.4}
-            #haling: "center"
-        	#text_color: "#11b5b1"
         MDRelativeLayout:
-            id: action
+            Image:
+            	id: login_img
+    			size: ("80dp","80dp")
+                size_hint: (None,None)
+                source: ""
+                pos_hint: {'center_x':0.5, 'center_y':0.81}
+
+
+            MDTextField:
+            	id: login
+            	multiline:False
+                hint_text: "Phone"
+            	font_size:'32sp'
+    			pos_hint:{'center_x':0.5, 'center_y':0.7}
+    			size: (root.size[0]*0.8,"100dp")
+                size_hint: (None,None)
+
+            MDTextField:
+            	id: password
+            	multiline:False
+                hint_text: "Password"
+            	font_size:'32sp'
+    			pos_hint:{'center_x':0.5, 'center_y':0.55}
+    			size: (root.size[0]*0.8,"100dp")
+                size_hint: (None,None)
+            MDLabel:
+            	id: error
+            	text:'fdsfds123dgbdfbdgffdgfdg'
+            	font_size:'18sp'
+                size_hint: (None,None)
+                #size: self.texture_size
+            	pos_hint: {'center_x':0.5, 'center_y':0.4}
+                haling: "center"
+            	text_color: "#11b5b1"
+            MDRelativeLayout:
+                id: action
 
 
 #:import Factory kivy.factory.Factory
 <LoginPopup@Popup>:
     title: ""
     size_hint: (None, None)
-    size: ("420dp","230dp")
+    size: ("300dp","200dp")
     separator_height: 0
     background_color: "#b5b9ba"
 
@@ -331,47 +346,56 @@
                 width: 2
                 rounded_rectangle: (self.x - 20, self.y - 20, self.width + 40, self.height + 60, 10)
 
-        MDRelativeLayout:
-        
+        BoxLayout:
+            orientation: "vertical"
             Label:
                 text: 'Choose media'
                 font_size: '28sp'
                 color: "#9539ba"
                 size_hint: (None, None)
                 height: self.texture_size[1] + dp(10)
-                pos_hint: {'center_x':0.5, 'center_y':0.99}
+                pos_hint: {'center_x':0.5, 'y':1.6}
 
 
+            BoxLayout:
+                spacing: "10dp"
+                padding: [(self.size[0]-dp(110))/2,(self.size[1]-dp(50))/2]
+                RelativeLayout:
+                    size: ("50dp","50dp")
+                    size_hint: (None,None)
+                    Image:
+                        id: vk
+                        size: ("50dp","50dp")
+                        size_hint: (None,None)
+                        source: "./icons/vk.png"
+                        pos_hint: {'center_x':0.5, 'center_y':0.5}
 
-            Image:
-                id: vk
-                size: ("120dp","120dp")
-                size_hint: (None,None)
-                source: "./icons/vk.png"
-                pos_hint: {'center_x':0.35, 'center_y':0.5}
+            	    Button:
 
-    	    Button:
+                        size: ("50dp","50dp")
+                        size_hint: (None,None)
+                        pos_hint: {'center_x':0.5, 'center_y':0.5}
+                        on_press: app.switch_to_login(root.ids.vk.source, root)
+                        opacity: 0.1
 
-                size: ("120dp","120dp")
-                size_hint: (None,None)
-                pos_hint: {'center_x':0.35, 'center_y':0.5}
-                on_press: app.switch_to_login(root.ids.vk.source, root)
-                opacity: 0.1
+                RelativeLayout:
+                    size: ("50dp","50dp")
+                    size_hint: (None,None)
 
-            Image:
-                id: ya
-                size: ("120dp","120dp")
-                size_hint: (None,None)
-                source:  "./icons/ya.png"
-                pos_hint: {'center_x':0.65, 'center_y':0.5}
+                    Image:
+                        id: ya
+                        size: ("50dp","50dp")
+                        size_hint: (None,None)
+                        source:  "./icons/ya.png"
+                        pos_hint: {'center_x':0.5, 'center_y':0.5}
 
-            Button:
+                    Button:
 
-                size: ("120dp","120dp")
-                size_hint: (None,None)
-                pos_hint: {'center_x':0.65, 'center_y':0.5}
-        	    on_press: app.switch_to_login(root.ids.ya.source, root)
-                opacity: 0.1
+                        size: ("50dp","50dp")
+                        size_hint: (None,None)
+                        pos_hint: {'center_x':0.5, 'center_y':0.5}
+                	    on_press: app.switch_to_login(root.ids.ya.source, root)
+                        opacity: 0.1
 
 
 
@@ -735,104 +759,108 @@
         MDRelativeLayout:
             id: search_row
             orientation: "vertical"
-            size: (root.size[0],"160dp")
+            size: (root.size[0],"105dp")
             size_hint: (None,None)
-            pos_hint: {'center_x':0.5, 'center_y':0.9}
+            pos_hint: {'center_x':0.5, 'center_y':0.95}
             md_bg_color: app.main_clr
-            MDBoxLayout:
-                id: search_inner
-                height: "100dp"
-                size_hint: (1,None)
-                padding: ["10dp","10dp","10dp","10dp"]
-                spacing: "5dp"
-                MDRelativeLayout:
-                    id: back_btn_layout
-                    pos_hint: {'center_y':.5}
-                    size: ("60dp","60dp")
-                    size_hint: (None,None)
 
+            MDRelativeLayout:
+                id: back_btn_layout
+                pos_hint: {'center_x':0.1,'center_y':.35}
+                size: ("50dp","50dp")
+                size_hint: (None,None)
+                md_bg_color: app.btn_hitbox_clr
+
+                Button:
+                    background_color: [0,0,0,0]
+                    pos_hint: {'center_x':.5, 'center_y':.5}
+                    size: ("50dp","50dp")
+                    size_hint: (None,None)
+                    on_release: root.close_search()
+                Image:
+                    pos_hint: {'center_x':.5, 'center_y':.5}
+                    size: ("30dp","30dp")
+                    size_hint: (None,None)
+                    source: "./icons/back.png"
+
+
+            MDRelativeLayout:
+                id: search_input_outer
+                pos_hint: {'center_x':0.57,'center_y':.35}
+                size: (root.size[0]*0.8,"55dp")
+                size_hint: (None,None)
+
+                TextInput:
+                    id: search_input
+                    multiline: False
+                    font_size: '20sp'
+                    padding_y: [(self.height)/4, 0]
+                    pos_hint: {"center_x": .48,"center_y": .5}
+                    size_hint: (None,None)
+                    cursor_color: (1,0,0,1)
+                    hint_text: 'Search audio'
+                    hint_text_color: (1,1,1,1) if self.focus else (0, 1, 0, 1)
+                    background_color: (0,0,0,0)
+                    size: (root.size[0]*0.64,"50dp")
+                    on_text_validate: root.search(self.text)
+                    on_text: root.show_resent(self.text)
+                    on_focus: root.show_resent(self.text)
+
+                    canvas.before:
+                        Color:
+                            rgba: (1, 1, 1, 1) if self.focus else (.9, .9, .9, 1)
+
+                        RoundedRectangle:
+                            pos: self.x - (search_input_outer.width -self.width)/2, self.y
+                            size: search_input_outer.width, self.height
+                            radius: [10]
+
+                        Color:
+                            rgba: (120/255, 120/255, 120/255, .8) if self.focus else (60/255, 60/255, 60/255, .8)
+                        Line:
+                            width: 2 if self.focus else 1.5
+                            rounded_rectangle: (self.x - (search_input_outer.width -self.width)/2, self.y, search_input_outer.width, self.height, dp(10))
+
+
+
+
+                MDRelativeLayout:
+                    pos_hint: {"center_x": .92,"center_y": .5}
+                    size: ("50dp","50dp")
+                    size_hint: (None,None)
+                    md_bg_color: app.btn_hitbox_clr
                     Button:
                         background_color: [0,0,0,0]
                         pos_hint: {'center_x':.5, 'center_y':.5}
-                        size: ("60dp","60dp")
+                        size: ("50dp","50dp")
                         size_hint: (None,None)
-                        on_release: root.close_search()
+                        on_release: root.clean_search()
+
                     Image:
                         pos_hint: {'center_x':.5, 'center_y':.5}
-                        size: ("40dp","40dp")
+                        size: ("20dp","20dp")
                         size_hint: (None,None)
-                        source: "./icons/back.png"
+                        source: "./icons/x.png"
+                        opacity: 1 if search_input.text != '' else 0
 
                 MDRelativeLayout:
-                    id: search_input_outer
-                    size: (root.size[0]*0.85,"70dp")
+                    id: mode_btn_layout
+                    pos_hint: {"center_x": .04,"center_y": .5}
+                    size: ("50dp","50dp")
                     size_hint: (None,None)
-
-                    TextInput:
-                        id: search_input
-                        multiline: False
-                        font_size: '28sp'
-                        padding_y: [(self.height)/4, 0]
-                        pos_hint: {"center_x": .48,"center_y": .5}
+                    md_bg_color: app.btn_hitbox_clr
+                    Button:
+                        background_color: [0,0,0,0]
+                        pos_hint: {'center_x':.5, 'center_y':.5}
+                        size: ("50dp","50dp")
                         size_hint: (None,None)
-                        cursor_color: (1,0,0,1)
-                        hint_text: 'Search audio'
-                        hint_text_color: (1,1,1,1) if self.focus else (0, 1, 0, 1)
-                        background_color: (0,0,0,0)
-                        size: (root.size[0]*0.65,"60dp")
-                        on_text_validate: root.search(self.text)
-                        on_text: root.show_resent(self.text)
-                        on_focus: root.show_resent(self.text)
-
-                        canvas.before:
-                            Color:
-                                rgba: (1, 1, 1, 1) if self.focus else (.9, .9, .9, 1)
-
-                            RoundedRectangle:
-                                pos: self.x - (search_input_outer.width -self.width)/2, self.y
-                                size: search_input_outer.width, self.height
-                                radius: [10]
-
-                            Color:
-                                rgba: (120/255, 120/255, 120/255, .8) if self.focus else (60/255, 60/255, 60/255, .8)
-                            Line:
-                                width: 2 if self.focus else 1.5
-                                rounded_rectangle: (self.x - (search_input_outer.width -self.width)/2, self.y, search_input_outer.width, self.height, 10)
- 
-
-
-
-                    MDRelativeLayout:
-                        pos_hint: {"center_x": .92,"center_y": .5}
-                        Button:
-                            background_color: [0,0,0,0]
-                            pos_hint: {'center_x':.5, 'center_y':.5}
-                            size: ("60dp","60dp")
-                            size_hint: (None,None)
-                            on_release: root.clean_search()
-
-                        Image:
-                            pos_hint: {'center_x':.5, 'center_y':.5}
-                            size: ("32dp","32dp")
-                            size_hint: (None,None)
-                            source: "./icons/x.png"
-                            opacity: 1 if search_input.text != '' else 0
-
-                    MDRelativeLayout:
-                        id: mode_btn_layout
-                        pos_hint: {"center_x": .05,"center_y": .5}
-                        Button:
-                            background_color: [0,0,0,0]
-                            pos_hint: {'center_x':.5, 'center_y':.5}
-                            size: ("60dp","60dp")
-                            size_hint: (None,None)
-                            on_release: root.switch_search()
-                        Image:
-                            id: mode_btn_img
-                            pos_hint: {'center_x':.5, 'center_y':.5}
-                            size: ("37dp","37dp")
-                            size_hint: (None,None)
-                            source: "./icons/search.png"
+                        on_release: root.switch_search()
+                    Image:
+                        id: mode_btn_img
+                        pos_hint: {'center_x':.5, 'center_y':.5}
+                        size: ("30dp","30dp")
+                        size_hint: (None,None)
+                        source: "./icons/search.png"
 
 
         MDBoxLayout:          
@@ -859,7 +887,6 @@
                             id: container
 
 
-# from import 
 <Start>:
     MDBoxLayout:
         id: main_container
@@ -964,65 +991,60 @@
 	SideMenu:
 		id: nav_drawer
         md_bg_color: app.main_clr
-        swipe_edge_width: "100dp"
+        swipe_edge_width: "50dp"
 
 		ContentNavigationDrawer:
 			orientation: 'vertical'
+
 			Image:
+                id: logo_img
 				size_hint: None, None
 		    	size: ("290dp", "75dp")
 		    	source: "logo.png"
 		    	pos_hint: {"center_x": .5, "center_y": .9}
 
             MDRelativeLayout:
+                id: home_btn_outer
                 size_hint: None, None
-                size: ("295dp", "75dp")
-                pos_hint: {"center_x": .5, "center_y": .8}
+                size: ("290dp", "75dp")
+                pos: (logo_img.pos[0],logo_img.pos[1]-logo_img.size[1]-dp(90))
         	    Button:
+                    id: home_btn
             	    size_hint: None, None
 		    	    size: ("290dp", "75dp")
-				    pos_hint: {"center_x": .5, "center_y": .8}
+				    pos_hint: {"center_x": .5, "center_y": .5}
 		    	    background_color: 0, 0, 0, 0
             	    on_release: 
                         app.audio_listing_key = 'user'
                         app.main_screen.audios_listing()
                     canvas.before:
                         Color:
-                            rgba: app.main_clr2
+                            rgba: (1,1,1,1)
 
                         RoundedRectangle:
                             pos: self.x, self.y
                             size: self.width, self.height
-                            radius: [6]
+                            radius: [dp(6), dp(6),0, 0]
 
-                        Color:
-                            rgba: 0, 0, 0, 1
-                        Line:
-                            width: 1.5
-                            rounded_rectangle: (self.x, self.y, self.width, self.height, 6)
+
 		        Image:
 				    size_hint: None, None
 		    	    size: ("60dp", "60dp")
 		    	    source: "./icons/home.png"
-		    	    pos_hint: {"center_x": .12, "center_y": .8}
+		    	    pos_hint: {"center_x": .12, "center_y": .5}
 		        MDLabel:
         		    text: "Loaded Music"
                     font_size: '32sp'
-				    pos_hint: {"center_x": .765, "center_y": .8}
+				    pos_hint: {"center_x": .765, "center_y": .5}
 
 
-            MDLabel:
-        		id: accounts
-        		#size_hint: None, None
-        		pos_hint: {"center_x": .65, "center_y": .735}
-				text: "No accounts yet connected"
-            	font_size: '20sp'
-				halign: 'left'
 
             MDScrollView:
+                id: accounts_list
                 size: ("290dp", "280dp")
-                pos_hint: {"center_x": .5, "center_y": .6}
                 size_hint: None,None
+                pos: (home_btn_outer.pos[0],home_btn_outer.pos[1]-self.size[1])
+
                 canvas.before:
                     Color:
                         rgba: 1, 1, 1, 1
@@ -1030,8 +1052,6 @@
                     Rectangle:
                         pos: self.x, self.y
                         size: self.width, self.height
-
-
 
 
             	DrawerList:
@@ -1046,38 +1066,40 @@
 
             MDRelativeLayout:
                 size_hint: None, None
-                size: ("295dp", "75dp")
-                pos_hint: {"center_x": .5, "center_y": .4}
+                size: (accounts_list.size[0], "75dp")
+                pos: (accounts_list.pos[0],accounts_list.pos[1]-self.size[1] + dp(3))
+
         		Button:
             		size_hint: None, None
 		    		size: ("290dp", "70dp")
-		    		pos_hint: {"center_x": .5, "center_y": .4}
+		    		pos_hint: {"center_x": .5, "center_y": .5}
                     background_color: 0, 0, 0, 0
             		on_release: Factory.LoginPopup().open()
                     canvas.before:
                         Color:
-                            rgba: app.main_clr2
+                            rgba: (1,1,1,1)
 
                         RoundedRectangle:
                             pos: self.x, self.y
                             size: self.width, self.height
-                            radius: [6]
+                            radius: [0,0,dp(6),dp(6)]
 
                         Color:
                             rgba: 0, 0, 0, 1
                         Line:
                             width: 1.5
-                            rounded_rectangle: (self.x, self.y, self.width, self.height, 6)
+                            rounded_rectangle: 
+                                (self.x, self.y, self.width, home_btn_outer.top-self.parent.pos[1],dp(6))
 		    	Image:
 		    		size_hint: None, None
 		    		size: ("70dp", "70dp")
 		    		source: "./icons/add.png"
 
-		    		pos_hint: {"center_x": .12, "center_y": .4}
+		    		pos_hint: {"center_x": .12, "center_y": .5}
 		    	MDLabel:
             		text: "Connect account"
                     font_size: '28sp'
-            		pos_hint: {"center_x": .745, "center_y": .4}
+            		pos_hint: {"center_x": .745, "center_y": .5}
 
 
             MDLabel:
@@ -1087,11 +1109,6 @@
             	pos_hint: {"center_y": .1}
 
 
-        MDFloatLayout:
-            id: loading_back
-            size_hint: (None,None)
-            pos: (0,0)
-            size: (0,0)
 
 <Player>:
 	MDRelativeLayout:

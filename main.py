@@ -291,15 +291,15 @@ class Start(CustomScreen):
         self.ids.menu_row.clear_widgets()
         if self.app.audio_listing_key == 'user':
             self.ids.menu_row.add_widget(
-                TopAppBarMenuElem("./icons/edit.png", [0.9, 0.35], func = lambda x: self.edit_menu())
+                TopAppBarMenuElem(self.app, "./icons/edit.png", [0.9, 0.35], func = lambda x: self.edit_menu())
             )
             self.ids.menu_row.add_widget(
-                TopAppBarMenuElem("./icons/menu.png", [0.1, 0.35], func = lambda x: self.ids.nav_drawer.set_state('toggle'))
+                TopAppBarMenuElem(self.app, "./icons/menu.png", [0.1, 0.35], func = lambda x: self.ids.nav_drawer.set_state('toggle'))
             )
             
         elif self.app.audio_listing_key == 'vk':
             self.ids.menu_row.add_widget(
-                TopAppBarMenuElem("./icons/menu.png", [0.1, 0.35], func = lambda x: self.ids.nav_drawer.set_state('toggle'))
+                TopAppBarMenuElem(self.app, "./icons/menu.png", [0.1, 0.35], func = lambda x: self.ids.nav_drawer.set_state('toggle'))
             )
             
         elif self.app.audio_listing_key == 'selection':
@@ -380,7 +380,12 @@ class Start(CustomScreen):
         self.app.manager.current = 'search'
         self.app.manager.get_screen('search').open_search(session = self.session)
 
-class Player(CustomScreen):  
+class Player(CustomScreen):
+    def open_player(self, *args, app = None):
+        print(args)
+        app.audio_bar.hide() if app.screen_container.isopen else app.audio_bar.show()
+        app.main_screen.ids.nav_drawer.enable_swiping = not app.main_screen.ids.nav_drawer.enable_swiping
+
     def loop_audio(self):
         pass
 
@@ -401,16 +406,16 @@ class Album(CustomScreen):
         # prepare top app bar
         self.ids.menu_row.clear_widgets()
         self.ids.menu_row.add_widget(
-            TopAppBarMenuElem("./icons/back.png", [0.1, 0.35], func = lambda x: self.close_album())
+            TopAppBarMenuElem(self.app, "./icons/back.png", [0.1, 0.35], func = lambda x: self.close_album())
         )
         if self.app.audio_listing_key == 'user':
 
             self.ids.menu_row.add_widget(
-                TopAppBarMenuElem("./icons/edit.png", [0.9, 0.35], func = lambda x: self.edit_menu())
+                TopAppBarMenuElem(self.app, "./icons/edit.png", [0.9, 0.35], func = lambda x: self.edit_menu())
             )
         elif self.app.audio_listing_key == 'vk':
             self.ids.menu_row.add_widget(
-                TopAppBarMenuElem("./icons/load.png", [0.9, 0.35], func = lambda x: print(123))
+                TopAppBarMenuElem(self.app, "./icons/load.png", [0.9, 0.35], func = lambda x: print(123))
             )
 
         elif self.app.audio_listing_key == 'selection':
@@ -523,11 +528,11 @@ class AlbumList(CustomScreen):
         # prepare top app bar
         self.ids.menu_row.clear_widgets()
         self.ids.menu_row.add_widget(
-            TopAppBarMenuElem("./icons/back.png", [0.1, 0.35], func = lambda x: self.close_album_list())
+            TopAppBarMenuElem(self.app, "./icons/back.png", [0.1, 0.35], func = lambda x: self.close_album_list())
         )
         if self.app.audio_listing_key == 'user':
             self.ids.menu_row.add_widget(
-                TopAppBarMenuElem("./icons/add.png", [0.9, 0.35], func = lambda x: self.add_album())
+                TopAppBarMenuElem(self.app, "./icons/add.png", [0.9, 0.35], func = lambda x: self.add_album())
             )
             
         elif self.app.audio_listing_key == 'vk':
@@ -804,7 +809,7 @@ class LoginApp(MDApp):
     secondary_clr2 = ColorProperty(defaultvalue=(184/255, 169/255, 101/255, 1))
     text_clr = ColorProperty()
     interactive_text_clr = ColorProperty()
-    btn_hitbox_clr = ColorProperty(defaultvalue=(1,1,1,.1))
+    btn_hitbox_clr = ColorProperty(defaultvalue=(1,0,0,.1))
     
     loading_list = ObjectProperty(LoadingBar(
         anim_mode = 'fill',
@@ -837,7 +842,6 @@ class LoginApp(MDApp):
     def on_load_clr(self,*args):
         if self._current != self.manager.current:
             pass
-            #self.load_event_stop()
         
         
     def switch_to_login(self, media, popup):
@@ -882,7 +886,11 @@ class LoginApp(MDApp):
             pass
         
         self.manager = ScreenManager()
-        self.screen_container = DraggableScreenLayout(direction = 'bottom', border = 0)
+        self.screen_container = DraggableScreenLayout(
+            direction = 'bottom',
+            border = 0,
+            low_priority=(Button,ScrollView,SideMenu),
+            swipe_threshold = 0.5)
         
         self.main_screen = Start(name='start')
         self.player_screen = Player(name='player')
@@ -902,7 +910,7 @@ class LoginApp(MDApp):
         self.screen_container.add_widget(self.manager)
         self.screen_container.add_widget(self.player_screen)
         self.screen_container.add_widget(self.audio_bar)
-        self.screen_container.fbind('isopen',lambda *args: self.audio_bar.hide() if self.screen_container.isopen else self.audio_bar.show())
+        self.screen_container.fbind('isopen',self.player_screen.open_player,app=self)
 
         self.platform = kivy.utils.platform
         if self.platform not in ['android','ios']:
@@ -918,7 +926,7 @@ class LoginApp(MDApp):
             self.downloader = DownloadMonitorIOS()
 
             from player import IOSPlayer
-            self.player = IOSPlayer(self)
+            self.player = IOSPlayer()
     
         elif self.platform == 'android':
             pass
@@ -942,12 +950,13 @@ class LoginApp(MDApp):
         self.sessions = []
         session_list = DrawerList()
         session_dir_list = os.listdir(self.app_dir + '/sessions/')
-        self.main_screen.ids.session_container.clear_widgets()
+        if session_dir_list:
+            self.main_screen.ids.session_container.clear_widgets()
+            
         for elem in session_dir_list:
             session_obj = SessionListElement(self, elem)
             self.sessions.append(session_obj)
             self.main_screen.ids.session_container.add_widget(session_obj)
-            self.main_screen.ids.accounts.text = 'Connected accounts'
     
 if __name__ == '__main__':
     if True:

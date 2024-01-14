@@ -354,8 +354,7 @@ class IOSPlayer(PlayerUI):
         
     def get_info(self):
         info_dict = self.player.get_info() # obj-c method of class IOS_player
-        if 'objectForKey_' in dir(info_dict):
-            print(dir(info_dict))
+        if not info_dict:
             return
         
         key = info_dict.objectForKey_(objc_str('key')).intValue()       

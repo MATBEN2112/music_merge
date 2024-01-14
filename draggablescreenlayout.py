@@ -216,10 +216,7 @@ class DraggableScreenLayout(Layout):
         return True
         
     def on_touch_move(self, touch):
-        
-
         if touch.grab_current == self and not self._event_priority(touch):
-            print(touch.grab_list)
             return self._move_screen(touch)
             
         else:
