@@ -43,6 +43,9 @@ class PlayerUI:
     def _update_progressbar(self,value):
         ''' Function to update progress bar and timer '''
         info_dict = self.get_info()
+        if not info_dict:
+            return
+        
         if 'info_dict' not in dir(self) or self.info_dict != info_dict: # does track states changed
 
             if 'info_dict' not in dir(self) or self.info_dict['song_pos'] != info_dict['song_pos']: # progress bar and timers
@@ -58,7 +61,6 @@ class PlayerUI:
             if 'info_dict' not in dir(self) or self.info_dict['file'] != info_dict['file']: # track
                 #self.track = (info_dict['key'],info_dict['file'],info_dict['author'],info_dict['song'],info_dict['img'])
                 # player image
-                print(info_dict['img'])
                 if 'img_back' in dir(self):
                     self.app.player_screen.remove_widget(self.img_back)
                 self.img_back = PlayerBack(info_dict['img'])

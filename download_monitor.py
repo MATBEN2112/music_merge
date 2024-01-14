@@ -185,11 +185,11 @@ class DownloadMonitorIOS(DownloadMonitor):
             if type(key) == bytes:
                 key = key.decode('unicode_escape')
                 
-            progress = tasks_arr.objectAtIndex_(i).objectForKey_(objc_str('progress')).UTF8String()}
+            progress = tasks_arr.objectAtIndex_(i).objectForKey_(objc_str('progress')).UTF8String()
             if type(progress) == bytes:
                 progress = progress.decode('unicode_escape')
                 
-            progress_dict.update({int(key):int(progress))
+            progress_dict.update({int(key):int(progress)})
 
         return progress_dict
         
