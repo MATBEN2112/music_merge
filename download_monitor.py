@@ -178,14 +178,18 @@ class DownloadMonitorIOS(DownloadMonitor):
         tasks_arr = self.loader.get_info()
         # tasks_arr : [{'key': key, 'link': m3u8, 'path': path, 'progress': progress},...{}]
         print(tasks_arr)
-        print(dir(tasks_arr))
         print(tasks_arr.count())
-        print(dir(tasks_arr.count()))
         progress_dict = {}
         for i in range(tasks_arr.count()):
-            progress_dict.update(
-                {tasks_arr.objectAtIndex_(i).objectForKey_(objc_str('key')).UTF8String():
-                tasks_arr.objectAtIndex_(i).objectForKey_(objc_str('progress')).UTF8String()})
+            key = tasks_arr.objectAtIndex_(i).objectForKey_(objc_str('key')).UTF8String()
+            if type(key) == bytes:
+                key = key.decode('unicode_escape')
+                
+            progress = tasks_arr.objectAtIndex_(i).objectForKey_(objc_str('progress')).UTF8String()}
+            if type(progress) == bytes:
+                progress = progress.decode('unicode_escape')
+                
+            progress_dict.update({int(key):int(progress))
 
         return progress_dict
         
