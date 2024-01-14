@@ -89,14 +89,19 @@ class VK_session(object):
         if response: # Check if request status code is redirect
             print('Connected')
             self.connected = True
+            self.session_obj.ids._left_container.clear_widgets()
             self.session_obj.title.source = self.img
+            self.session_obj.ids._left_container.add_widget(self.session_obj.title)
+            
+            
             self.session_obj.secondary_text = self.u_id
             self.session_obj.on_release=lambda :self.session_obj.open_session()
             self.session_obj.bg_color = (1,1,1,1)
             
         else:
             self.connected = False
-            self.session_obj.title.source = "./icons/problem.png"
+            self.session_obj.ids._left_container.clear_widgets()
+            self.session_obj.ids._left_container.add_widget(self.session_obj.problem_title)
             self.session_obj.secondary_text = 'Could not connect'
             self.session_obj.on_release=lambda :self.session_obj.session_unavalible()
 

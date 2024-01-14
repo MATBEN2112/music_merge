@@ -809,7 +809,7 @@ class LoginApp(MDApp):
     secondary_clr2 = ColorProperty(defaultvalue=(184/255, 169/255, 101/255, 1))
     text_clr = ColorProperty()
     interactive_text_clr = ColorProperty()
-    btn_hitbox_clr = ColorProperty(defaultvalue=(1,0,0,.1))
+    btn_hitbox_clr = ColorProperty(defaultvalue=(1,0,0,0))
     
     loading_list = ObjectProperty(LoadingBar(
         anim_mode = 'fill',

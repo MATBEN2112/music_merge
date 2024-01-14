@@ -398,9 +398,19 @@ class SessionListElement(TwoLineAvatarIconListItem):
             
         self.text = self.session.u_name
         self.secondary_text ='Connecting...'
-        self.title = ImageLeftWidgetWithoutTouch(source="./icons/load.gif")
+        
 
-        self.add_widget(self.title)
+        self.load_title = CircularProgressBar(
+                thickness = '3dp',
+                widget_size="46dp",
+                progress_clr = self.app.main_clr,
+                hint_clr = self.app.main_clr2,
+                label_clr = (0,0,0,0),
+                body_clr = (0.56, 0.56, 0.56, 1))
+        self.title = ImageLeftWidgetWithoutTouch()
+        self.problem_title = ImageLeftWidgetWithoutTouch(source="./icons/problem.png")
+
+        self.ids._left_container.add_widget(self.load_title)
             
         self.size_hint_y=None
     
@@ -421,11 +431,12 @@ class SessionListElement(TwoLineAvatarIconListItem):
         self.app.main_screen.audios_listing(session = self.session)
         
     def session_unavalible(self):
-        if 'vk_' in session_name:
+        if isinstance(self.session,VK_session):
             self.session = VK_session(self,session_name)
             
         self.secondary_text ='Connecting...'
-        self.title = ImageLeftWidgetWithoutTouch(source="./icons/load.gif")
+        self.session_obj.ids._left_container.clear_widgets()
+        self.ids._left_container.add_widget(self.load_title)
         
     def delete_session(self):
         pass

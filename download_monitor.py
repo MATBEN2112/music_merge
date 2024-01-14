@@ -136,7 +136,8 @@ class DownloadMonitor:
             
     async def save_img(self, track_obj,task_key):
         img = track_obj.app.app_dir + f'/images/t/{task_key}.jpg'
-        async with aiohttp.ClientSession() as session:
+        session_timeout =   aiohttp.ClientTimeout(total=None,sock_connect=5,sock_read=5)
+        async with aiohttp.ClientSession(timeout = session_timeout,connector=aiohttp.TCPConnector(verify_ssl=False)) as session:
             async with session.get(track_obj.img) as response:
                 if response.status == 200:
                     async with aiofiles.open(img, mode='wb') as f:
