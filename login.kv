@@ -813,7 +813,7 @@
                         RoundedRectangle:
                             pos: self.x - (search_input_outer.width -self.width)/2, self.y
                             size: search_input_outer.width, self.height
-                            radius: [10]
+                            radius: [dp(10)]
 
                         Color:
                             rgba: (120/255, 120/255, 120/255, .8) if self.focus else (60/255, 60/255, 60/255, .8)
@@ -1089,7 +1089,7 @@
                         Line:
                             width: 1.5
                             rounded_rectangle: 
-                                (self.x, self.y, self.width, home_btn_outer.top-self.parent.pos[1],dp(6))
+                                (self.x, self.y, self.width, home_btn_outer.top-self.parent.pos[1] - dp(3),dp(6))
 		    	Image:
 		    		size_hint: None, None
 		    		size: ("70dp", "70dp")

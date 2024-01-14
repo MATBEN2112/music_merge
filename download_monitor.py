@@ -199,7 +199,7 @@ class DownloadMonitorIOS(DownloadMonitor):
                 track_obj.app.app_dir + '/downloads/' + str(task_key) + '.mp3'
             )
             m3u8 = NSString.alloc().initWithUTF8String_(m3u8)
-            task_key = NSString.alloc().initWithUTF8String_(task_key)
+            task_key = NSString.alloc().initWithUTF8String_(str(task_key))
             self.loader.loadVK_fileName_key_(m3u8,path,task_key) # obj-c method of class audioLoader
 
     async def download_ya(self, tasks):

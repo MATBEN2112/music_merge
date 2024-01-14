@@ -926,7 +926,7 @@ class LoginApp(MDApp):
             self.downloader = DownloadMonitorIOS()
 
             from player import IOSPlayer
-            self.player = IOSPlayer()
+            self.player = IOSPlayer(self)
     
         elif self.platform == 'android':
             pass
