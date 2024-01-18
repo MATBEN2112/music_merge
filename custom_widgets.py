@@ -27,7 +27,7 @@ from kivy.uix.behaviors import ButtonBehavior
 from kivy.uix.textinput import TextInput
 from kivymd.uix.button import MDIconButton
 from kivy.core.text import Label as CoreLabel
-from kivy.metrics import sp
+from kivy.metrics import sp, dp
 import os
 from vk_methods import VK_session
 import shutil
@@ -48,6 +48,7 @@ from ticker import Ticker
 from updatable_scrollview import UpdatableScrollView
 from draggablescreenlayout import DraggableScreenLayout
 from animations import LoadSign, CircularProgressBar, LoadingBar
+from album import AlbumButton
 #from sidemenu import SideMenu
 from kivymd.uix.navigationdrawer import MDNavigationDrawer
 from kivy.properties import ListProperty, OptionProperty, DictProperty, NumericProperty
@@ -96,13 +97,13 @@ class LoginButton(MDRelativeLayout, TouchBehavior):
 class PlayerBack(MDRelativeLayout):
     def __init__(self, img):
         super(PlayerBack, self).__init__()
+        self.size_hint=(None,None)
         self.pos_hint={'center_x':0.5, 'center_y':0.65}
         self.size=("400dp","400dp")
-        self.size_hint=(None,None)
         img = './icons/player_back.png' if img == './icons/track.png' else img
-        with self.canvas.before:
+        with self.canvas:
             Color((1,1,1,1), mode='rgba')
-            RoundedRectangle(pos=self.pos, size=self.size, radius=[20], source = img)
+            RoundedRectangle(pos=self.pos, size=self.size, radius=[dp(20)], source = img)
         
 class ContentNavigationDrawer(MDRelativeLayout):
     pass
@@ -471,51 +472,6 @@ class TrackWithCheckBox(TwoLineAvatarIconListItem):
             self.app.meta.add_to_album(self.key, album_key) # [DB class method]      
 
 
-class AlbumButton(MDBoxLayout, TouchBehavior):
-    def __init__(self, app, album):
-        super(AlbumButton, self).__init__()
-        self.app = app
-        self.album = album
-        self.key = album[0]
-        self.name = album[1]
-        self.img = album[2]
-        self.metric = self.app.root.size[0]/2.5
-        self.img = Image(
-            size=(self.metric,)*2,
-            size_hint=(None,None),
-            source=self.img
-        )
-                
-        self.album_name = MDLabel(
-            size=(self.metric,"20dp"),
-            size_hint=(None,None),
-            font_size = '14sp',
-            text_color = "#232217",
-            text = self.name,
-            halign = "center",
-            pos_hint= {'center_x':.5},
-            shorten = True,
-            shorten_from = "right"
-        )
-        
-        self.orientation= "vertical"
-
-        self.size_hint_y= None
-        self.size_hint_x= None
-        self.md_bg_color= "#3F6668"
-        self.size=(self.metric,self.metric+self.album_name.size[1])
-
-        self.add_widget(self.img)
-        self.add_widget(self.album_name)
-        
-    def on_touch_up(self, touch):
-        if self.collide_point(touch.x, touch.y):
-            screen_to_return = self.app.manager.current
-            self.app.manager.transition = SlideTransition(direction="up")
-            self.app.manager.current = 'album'
-            self.app.manager.get_screen('album').open_album(self.album) 
-
-
 class VKTrack(TwoLineAvatarIconListItem):
     def __init__(self, session, app, track):
         super(VKTrack, self).__init__()
@@ -567,51 +523,7 @@ class VKTrack(TwoLineAvatarIconListItem):
         task = {key:self}
         #task = [(self.text,self.secondary_text,key,self.img,self.session, self.id,self.app,self)]
         asyncio.get_event_loop().create_task(self.app.downloader.download(task,'vk'))
-            
-    
-class VKAlbumButton(MDBoxLayout, TouchBehavior):
-    def  __init__(self, session, app, album):
-        super(VKAlbumButton, self).__init__()
-        self.img = album[2] or "./icons/song.png"
-        self.name = album[1] or "Album"
 
-        self.app = app
-        self.session = session
-        self.album = album
-        
-        self.orientation= "vertical"
-        self.size_hint_y= None
-        self.size_hint_x= None
-        self.md_bg_color= "#3F6668"
-        self.size=("200dp","220dp")
-      
-        self.add_widget(
-            AsyncImage(
-                size=("200dp","200dp"),
-                size_hint=(None,None),
-                source=self.img,
-            )
-        )
-        self.add_widget(
-            MDLabel(
-              size=("160dp","20dp"),
-              size_hint=(None,None),
-              font_size = '14sp',
-              text_color = "#232217",
-              text = self.name,
-              halign = "center",
-              pos_hint= {'center_x':.5},
-              shorten = True,
-              shorten_from = "right"
-          )
-        )
-        
-    def on_touch_up(self, touch):
-        if self.collide_point(touch.x, touch.y):
-            screen_to_return = self.app.manager.current
-            self.app.manager.transition = SlideTransition(direction="up")
-            self.app.manager.current = 'album'
-            self.app.manager.get_screen('album').open_album(self.album,session = self.session)
 
 class TopAppBarMenuElem(MDRelativeLayout):
     def  __init__(self,app, img, pos, func=None):

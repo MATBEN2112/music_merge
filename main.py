@@ -209,7 +209,7 @@ Count: {len(track_list)}'''
                     isend = True
                     
                 else:
-                    self.ids.container.add_widget(AlbumButton(self.app, album))
+                    self.ids.container.add_widget(AlbumButton(None, self.app, album))
 
 
         elif self.app.audio_listing_key == 'vk':
@@ -228,7 +228,7 @@ Count: {len(track_list)}'''
                     isend = True
                     
                 else:
-                    album_obj = VKAlbumButton(self.session, self.app, album)
+                    album_obj = AlbumButton(self.session, self.app, album)
                     self.ids.container.add_widget(album_obj)
 
         elif self.app.audio_listing_key == 'ya':
@@ -238,7 +238,7 @@ Count: {len(track_list)}'''
             self.app.load_event_start()
             album_list = self.app.meta.album_list() # [DB class method]
             for album in album_list:
-                self.ids.container.add_widget(AlbumButton(self.app, album))
+                self.ids.container.add_widget(AlbumButton(None, self.app, album))
 
         self.album_list = album_list
         self.isend = isend
@@ -342,6 +342,7 @@ class Start(CustomScreen):
         menu_items = [
             {"viewclass": "OneLineListItem","text": f"Selection","on_release": self.open_selection_menu},
             {"viewclass": "OneLineListItem","text": f"Delete all","on_release": self.delete_all},
+            {"viewclass": "OneLineListItem","text": f"Popup debug","on_release": self.show_popup},
         ]
         self.drop_down_menu = MDDropdownMenu(
             caller=self.ids.menu_row, items=menu_items,position="center",width_mult=4
@@ -359,6 +360,20 @@ class Start(CustomScreen):
                 delattr(screen,'session')
                 
         self.audios_listing()
+
+    def show_popup(self):
+        if 'popup_list' not in dir(self):
+            self.popup_list = [
+                CaptchaPopup,SecureCodePopup,CreateAlbumPopup,
+                ConfirmationPopup,RenameAlbumPopup,AddToAlbumPopup,
+                AddToAlbumPopup,RenameTrackPopup]
+
+        if 'popup_index' not in dir(self):
+            self.popup_index = 0
+
+        self.popup_list[self.popup_index]().open()
+        self.popup_index += 1
+        
 
     async def load_more(self,scroll_view):
         scroll_view.loading_container_down.load_sign.start_anim()
@@ -551,12 +566,15 @@ class AlbumList(CustomScreen):
         self.manager.current = 'start'
         self.manager.get_screen('start').audios_listing(session = self.session)
 
-    def add_album(self, album_name=None):
+    def add_album(self, album_name=None, img = None):
         if album_name:
-            self.app.meta.add_album(album_name, img=None) # [DB class method]
+            self.app.meta.add_album(album_name, img=img) # [DB class method]
             self.create_album_popup.dismiss()
             return self.open_album_list()
-            
+        
+        elif 'create_album_popup' in dir(self):
+            self.create_album_popup.dismiss()
+               
         self.create_album_popup = CreateAlbumPopup()
         func = lambda :self.add_album(album_name=self.create_album_popup.ids.album_name.text)
         btn = PopupActionButton("Enter", func, 0.5)
@@ -589,6 +607,18 @@ class Search(CustomScreen):
         if 'app' not in dir(self):
             self.app = MDApp.get_running_app()
 
+        if self.app.audio_listing_key == 'user':
+            self.ids.search_input.hint_text = 'Search loaded audios'
+            
+        elif self.app.audio_listing_key == 'vk':
+            self.ids.search_input.hint_text = 'Search VK audios'
+
+        elif self.app.audio_listing_key == 'ya':
+            pass
+        
+        elif self.app.audio_listing_key == 'selection':
+            pass
+        
         # prepare track listing
         self.task_manager() # cancel priviously initiated tasks
         self.app.task = self.app.web_tasks_loop.create_task(
@@ -607,7 +637,7 @@ class Search(CustomScreen):
         self.ids.search_input.text = ''
 
     def switch_search(self, *args):
-        if True: #self.session:
+        if self.app.audio_listing_key != 'user':
             self.global_mode = not self.global_mode
             if self.global_mode:
                 self.ids.mode_btn_img.source = "./icons/glob_search.png"
@@ -805,9 +835,9 @@ class LoginApp(MDApp):
     # white color scheam
     main_clr = ColorProperty(defaultvalue=(59/255, 85/255, 158/255, 1))
     main_clr2 = ColorProperty(defaultvalue=(129/255, 190/255, 247/255, 1))
-    secondary_clr1 = ColorProperty(defaultvalue=(179/255, 164/255, 111/255, 1))
-    secondary_clr2 = ColorProperty(defaultvalue=(184/255, 169/255, 101/255, 1))
-    text_clr = ColorProperty()
+    secondary_clr1 = ColorProperty(defaultvalue=(222/255, 222/255, 222/255, 1))
+    secondary_clr2 = ColorProperty(defaultvalue=(184/255, 184/255, 184/255, 1))
+    text_clr = ColorProperty(defaultvalue=(0,0,0,1))
     interactive_text_clr = ColorProperty()
     btn_hitbox_clr = ColorProperty(defaultvalue=(1,0,0,0))
     

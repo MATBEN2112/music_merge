@@ -9,6 +9,7 @@ from kivy.uix.button import Button
 from kivy.uix.image import Image
 from kivymd.uix.button import MDIconButton
 
+from kivy.metrics import dp
 from kivy.graphics.context_instructions import Color
 from kivy.graphics.vertex_instructions import RoundedRectangle, Line
 import csv
@@ -39,7 +40,12 @@ class DropDownElement(MDRelativeLayout):
         )
         btn.bind(on_release=dd.select_resent)
         self.add_widget(btn)
+        self.bind(pos=self._draw, size=self._draw)
 
+    def _draw(self,*args):
+        with self.canvas.after:
+            Color(rgba=(0,0,0,1))
+            self.l = Line(points=[self.pos[0]+dp(20), self.pos[1], self.pos[0]+self.size[0]-dp(20), self.pos[1]], width=dp(1))
 
 class DropDownResent(DropDown):
     def __init__(self, screen, achor_widget, q):

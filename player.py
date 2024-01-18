@@ -35,6 +35,7 @@ class PlayerUI:
                 self.track_list = self.app.main_screen.track_list
                 
         self.current_track = track_obj.track
+        print('New track to play arrived: ', self.current_track)
         # work with UI and load audio to player
         self._start_player_session(track_obj)
         
@@ -89,10 +90,10 @@ class PlayerUI:
                 # track name
                 track_name = info_dict['author'] + ' - ' + info_dict['song']
                 self.app.audio_bar.ids.ticker.stop_animation()
-                self.app.audio_bar.ids.ticker.data = {'text': track_name, 'font_size':'20sp'}
+                self.app.audio_bar.ids.ticker.data = {'text': track_name, 'font_size':'24sp'}
                 self.app.audio_bar.ids.ticker.start_animation(-1)
                 self.app.player_screen.ids.ticker.stop_animation()
-                self.app.player_screen.ids.ticker.data = {'text': track_name, 'font_size':'28sp'}
+                self.app.player_screen.ids.ticker.data = {'text': track_name, 'font_size':'32sp'}
                 self.app.player_screen.ids.ticker.start_animation(-1)
                 # timer len
                 self.app.audio_bar.ids.song_progress.max = info_dict['song_len']
@@ -115,7 +116,7 @@ class PlayerUI:
                     print('UI element is not loaded')
             
             if 'info_dict' not in dir(self) or self.info_dict['status'] != info_dict['status']: # play/stop button
-                img = "./icons/stop60.png" if info_dict['status'] else "./icons/play60.png"
+                img = "./icons/stop.png" if info_dict['status'] else "./icons/play.png"
                 f = self.pause if info_dict['status'] else self.play
                 self.app.audio_bar.ids.song_status.source = img
                 self.app.audio_bar.ids.song_status.reload()
@@ -298,7 +299,7 @@ class IOSPlayer(PlayerUI):
             
         elif isinstance(self.current_track_obj, VKTrack):
             uid = self.current_track[5].u_id
-            if self.current_track.album_key:
+            if self.current_track_obj.album_key:
                 section_id,next_from = None,None
             else:
                 section_id,next_from = self.current_track[5].section_id_t, self.current_track[5].next_from_t
@@ -316,15 +317,27 @@ class IOSPlayer(PlayerUI):
             
         
     def play(self):
+        if not self.current_track_obj:
+            return
+        
         self.player.play() # obj-c method of class IOS_player
 
     def pause(self):
+        if not self.current_track_obj:
+            return
+        
         self.player.pause() # obj-c method of class IOS_player
         
     def stop(self):
+        if not self.current_track_obj:
+            return
+        
         self.player.stop() # obj-c method of class IOS_player
 
     def play_next(self, n):
+        if not self.current_track_obj:
+            return
+        
         self._next(n)
         
         if n > 0:
@@ -332,16 +345,34 @@ class IOSPlayer(PlayerUI):
         elif n < 0:
             self.player.prev() # obj-c method of class IOS_player
 
-    def seek(self, position):
-        self.player.seek_(position) # obj-c method of class IOS_player
+    def seek(self, *args):
+        if not self.current_track_obj:
+            return
+        
+        if type(args[0]) is float or type(args[0]) is int:
+            self.player.seek(args[0])
+        else:
+            slider, touch = args[0][0:2]
+            if slider.collide_point(touch.x, touch.y):
+                slider.active = False
+                self.player.seek_(int(slider.value)) # obj-c method of class IOS_player
 
     def get_pos(self):
+        if not self.current_track_obj:
+            return
+        
         return self.player.get_pos() # obj-c method of class IOS_player
 
     def get_length(self):
+        if not self.current_track_obj:
+            return
+        
         return self.player.get_len() # obj-c method of class IOS_player
 
     def get_current_track(self):
+        if not self.current_track_obj:
+            return
+        
         info = self.get_info()
         return (info['key'], info['file'], info['author'], info['song'], info['img'],) if info else (None,)*5
         

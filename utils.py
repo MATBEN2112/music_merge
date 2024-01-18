@@ -1,3 +1,19 @@
+def rgba2hex(rgba):
+    return f'{int(rgba[0]):x}{int(rgba[1]):x}{int(rgba[2]):x}{int(rgba[3]*255):x}' if any([clr > 1 for clr in rgba[:-1]]) \
+    else f'{int(rgba[0]*255):x}{int(rgba[1]*255):x}{int(rgba[2]*255):x}{int(rgba[3]*255):x}'
+
+def rgb2hex(rgb):
+    return f'{int(rgb[0]):x}{int(rgb[1]):x}{int(rgb[2]):x}' if any([clr > 1 for clr in rgb]) else \
+    f'{int(rgb[0]*255):x}{int(rgb[1]*255):x}{int(rgb[2]*255):x}'
+
+def hex2rgba(hex_string):
+    rgba = [int(hex_string[i:i+2],16) for i in range(0,7,2)]    
+    return (*rgba,)
+
+def hex2rgb(hex_string):
+    rgb = [int(hex_string[i:i+2],16) for i in range(0,5,2)]    
+    return (*rgb,)
+
 import functools
 import re
 import time
