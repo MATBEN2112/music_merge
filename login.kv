@@ -355,7 +355,7 @@
             rounded_rectangle: (self.x - dp(20), self.y - dp(20), self.width + dp(40), self.height + dp(60), dp(10))
 
 <PopupActionButton>:
-    size: ("160dp","70dp")
+    size: ("120dp","50dp")
     size_hint: (None,None)
     pos_hint: {"center_y": 0.22}
     MDRelativeLayout:
@@ -427,9 +427,9 @@
 
 <CaptchaPopup>:
     title: ""
-    size_hint: (.8,.3)
+    size_hint: (.8,.4)
     separator_height: 0
-    pos_hint: {'center_x':0.5}
+    pos_hint: {'center_y':0.7,'center_x':0.5}
     on_dismiss: 
         self.ids.error.text = ''
         self.ids.captcha_key.text = ''
@@ -486,13 +486,12 @@
 
 <SecureCodePopup>:
     title: ""
-    size_hint: (.8,.25)
+    size_hint: (.8,.35)
     separator_height: 0
-    pos_hint: {'center_x':0.5}
+    pos_hint: {'center_y':0.7,'center_x':0.5}
     on_dismiss: 
     	self.ids.error.text = ''
     	self.ids.secure_code.text = ''
-    	self.ids.action.clear_widgets()
 
     PopupBody:
         MDRelativeLayout:
@@ -527,9 +526,9 @@
 
 <CreateAlbumPopup>:
     title: ""
-    size_hint: (.8,.3)
+    size_hint: (.8,.4)
     separator_height: 0
-    pos_hint: {'center_x':0.5}
+    pos_hint: {'center_y':0.7,'center_x':0.5}
     on_dismiss: 
         self.ids.cover.source = "./icons/add-img.png"
         self.ids.album_name.text = ''
@@ -571,9 +570,9 @@
 
 <RenameAlbumPopup>:
     title: ""
-    size_hint: (.8,.2)
+    size_hint: (.8,.3)
     separator_height: 0
-    pos_hint: {'center_x':0.5}
+    pos_hint: {'center_y':0.7,'center_x':0.5}
     on_dismiss: 
         self.ids.album_name.text = ''
         self.ids.action.clear_widgets()
@@ -602,9 +601,9 @@
 
 <RenameTrackPopup>:
     title: ""
-    size_hint: (.8,.25)
+    size_hint: (.8,.35)
     separator_height: 0
-    pos_hint: {'center_x':0.5}
+    pos_hint: {'center_y':0.7,'center_x':0.5}
     on_dismiss: 
         self.ids.author.text = ''
         self.ids.song.text = ''
@@ -663,7 +662,7 @@
 
 <ConfirmationPopup>:
     title: ""
-    size_hint: (.8,.15)
+    size_hint: (.8,.25)
     separator_height: 0
     pos_hint: {'center_x':0.5}
     on_dismiss: 

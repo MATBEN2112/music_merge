@@ -345,22 +345,14 @@ class IOSPlayer(PlayerUI):
         self.player.stop() # obj-c method of class IOS_player
 
     def play_next(self, n):
-        if not self.current_track_obj:
-            return
-        
-        self._next(n)
-        
         if n > 0:
             self.player.next() # obj-c method of class IOS_player
         elif n < 0:
             self.player.prev() # obj-c method of class IOS_player
 
     def seek(self, *args):
-        if not self.current_track_obj:
-            return
-        
-        if type(args[0]) is float or type(args[0]) is int:
-            self.player.seek(args[0])
+        if isinstance(args[0],(float,int)):
+            self.player.seek_(int(args[0]))
         else:
             slider, touch = args[0][0:2]
             if slider.collide_point(touch.x, touch.y):
