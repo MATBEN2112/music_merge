@@ -88,7 +88,7 @@ class PlayerBack(MDRelativeLayout):
         super(PlayerBack, self).__init__()
         self.size_hint=(None,None)
         self.pos_hint={'center_x':0.5, 'center_y':0.65}
-        self.size=("400dp","400dp")
+        self.size=("320dp","320dp")
         img = './icons/player_back.png' if img == './icons/track.png' else img
         with self.canvas:
             Color((1,1,1,1), mode='rgba')

@@ -104,10 +104,10 @@ class PlayerUI:
                 # track name
                 track_name = info_dict['author'] + ' - ' + info_dict['song']
                 self.app.audio_bar.ids.ticker.stop_animation()
-                self.app.audio_bar.ids.ticker.data = {'text': track_name, 'font_size':'24sp'}
+                self.app.audio_bar.ids.ticker.data = {'text': track_name, 'font_size':'20sp'}
                 self.app.audio_bar.ids.ticker.start_animation(-1)
                 self.app.player_screen.ids.ticker.stop_animation()
-                self.app.player_screen.ids.ticker.data = {'text': track_name, 'font_size':'32sp'}
+                self.app.player_screen.ids.ticker.data = {'text': track_name, 'font_size':'28sp'}
                 self.app.player_screen.ids.ticker.start_animation(-1)
                 # timer len
                 self.app.audio_bar.ids.song_progress.max = info_dict['song_len']
@@ -291,7 +291,8 @@ class IOSPlayer(PlayerUI):
     def load(self):
         if not self.current_track_obj:
             return
-        
+
+        print(self.track_list)
         track_arr = NSMutableArray.arrayWithCapacity_(len(self.track_list))
         for track in self.track_list:
             if track == 'EOL':
@@ -344,13 +345,13 @@ class IOSPlayer(PlayerUI):
         
         self.player.stop() # obj-c method of class IOS_player
 
-    def play_next(self, n):
+    def play_next(self, n): # error
         if n > 0:
             self.player.next() # obj-c method of class IOS_player
         elif n < 0:
             self.player.prev() # obj-c method of class IOS_player
 
-    def seek(self, *args):
+    def seek(self, *args): # done
         if isinstance(args[0],(float,int)):
             self.player.seek_(int(args[0]))
         else:
@@ -373,7 +374,6 @@ class IOSPlayer(PlayerUI):
         
     def get_info(self):
         info_dict = self.player.get_info() # obj-c method of class IOS_player
-        print(info_dict)
         if not info_dict:
             return
         

@@ -59,7 +59,7 @@
                 rounded_rectangle: (self.x, self.y, self.width, self.height, dp(22))
 
         MDRelativeLayout:
-            size: ("90dp", "90dp")
+            size: ("70dp", "90dp")
             size_hint: (None,None)
 		    Button:
                 id: action
@@ -67,7 +67,7 @@
 
             Image:
                 id: song_status
-                size: ("75dp", "75dp")
+                size: ("60dp", "60dp")
                 size_hint: (None,None)
                 source: "./icons/play.png"
                 pos_hint: {'center_x':0.5, 'center_y':0.5}
@@ -75,7 +75,7 @@
 
         Ticker:
             id: ticker
-            data: {'text': "Artist - song", 'font_size':'24sp'}
+            data: {'text': "Artist - song", 'font_size':'20sp'}
             divider: "30dp"
             fit_size: True
 
@@ -427,7 +427,7 @@
 
 <CaptchaPopup>:
     title: ""
-    size_hint: (.8,.4)
+    size_hint: (.8,.35)
     separator_height: 0
     pos_hint: {'center_y':0.7,'center_x':0.5}
     on_dismiss: 
@@ -486,7 +486,7 @@
 
 <SecureCodePopup>:
     title: ""
-    size_hint: (.8,.35)
+    size_hint: (.8,.3)
     separator_height: 0
     pos_hint: {'center_y':0.7,'center_x':0.5}
     on_dismiss: 
@@ -662,7 +662,7 @@
 
 <ConfirmationPopup>:
     title: ""
-    size_hint: (.8,.25)
+    size_hint: (.8,.2)
     separator_height: 0
     pos_hint: {'center_x':0.5}
     on_dismiss: 
@@ -1057,15 +1057,15 @@
         	pos_hint: {'center_x':0.5, 'center_y':1}
             
         	background_color: 0,0,0,0
-    		size: (root.size[0],root.size[1]/4.7)
+    		size: (root.size[0],root.size[1]/4.5)
             size_hint: (None,None)
             on_release: root.parent.close_screen()
 
         Image:
-			size: ("90dp","90dp")
+			size: ("60dp","60dp")
             size_hint: (None,None)
             source: "./icons/down.png"
-            pos_hint: {'center_x':0.5, 'center_y':0.95}
+            pos_hint: {'center_x':0.5, 'center_y':0.92}
 
             
         Ticker:
@@ -1073,20 +1073,20 @@
             width: root.size[0]*.9
             size_hint: (None,1)
             pos_hint:{'center_x':0.5, 'center_y':.4}
-            data: {'text': "Artist - song", 'font_size':'32sp'}
-            divider: 30
+            data: {'text': "Artist - song", 'font_size':'28sp'}
+            divider: "30dp"
             fit_size: True
 
         Label:
         	id: song_timer
         	text: "00:00"
-            pos_hint: {'center_x':.16, 'center_y':.3}
+            pos_hint: {'center_x':.14, 'center_y':.3}
             size_hint: (1,1)
             font_size: "20sp"
         Label:
         	id: song_len
         	text: "00:00"
-            pos_hint: {'center_x':.84, 'center_y':.3}
+            pos_hint: {'center_x':.86, 'center_y':.3}
             size_hint: (1,1)
             font_size: "20sp"
         MDSlider:
@@ -1099,21 +1099,21 @@
         	value: 0
 
             pos_hint: {'center_x':0.5, 'center_y':0.32}
-            size: (root.size[0]*0.8,"25dp")
+            size: (root.size[0]*0.9,"25dp")
             size_hint: (None,None)
             on_touch_down:
             	if args[0].collide_point(args[1].x, args[1].y): self.on_touch_up=lambda x: app.player.seek(args)
             	else: self.on_touch_up=lambda x: x
 
         Image:
-            pos_hint: {'center_x':0.25, 'center_y':0.2}
+            pos_hint: {'center_x':0.2, 'center_y':0.2}
             source: "./icons/left.png"
-            size: ("90dp","90dp")
+            size: ("80dp","80dp")
             size_hint: (None,None)
 
         Button:
-        	pos_hint: {'center_x':0.25, 'center_y':0.2}
-            size: ("90dp","90dp")
+        	pos_hint: {'center_x':0.2, 'center_y':0.2}
+            size: ("80dp","80dp")
             size_hint: (None,None)
             opacity: 0
             on_release: app.player.play_next(-1)
@@ -1122,25 +1122,25 @@
             id: song_status
             pos_hint: {'center_x':0.5, 'center_y':0.2}
             source: "./icons/play.png"
-            size: ("90dp","90dp")
+            size: ("80dp","80dp")
             size_hint: (None,None)
 
         Button:
             id: action
         	pos_hint: {'center_x':0.5, 'center_y':0.2}
-    		size: ("90dp","90dp")
+    		size: ("80dp","80dp")
             size_hint: (None,None)
             opacity: 0
 
         Image:
-            pos_hint: {'center_x':0.75, 'center_y':0.2}
+            pos_hint: {'center_x':0.8, 'center_y':0.2}
             source: "./icons/right.png"
-            size: ("90dp","90dp")
+            size: ("80dp","80dp")
             size_hint: (None,None)
 
         Button:
-        	pos_hint: {'center_x':0.75, 'center_y':0.2}
-            size: ("90dp","90dp")
+        	pos_hint: {'center_x':0.8, 'center_y':0.2}
+            size: ("80dp","80dp")
             size_hint: (None,None)
             opacity: 0
             on_release: app.player.play_next(1)
