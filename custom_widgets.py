@@ -51,30 +51,19 @@ from animations import LoadSign, CircularProgressBar, LoadingBar
 from album import AlbumButton
 #from sidemenu import SideMenu
 from kivymd.uix.navigationdrawer import MDNavigationDrawer
-from kivy.properties import ListProperty, OptionProperty, DictProperty, NumericProperty
+from kivy.properties import ListProperty, OptionProperty, DictProperty, NumericProperty, BooleanProperty
 from kivy.uix.button import Button
 from kivy.uix.scrollview import ScrollView
 
     
+class PopupBody(BoxLayout):
+    pass
 
-class PopupActionButton(MDRelativeLayout, TouchBehavior):
-    def __init__(self, text, func, x):
-        super(PopupActionButton, self).__init__()
-        self.add_widget(MDLabel(text=text, font_size = "18sp", pos_hint={"center_x": .5, "center_y": 0.5}, halign="center"))
-        self.pos_hint={"center_x": x, "center_y": 0.2}
-        self.size_hint=(None,None)
-        self.size = ("160dp","65dp")
-        self.func = func
-
-        with self.canvas.before:
-            Color(1, 0, 0, .5, mode='rgba')
-            RoundedRectangle(pos=self.pos, size=self.size, radius = [8])
-            Color(1, 0.5, 0, .5, mode='rgba')
-            Line(rounded_rectangle=(self.x, self.y, self.width, self.height, 8))
+class PopupActionButton(MDRelativeLayout, ButtonBehavior, TouchBehavior):
     def on_touch_up(self, touch):
         if self.collide_point(touch.x, touch.y):
-            self.func()
-
+            self.dispatch('on_release')
+            return True
             
 class LoginButton(MDRelativeLayout, TouchBehavior):
     def __init__(self, func):
@@ -248,63 +237,57 @@ class Track(TwoLineAvatarIconListItem):
         
     def add_to_album(self):
         self.drop_down_menu.dismiss()
-        self.add_to_album_popup = AddToAlbumPopup()
+        self.popup = AddToAlbumPopup()
 
-        self.add_to_album_popup.ids.container.clear_widgets()
+        self.popup.ids.container.clear_widgets()
         album_list = self.app.meta.album_list() # DB class method
         for album in album_list:
-            self.add_to_album_popup.ids.container.add_widget(
-                AlbumListItem( self.app, album, self.track, self.add_to_album_popup)
+            self.popup.ids.container.add_widget(
+                AlbumListItem( self.app, album, self.track, self.popup)
             )
-        self.add_to_album_popup.open()
+        self.popup.open()
         
     def rename_track(self, new_artist=None, new_song=None):
         if new_artist and new_song:
             self.app.meta.edit_track(self.key, new_artist, new_song) # DB class method
-            self.text = new_artist
             self.secodary_text = new_song
-            return self.rename_track_popup.dismiss()
+            self.text = new_artist
+            return self.popup.dismiss()
+        
+        elif isinstance(new_artist,str):
+            return
             
         self.drop_down_menu.dismiss()
-        self.rename_track_popup = RenameTrackPopup()
-        func = lambda : self.rename_track(
-            new_artist=self.rename_track_popup.ids.author.text,
-            new_song=self.rename_track_popup.ids.song.text
+        self.popup = RenameTrackPopup()
+        func = lambda *args: self.rename_track(
+            new_artist=self.popup.ids.author.text,
+            new_song=self.popup.ids.song.text
         )
-        btn = PopupActionButton("Enter", func, 0.5)
-        self.rename_track_popup.ids.action.clear_widgets()
-        self.rename_track_popup.ids.author.text = self.text
-        self.rename_track_popup.ids.song.text = self.secondary_text
-        self.rename_track_popup.ids.action.add_widget(btn)
-        self.rename_track_popup.open()
+        self.popup.ids.action.ids.text.text = "Confirm"
+        self.popup.ids.song.text = self.secondary_text
+        self.popup.ids.author.text = self.text
+        self.popup.ids.action.bind(on_release=func)
+        self.popup.open()
         
     def delete_track(self, state=None):
         if state == "Confirm":
-            try:
-                self.app.meta.delete_track(self.key, key_album=self.album_key) # DB class method
-            except PermissionError: # if file loaded to player 
-                self.app.player.stop()
-                self.app.meta.delete_track(self.key, key_album=self.album_key) # DB class method
-            
-            return self.confirmation_popup.dismiss()
+            self.app.meta.delete_track(self.key, key_album=self.album_key) # DB class method
+            self.parent.remove_widget(self)    
+            return self.popup.dismiss()
                     
         elif state == "Cancel":
-            return self.confirmation_popup.dismiss()
+            return self.popup.dismiss()
 
         self.drop_down_menu.dismiss()
 
-        self.confirmation_popup = ConfirmationPopup()
+        self.popup = ConfirmationPopup()
 
-        func = lambda :self.delete_track(state = "Confirm")
-        btn1 = PopupActionButton("Confirm", func, 0.2)
-        func = lambda :self.delete_track(state = "Cancel")
-        btn2 = PopupActionButton("Cancel", func, 0.8)
-        self.confirmation_popup.ids.action.clear_widgets()
-        self.confirmation_popup.ids.action.add_widget(btn1)
-        self.confirmation_popup.ids.action.add_widget(btn2)
-        self.confirmation_popup.open()
-    
-    ### TRACK METHODS ###
+        self.popup.ids.info.text = 'Are you sure want to delete track'
+        self.popup.ids.action.ids.text.text = "Confirm"
+        self.popup.ids.action.bind(on_release=lambda *args:self.delete_track(state = "Confirm"))
+        self.popup.ids.cancel.ids.text.text = "Cancel"
+        self.popup.ids.cancel.bind(on_release=lambda *args:self.delete_track(state = "Cancel"))
+        self.popup.open()
 
 class AlbumListItem(OneLineAvatarIconListItem):
     def __init__(self, app, album, track, popup=None):
@@ -318,7 +301,7 @@ class AlbumListItem(OneLineAvatarIconListItem):
         
     def on_touch_up(self, touch):
         if self.collide_point(touch.x, touch.y):
-            self.app.meta.add_to_album(self.track[0], self.album[0]) ###
+            self.app.meta.add_to_album(self.track[0], self.album[0]) # [DB class method]
             return self.popup.dismiss()
             
         
@@ -344,13 +327,27 @@ class SelectionBottomMenu(MDBoxLayout):
         else:
             self.screen.audios_listing(session = 1)
 
-    def delete_selected(self):
-        children = [*self.screen.ids.container.children]
-        for child in children:
-            if isinstance(child, TrackWithCheckBox):
-                child.delete_track()
+    def delete_selected(self, state=None):
+        if state == "Confirm":
+            children = [*self.screen.ids.container.children]
+            for child in children:
+                if isinstance(child, TrackWithCheckBox):
+                    child.delete_track()
                 
-        self.close_selection()
+            self.popup.dismiss()
+            return self.close_selection()
+                    
+        elif state == "Cancel":
+            return self.popup.dismiss()
+        
+        self.popup = ConfirmationPopup()
+
+        self.popup.ids.info.text = 'Are you sure want to delete selected tracks'
+        self.popup.ids.action.ids.text.text = "Confirm"
+        self.popup.ids.action.bind(on_release=lambda *args:self.delete_selected(state = "Confirm"))
+        self.popup.ids.cancel.ids.text.text = "Cancel"
+        self.popup.ids.cancel.bind(on_release=lambda *args:self.delete_selected(state = "Cancel"))
+        self.popup.open()
 
         
     def create_album(self, album_name=None):
@@ -361,15 +358,18 @@ class SelectionBottomMenu(MDBoxLayout):
                 if isinstance(child, TrackWithCheckBox):
                     child.add_to_album(album_key=album_key)
 
-            self.create_album_popup.dismiss()          
+            self.popup.dismiss()          
             return self.close_selection()
+        
+        elif isinstance(album_name,str):
+            return
             
-        self.create_album_popup = CreateAlbumPopup()
-        func = lambda :self.create_album(album_name=self.create_album_popup.ids.album_name.text)
-        btn = PopupActionButton("Enter", func, 0.5)
-        self.create_album_popup.ids.action.clear_widgets()
-        self.create_album_popup.ids.action.add_widget(btn)
-        self.create_album_popup.open()
+        self.popup = CreateAlbumPopup()
+        self.popup.ids.action.ids.text.text = "Confirm"
+        self.popup.ids.action.bind(
+            on_release=lambda *args:self.create_album(album_name=self.popup.ids.album_name.text)
+        )
+        self.popup.open()
         
     def close_selection(self):
         self.screen.remove_widget(self)

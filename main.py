@@ -40,12 +40,12 @@ from custom_widgets import *
 # 3) make loading indicator for track [FIXED]
 # 4) new loading indicator for scrollview [FIXED]
 # 5) fix vk search [FIXED]
-# 6) track count in album
-# 7) make reload of screen on any change (delete, edit, add tracks)
+# 6) track count in album [FIXED]
+# 7) make reload of screen on any change (delete, edit, add tracks) [FIXED] almost done secondary text update problem
 # 8) close audio_bar on side menu open
 # 9) track highlight does not work properly sometimes
 # 10) side menu touch event should not trigger scrollview and scrollview elements
-
+# 11) rebuild login scheam
 
 
 class CustomScreen(Screen):
@@ -100,14 +100,17 @@ class CustomScreen(Screen):
             for track in track_list[offset:offset + number_to_load]:
                 if 'temp' in track:
                     continue
-                if track == 'EOF':
+                if track == 'EOL':
                     isend = True
 
                 else:
                     track_obj = Track(self.app, track)
-                    if album_key == self.app.player.album_key and self.app.player.get_current_track()[0:5] == track[0:5]: # Now playing UI update
+                    if album_key == self.app.player.album_key and self.app.player.get_current_track() == track[1]:
+                        # Now playing UI update
                         track_obj.highlighte()
-                        self.app.player.current_track_obj = track_obj
+                        if not self.app.player.current_track_obj.parent:
+                            self.app.player.current_track_obj = track_obj
+                            self.app.player.track_list = track_list
                             
                     self.ids.container.add_widget(track_obj)
                     
@@ -133,14 +136,17 @@ class CustomScreen(Screen):
                 state = 'load vk audio'
                 
             for track in track_list[offset:offset + number_to_load]:
-                if track == 'EOF': # list is ended
+                if track == 'EOL': # list is ended
                     isend = True
                     
                 else:
                     track_obj = VKTrack(self.session,self.app,track)
-                    if album_key == self.app.player.album_key and self.app.player.get_current_track()[0:5] == track[0:5]: # Now playing UI update
+                    if album_key == self.app.player.album_key and self.app.player.get_current_track() == track[1]:
+                        # Now playing UI update
                         track_obj.highlighte()
-                        self.app.player.current_track_obj = track_obj
+                        if not self.app.player.current_track_obj.parent:
+                            self.app.player.current_track_obj = track_obj
+                            self.app.player.track_list = track_list
                             
                     self.ids.container.add_widget(track_obj)
                     
@@ -154,7 +160,7 @@ class CustomScreen(Screen):
             for track in track_list[offset:offset + number_to_load]:
                 if 'temp' in track:
                     continue
-                if track == 'EOF': # list is ended
+                if track == 'EOL': # list is ended
                     isend = True
 
                 else:
@@ -177,7 +183,9 @@ Search query: {search_query}
 Global search: {global_search}
 Count: {len(track_list)}'''
             )
-        if self.name == 'album':
+        if self.name == 'album' and isend:
+            self.ids.count.text = str(len(track_list)-1) + " track in album"
+        elif self.name == 'album':
             self.ids.count.text = str(len(track_list)) + " track in album"
         self.track_list = track_list
         self.isend = isend
@@ -205,7 +213,7 @@ Count: {len(track_list)}'''
                 if 'temp' in album:
                     continue
 
-                if album == 'EOF':
+                if album == 'EOL':
                     isend = True
                     
                 else:
@@ -224,7 +232,7 @@ Count: {len(track_list)}'''
                 album_list = await self.session.load_playlists()
                 
             for album in album_list[offset:offset + number_to_load]:
-                if album == 'EOF': # list is ended
+                if album == 'EOL': # list is ended
                     isend = True
                     
                 else:
@@ -256,7 +264,7 @@ Count: {len(album_list)}'''
         if 'session' not in dir(self):
             return
 
-        if self.name == 'start':
+        if self.name in ['start','search']:
             scroll_view.loading_container_up.load_sign.start_anim()
             self.ids.container.clear_widgets()
             await self.load_music()
@@ -273,6 +281,7 @@ Count: {len(album_list)}'''
             self.ids.container.clear_widgets()
             await self.load_albums()
             scroll_view.loading_container_up.load_sign.stop_anim()
+
 
 #################
 ### Main Screen  ###
@@ -365,14 +374,14 @@ class Start(CustomScreen):
         if 'popup_list' not in dir(self):
             self.popup_list = [
                 CaptchaPopup,SecureCodePopup,CreateAlbumPopup,
-                ConfirmationPopup,RenameAlbumPopup,AddToAlbumPopup,
+                ConfirmationPopup,RenameAlbumPopup,
                 AddToAlbumPopup,RenameTrackPopup]
 
         if 'popup_index' not in dir(self):
             self.popup_index = 0
 
         self.popup_list[self.popup_index]().open()
-        self.popup_index += 1
+        self.popup_index += 1 if self.popup_index < len(self.popup_list)-1 else -self.popup_index
         
 
     async def load_more(self,scroll_view):
@@ -464,7 +473,6 @@ class Album(CustomScreen):
             {"viewclass": "OneLineListItem","text": f"Selection","on_release": self.open_selection_menu},
             {"viewclass": "OneLineListItem","text": f"Delete album","on_release": self.delete_album},
             {"viewclass": "OneLineListItem","text": f"Rename album","on_release": self.rename_album},
-            {"viewclass": "OneLineListItem","text": f"Add track","on_release": self.add_track},
         ]
         self.drop_down_menu = MDDropdownMenu(
             caller=self.ids.menu_row, items=menu_items,position="center",width_mult=4
@@ -476,40 +484,41 @@ class Album(CustomScreen):
         if state == "Confirm":
             self.app.meta.delete_album(self.album[0]) # [DB class method]
                 
-            self.confirmation_popup.dismiss()
+            self.popup.dismiss()
             return self.close_album()
         
         elif state == "Cancel":
-            return self.confirmation_popup.dismiss()
+            return self.popup.dismiss()
             
-        self.confirmation_popup = ConfirmationPopup()
-        func = lambda :self.delete_album(state = "Confirm")
-        btn1 = PopupActionButton("Confirm", func, 0.2)
-        func = lambda :self.delete_album(state = "Cancel")
-        btn2 = PopupActionButton("Cancel", func, 0.8)
-        self.confirmation_popup.ids.action.clear_widgets()
-        self.confirmation_popup.ids.action.add_widget(btn1)
-        self.confirmation_popup.ids.action.add_widget(btn2)
-        self.confirmation_popup.open()
+        self.popup = ConfirmationPopup()
+        self.popup.ids.info.text = 'Are you sure want to delete album'
+        self.popup.ids.action.ids.text.text = "Confirm"
+        self.popup.ids.action.bind(on_release=lambda *args:self.delete_album(state = "Confirm"))
+        self.popup.ids.cancel.ids.text.text = "Cancel"
+        self.popup.ids.cancel.on_release=lambda *args:self.delete_album(state = "Cancel")
+        self.popup.open()
     
     def rename_album(self, album_name=None):
         self.drop_down_menu.dismiss()
         if album_name:
             self.app.meta.edit_album(self.album[0], album_name) # [DB class method]
-            self.rename_album_popup.dismiss()
-            self.ids.menu_row.title = album_name
+            self.popup.dismiss()
+            self.ids.album_name.text = album_name
             return
         
-        self.rename_album_popup = RenameAlbumPopup()
+        elif isinstance(album_name,str):
+            return
+        
+        self.popup = RenameAlbumPopup()
 
-        func = lambda :self.rename_album(album_name=self.rename_album_popup.ids.album_name.text)
-        btn = PopupActionButton("Enter", func, 0.5)
-        self.rename_album_popup.ids.action.clear_widgets()
-        self.rename_album_popup.ids.action.add_widget(btn)
-        self.rename_album_popup.open()
-
-    def add_track(self):
-        self.drop_down_menu.dismiss()
+        self.popup.ids.action.ids.text.text = "Confirm"
+        self.popup.ids.album_name.text = self.ids.album_name.text
+        self.popup.ids.action.bind(
+            on_release= lambda *args:self.rename_album(
+                album_name=self.popup.ids.album_name.text
+            )
+        )
+        self.popup.open()
 
     def open_selection_menu(self):
         self.drop_down_menu.dismiss()
@@ -569,18 +578,20 @@ class AlbumList(CustomScreen):
     def add_album(self, album_name=None, img = None):
         if album_name:
             self.app.meta.add_album(album_name, img=img) # [DB class method]
-            self.create_album_popup.dismiss()
+            self.popup.dismiss()
             return self.open_album_list()
         
-        elif 'create_album_popup' in dir(self):
-            self.create_album_popup.dismiss()
+        elif isinstance(album_name,str):
+            self.popup.dismiss()
                
-        self.create_album_popup = CreateAlbumPopup()
-        func = lambda :self.add_album(album_name=self.create_album_popup.ids.album_name.text)
-        btn = PopupActionButton("Enter", func, 0.5)
-        self.create_album_popup.ids.action.clear_widgets()
-        self.create_album_popup.ids.action.add_widget(btn)
-        self.create_album_popup.open()
+        self.popup = CreateAlbumPopup()
+        self.popup.ids.action.ids.text.text = "Confirm"
+        self.popup.ids.action.bind(
+            on_release= lambda *args:self.add_album(
+                album_name=self.popup.ids.album_name.text
+            )
+        )
+        self.popup.open()
 
     async def load_more(self,scroll_view):
         scroll_view.loading_container_down.load_sign.start_anim()
@@ -603,6 +614,7 @@ class Search(CustomScreen):
 
     def open_search(self,session=None):
         self.global_mode = False
+        self.ids.mode_btn_img.source = "./icons/search.png"
         self.session = session
         if 'app' not in dir(self):
             self.app = MDApp.get_running_app()
@@ -661,13 +673,17 @@ class Search(CustomScreen):
 #################
 ### Login Screen ###
 #################
+### Has not yet tested use careful 
 class Login(CustomScreen):
+    
     def close_login_page(self):
         self.manager.transition = SlideTransition(direction="up")
         self.manager.current = 'start'
 
     def open_login_page(self,media):
-        self.app = MDApp.get_running_app()
+        if 'app' not in dir(self):
+            self.app = MDApp.get_running_app()
+            
         if media == "./icons/vk.png": 
             self.secure_code_popup = SecureCodePopup()
             self.captcha_popup = CaptchaPopup()
@@ -719,13 +735,12 @@ class Login(CustomScreen):
             self.captcha_popup.dismiss()
             #popup with secure code appear
 
-            func = lambda : self.do_login_vk_secure_code(
+            func = lambda *args: self.do_login_vk_secure_code(
                 self.secure_code_popup.ids.secure_code.text,
                 auth_hash
             )
-            btn = PopupActionButton("Enter",func, 0.5)
-            self.secure_code_popup.ids.action.clear_widgets()
-            self.secure_code_popup.ids.action.add_widget(btn)
+            self.secure_code_popup.ids.action.ids.text.text = "Confirm"
+            self.secure_code_popup.ids.action.bind(on_release= func)
             self.secure_code_popup.open()
             
         elif status == 'Captcha needed':
@@ -733,17 +748,15 @@ class Login(CustomScreen):
                 self.captcha_popup.ids.error.text = 'Incorrect captcha'
             vk.captcha(self.session, self.captcha_sid)# load captcha img
             #popup with captcha appear
-            func = lambda : self.do_login_vk(
+            func = lambda *args: self.do_login_vk(
                 login,
                 password,
                 captcha_sid=captcha_sid,
                 captcha_key=self.captcha_popup.ids.captcha_key.text)
-            btn = PopupActionButton("Enter",func, 0.5)
+            self.captcha_popup.ids.action.ids.text.text = "Confirm"
+            self.captcha_popup.ids.action.bind(on_release= func)
             
-            self.captcha_popup.ids.action.clear_widgets()
-            self.captcha_popup.ids.action.add_widget(btn)
-            
-            self.captcha_popup.ids.captcha.source = 'captcha.jpg'
+            self.captcha_popup.ids.captcha.source = 'captcha.jpg' #[FIX] provide app full path
             self.captcha_popup.ids.captcha.reload()# provide img up to date
             self.captcha_popup.open()
             
@@ -773,15 +786,14 @@ class Login(CustomScreen):
             self.secure_code_popup.dismiss()
             vk.captcha(self.session, self.captcha_sid) # load captcha img
             #popup with captcha appear
-            func = lambda : self.do_login_vk_secure_code(
+            func = lambda *args: self.do_login_vk_secure_code(
                 secure_code,
                 auth_hash,
                 captcha_sid=captcha_sid,
                 captcha_key=self.captcha_popup.ids.captcha_key.text
             )
-            btn = PopupActionButton("Enter",func, 0.5)
-            self.captcha_popup.ids.action.clear_widgets()
-            self.captcha_popup.ids.action.add_widget(btn)
+            self.captcha_popup.ids.action.ids.text.text = "Confirm"
+            self.captcha_popup.ids.action.bind(on_release= func)
             
             self.captcha_popup.ids.captcha.source = 'captcha.jpg'
             self.captcha_popup.ids.captcha.reload()# provide img up to date
@@ -791,13 +803,12 @@ class Login(CustomScreen):
             # show error
             self.secure_code_popup.ids.error.text = 'Incorrect secure code'
             #popup with secure code appear
-            func = lambda : self.do_login_vk_secure_code(
+            func = lambda *args: self.do_login_vk_secure_code(
                 self.secure_code_popup.ids.secure_code.text,
                 auth_hash
             )
-            btn = PopupActionButton("Enter",func, 0.5)
-            self.secure_code_popup.ids.action.clear_widgets()
-            self.secure_code_popup.ids.action.add_widget(btn)
+            self.secure_code_popup.ids.action.ids.text.text = "Confirm"
+            self.secure_code_popup.ids.action.bind(on_release= func)
             
             self.secure_code_popup.open()
             

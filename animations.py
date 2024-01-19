@@ -208,7 +208,7 @@ class CircularProgressBar(LoadSignBase):
         return self._max_progress
 
     @max.setter
-    def max(self, value: int):
+    def max(self, value):
         if type(value) != int:
             raise TypeError("Maximum progress only accepts an integer value, not {}!".format(type(value)))
         elif value <= self._min_progress:
@@ -222,7 +222,7 @@ class CircularProgressBar(LoadSignBase):
         return self._min_progress
 
     @min.setter
-    def min(self, value: int):
+    def min(self, value):
         if type(value) != int:
             raise TypeError("Minimum progress only accepts an integer value, not {}!".format(type(value)))
         elif value > self._max_progress:

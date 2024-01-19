@@ -1,5 +1,7 @@
 #:import sp kivy.metrics.sp
 #:import dp kivy.metrics.dp
+#:import CoreLabel kivy.core.text.Label
+#:import Factory kivy.factory.Factory
 <SelectionBottomMenu>:
 	id: selection_row
     md_bg_color: app.main_clr
@@ -318,127 +320,129 @@
                 id: action
 
 
-#:import Factory kivy.factory.Factory
-<LoginPopup@Popup>:
-    title: ""
-    size_hint: (None, None)
-    size: ("300dp","200dp")
-    separator_height: 0
-    background_color: "#b5b9ba"
 
-    BoxLayout:
-        orientation: "vertical"
-    	
-        size: root.width, root.height
+<PopupBody>:
+    orientation: "vertical"
+    size: root.width, root.height
+    canvas.before:
 
+        Color:
+            rgba: 1, 1, 1, 1
+
+        RoundedRectangle:
+            pos: self.x - dp(20), self.y - dp(20)
+            size: self.width + dp(40), self.height + dp(60)
+            radius: [dp(10)]
+
+        Color:
+            rgba: app.main_clr2
+
+        RoundedRectangle:
+            pos: self.x - dp(20), self.y + self.height - dp(20)
+            size: self.width + dp(40), dp(60)
+            radius: [dp(10),dp(10),0,0]
+
+        Color:
+            rgba: app.main_clr
+        Line:
+            width: dp(1)
+            points: self.x - dp(20),self.y + self.height - dp(20),self.x + self.width + dp(20),self.y + self.height - dp(20)
+
+        Color:
+            rgba: app.main_clr
+        Line:
+            width: dp(2)
+            rounded_rectangle: (self.x - dp(20), self.y - dp(20), self.width + dp(40), self.height + dp(60), dp(10))
+
+<PopupActionButton>:
+    size: ("160dp","70dp")
+    size_hint: (None,None)
+    pos_hint: {"center_y": 0.22}
+    MDRelativeLayout:
         canvas.before:
             Color:
-                rgba: 1, 1, 1, 1
+                rgba: app.main_clr2
 
             RoundedRectangle:
-                pos: self.x - 20, self.y - 20
-                size: self.width + 40, self.height + 60
-                radius: [10]
+                pos: self.pos
+                size: self.width, self.height
+                radius: [dp(5)]
 
             Color:
                 rgba: .5, .5, .5, 1
             Line:
-                width: 2
-                rounded_rectangle: (self.x - 20, self.y - 20, self.width + 40, self.height + 60, 10)
+                width: dp(1)
+                rounded_rectangle: (self.x, self.y, self.width, self.height,dp(5))
 
-        BoxLayout:
-            orientation: "vertical"
+    Label:
+        id: text
+        text: 'Text'
+        color: (0,0,0,1)
+        pos_hint: {"center_x": .5, "center_y": 0.5}
+        font_size: "18sp"
+        halign: "center"
+
+<LoginPopup@Popup>:
+    title: ""
+    size_hint: (.8,.2)
+    separator_height: 0
+
+    PopupBody
+        MDRelativeLayout:
+
             Label:
                 text: 'Choose media'
-                font_size: '28sp'
-                color: "#9539ba"
-                size_hint: (None, None)
-                height: self.texture_size[1] + dp(10)
-                pos_hint: {'center_x':0.5, 'y':1.6}
+                color: (0,0,0,1)
+                font_size: "18sp"
+                pos_hint: {'center_x':0.5, 'center_y':1.02}
+                haling: "center"
 
+            Image:
+                id: vk
+                size: ("70dp","70dp")
+                size_hint: (None,None)
+                source: "./icons/vk.png"
+                pos_hint: {'center_y':0.5, 'center_x':0.35}
 
-            BoxLayout:
-                spacing: "10dp"
-                padding: [(self.size[0]-dp(110))/2,(self.size[1]-dp(50))/2]
-                RelativeLayout:
-                    size: ("50dp","50dp")
-                    size_hint: (None,None)
-                    Image:
-                        id: vk
-                        size: ("50dp","50dp")
-                        size_hint: (None,None)
-                        source: "./icons/vk.png"
-                        pos_hint: {'center_x':0.5, 'center_y':0.5}
+            Button:
+                size: ("70dp","70dp")
+                size_hint: (None,None)
+                pos_hint: {'center_y':0.5, 'center_x':0.35}
+                on_press: app.switch_to_login(root.ids.vk.source, root)
+                opacity: 0.1
 
-            	    Button:
+            Image:
+                id: ya
+                size: ("70dp","70dp")
+                size_hint: (None,None)
+                source:  "./icons/ya.png"
+                pos_hint: {'center_y':0.5, 'center_x':0.65}
 
-                        size: ("50dp","50dp")
-                        size_hint: (None,None)
-                        pos_hint: {'center_x':0.5, 'center_y':0.5}
-                        on_press: app.switch_to_login(root.ids.vk.source, root)
-                        opacity: 0.1
-
-                RelativeLayout:
-                    size: ("50dp","50dp")
-                    size_hint: (None,None)
-
-                    Image:
-                        id: ya
-                        size: ("50dp","50dp")
-                        size_hint: (None,None)
-                        source:  "./icons/ya.png"
-                        pos_hint: {'center_x':0.5, 'center_y':0.5}
-
-                    Button:
-
-                        size: ("50dp","50dp")
-                        size_hint: (None,None)
-                        pos_hint: {'center_x':0.5, 'center_y':0.5}
-                	    on_press: app.switch_to_login(root.ids.ya.source, root)
-                        opacity: 0.1
-
-
+            Button:
+                size: ("70dp","70dp")
+                size_hint: (None,None)
+                pos_hint: {'center_y':0.5, 'center_x':0.65}
+                on_press: app.switch_to_login(root.ids.ya.source, root)
+                opacity: 0.1
 
 <CaptchaPopup>:
     title: ""
-    size_hint: (None, None)
-    size: ("420dp","280dp")
+    size_hint: (.8,.3)
     separator_height: 0
     pos_hint: {'center_x':0.5}
-    background_color: "#b5b9ba"
     on_dismiss: 
         self.ids.error.text = ''
         self.ids.captcha_key.text = ''
         self.ids.action.clear_widgets()
 
-    BoxLayout:
-        orientation: "vertical"
-        
-        size: root.width, root.height
-
-        canvas.before:
-            Color:
-                rgba: 1, 1, 1, 1
-
-            RoundedRectangle:
-                pos: self.x - 20, self.y - 20
-                size: self.width + 40, self.height + 60
-                radius: [10]
-
-            Color:
-                rgba: .5, .5, .5, 1
-            Line:
-                width: 2
-                rounded_rectangle: (self.x - 20, self.y - 20, self.width + 40, self.height + 60, 10)
-
+    PopupBody:
         MDRelativeLayout:
-            orientation: 'vertical'
         
-            MDLabel:
+            Label:
                 text: 'Enter symbols from captcha'
-                text_color: "#ffb5b1"
-                font_size: "24sp"
-                pos_hint: {'center_x':0.63, 'center_y':0.97}
+                color: (0,0,0,1)
+                font_size: "18sp"
+                pos_hint: {'center_x':0.5, 'center_y':1.02}
                 haling: "center"
 
             Image:
@@ -447,131 +451,106 @@
                 size_hint: (None,None)
                 pos_hint: {'center_x':0.5, 'center_y':0.78}
                 source: "captcha.jpg"
+                canvas.after:
+                    Color:
+                        rgba: app.main_clr
+
+                    Line:
+                        width: dp(1)
+                        rectangle: (self.x - dp(1), self.y - dp(1), self.width + dp(2), self.height + dp(2))
 
 
             MDTextField:
                 id: captcha_key
                 multiline:False
                 hint_text: "Captcha key"
-                font_size:'32sp'
+                font_size:'20sp'
                 pos_hint:{'center_x':0.5, 'center_y':0.5}
-                size: (root.size[0]*0.8,"100dp")
+                size: (root.size[0]*0.5,"100dp")
                 size_hint: (None,None)
 
-		    MDLabel:
+		    Label:
         	    id: error
-        	    text:''
+        	    text:'error'
         	    font_size:"18sp"
-        	    pos_hint: {'center_x':0.68, 'center_y':0.33}
+        	    pos_hint: {'center_x':0.5, 'center_y':0.33}
         	    theme_text_color: "Custom"
-    		    text_color: "red"
+    		    color: (1,0,0,1)
         	    haling: "center"
 
-    	    MDRelativeLayout:
-    		    id: action
+
+            PopupActionButton:
+                id: action
+                pos_hint: {'center_x':0.5}
 
 
 <SecureCodePopup>:
     title: ""
-    size_hint: (None, None)
-    size: ("420dp","220dp")
+    size_hint: (.8,.25)
     separator_height: 0
     pos_hint: {'center_x':0.5}
-    background_color: "#b5b9ba"
     on_dismiss: 
     	self.ids.error.text = ''
     	self.ids.secure_code.text = ''
     	self.ids.action.clear_widgets()
-    BoxLayout:
-        orientation: "vertical"
-        
-        size: root.width, root.height
 
-        canvas.before:
-            Color:
-                rgba: 1, 1, 1, 1
-
-            RoundedRectangle:
-                pos: self.x - 20, self.y - 20
-                size: self.width + 40, self.height + 60
-                radius: [10]
-
-            Color:
-                rgba: .5, .5, .5, 1
-            Line:
-                width: 2
-                rounded_rectangle: (self.x - 20, self.y - 20, self.width + 40, self.height + 60, 10)
-
+    PopupBody:
         MDRelativeLayout:
-            orientation: 'vertical'
         
-            MDLabel:
+            Label:
                 text: 'Enter secure code to email or phone'
-                font_size: "24sp"
-                pos_hint: {'center_x':0.5, 'center_y':0.98}
+                color: (0,0,0,1)
+                font_size: "18sp"
+                pos_hint: {'center_x':0.5, 'center_y':1.02}
+                haling: "center"
 
             MDTextField:
                 id: secure_code
                 multiline:False
                 hint_text: "Secure code"
-                font_size:'32sp'
+                font_size:'20sp'
                 pos_hint:{'center_x':0.5, 'center_y':0.65}
-                size: (root.size[0]*0.8,"100dp")
+                size: (root.size[0]*0.5,"100dp")
                 size_hint: (None,None)
 
-            MDLabel:
+            Label:
                 id: error
-                text:''
+                text:'error'
                 font_size:"18sp"
-                pos_hint: {'center_x':0.68, 'center_y':0.37}
-                theme_text_color: "Custom"
-                text_color: "red"
+                pos_hint: {'center_x':0.5, 'center_y':0.41}
+                color: (1,0,0,1)
                 haling: "center"
 
-    	    MDRelativeLayout:
-    		    id: action
+    	    PopupActionButton:
+                id: action
+                pos_hint: {'center_x':0.5}
 
 <CreateAlbumPopup>:
     title: ""
-    size_hint: (None, None)
-    size: ("420dp","250dp")
+    size_hint: (.8,.3)
     separator_height: 0
     pos_hint: {'center_x':0.5}
-    #background_color: "#b5b9ba"
     on_dismiss: 
         self.ids.cover.source = "./icons/add-img.png"
         self.ids.album_name.text = ''
         self.ids.action.clear_widgets()
-    BoxLayout:
-        orientation: "vertical"
-        
-        size: root.width, root.height
 
-        canvas.before:
-            Color:
-                rgba: 1, 1, 1, 1
-
-            RoundedRectangle:
-                pos: self.x - 20, self.y - 20
-                size: self.width + 40, self.height + 60
-                radius: [10]
-
-            Color:
-                rgba: .5, .5, .5, 1
-            Line:
-                width: 2
-                rounded_rectangle: (self.x - 20, self.y - 20, self.width + 40, self.height + 60, 10)
-
+    PopupBody:
         MDRelativeLayout:
-            orientation: 'vertical'
+            Label:
+                text: 'Create album'
+                color: (0,0,0,1)
+                font_size: "18sp"
+                pos_hint: {'center_x':0.5, 'center_y':1.02}
+                haling: "center"
             Image:
                 id: cover
                 source: "./icons/add-img.png"
-                pos_hint:{'center_x':0.5, 'center_y':0.95}
+                pos_hint:{'center_x':0.5, 'center_y':0.75}
                 size: ("90dp","90dp")
                 size_hint: (None,None)
             Button:
-                pos_hint:{'center_x':0.5, 'center_y':0.95}
+                pos_hint:{'center_x':0.5, 'center_y':0.75}
                 size: ("90dp","90dp")
                 size_hint: (None,None)
                 opacity: 0
@@ -581,165 +560,135 @@
                 id: album_name
                 multiline:False
                 hint_text: "Album name"
-                font_size:'32sp'
-                pos_hint:{'center_x':0.5, 'center_y':0.5}
-                size: (root.size[0]*0.8,"100dp")
+                font_size:'20sp'
+                pos_hint:{'center_x':0.5, 'center_y':0.48}
+                size: (root.size[0]*0.7,"100dp")
                 size_hint: (None,None)
 
-    	    MDRelativeLayout:
-    		    id: action
+    	    PopupActionButton:
+                id: action
+                pos_hint: {'center_x':0.5}
 
 <RenameAlbumPopup>:
     title: ""
-    size_hint: (None, None)
-    size: ("420dp","150dp")
+    size_hint: (.8,.2)
     separator_height: 0
     pos_hint: {'center_x':0.5}
-    background_color: "#b5b9ba"
     on_dismiss: 
         self.ids.album_name.text = ''
         self.ids.action.clear_widgets()
 
-    BoxLayout:
-        orientation: "vertical"
-        size: root.width, root.height
-        canvas.before:
-            Color:
-                rgba: 1, 1, 1, 1
-
-            RoundedRectangle:
-                pos: self.x - 20, self.y - 20
-                size: self.width + 40, self.height + 60
-                radius: [10]
-
-            Color:
-                rgba: .5, .5, .5, 1
-            Line:
-                width: 2
-                rounded_rectangle: (self.x - 20, self.y - 20, self.width + 40, self.height + 60, 10)
-
+    PopupBody:
         MDRelativeLayout:
-            orientation: 'vertical'
+            Label:
+                text: 'Rename album'
+                color: (0,0,0,1)
+                font_size: "18sp"
+                pos_hint: {'center_x':0.5, 'center_y':1.02}
+                haling: "center"
 
             MDTextField:
         	    id: album_name
                 multiline:False
                 hint_text: "New album name"
-                font_size:'32sp'
-                pos_hint:{'center_x':0.5, 'center_y':0.9}
-                size: (root.size[0]*0.8,"100dp")
+                font_size:'20sp'
+                pos_hint:{'center_x':0.5, 'center_y':0.55}
+                size: (root.size[0]*0.7,"100dp")
                 size_hint: (None,None)
 
-    	    MDRelativeLayout:
-    		    id: action
+    	    PopupActionButton:
+                id: action
+                pos_hint: {'center_x':0.5}
 
 <RenameTrackPopup>:
     title: ""
-    size_hint: (None, None)
-    size: ("420dp","220dp")
+    size_hint: (.8,.25)
     separator_height: 0
     pos_hint: {'center_x':0.5}
-    background_color: "#b5b9ba"
     on_dismiss: 
         self.ids.author.text = ''
         self.ids.song.text = ''
         self.ids.action.clear_widgets()
 
-    BoxLayout:
-        orientation: "vertical"
-        size: root.width, root.height
-        canvas.before:
-            Color:
-                rgba: 1, 1, 1, 1
-
-            RoundedRectangle:
-                pos: self.x - 20, self.y - 20
-                size: self.width + 40, self.height + 60
-                radius: [10]
-
-            Color:
-                rgba: .5, .5, .5, 1
-            Line:
-                width: 2
-                rounded_rectangle: (self.x - 20, self.y - 20, self.width + 40, self.height + 60, 10)
-
+    PopupBody:
         MDRelativeLayout:
-            orientation: 'vertical'
+            Label:
+                text: 'Rename track'
+                color: (0,0,0,1)
+                font_size: "18sp"
+                pos_hint: {'center_x':0.5, 'center_y':1.02}
+                haling: "center"
 
             MDTextField:
                 id: author
                 multiline:False
                 hint_text: "Author"
-                font_size:'32sp'
-                pos_hint:{'center_x':0.5, 'center_y':0.9}
-                size: (root.size[0]*0.8,"100dp")
+                font_size:'18sp'
+                pos_hint:{'center_x':0.5, 'center_y':0.75}
+                size: (root.size[0]*0.7,"70dp")
                 size_hint: (None,None)
             MDTextField:
                 id: song
                 multiline:False
                 hint_text: "Song"
-                font_size:'32sp'
-                pos_hint:{'center_x':0.5, 'center_y':0.6}
-                size: (root.size[0]*0.8,"100dp")
+                font_size:'18sp'
+                pos_hint:{'center_x':0.5, 'center_y':0.5}
+                size: (root.size[0]*0.7,"70dp")
                 size_hint: (None,None)
 
-            MDRelativeLayout:
+            PopupActionButton:
                 id: action
+                pos_hint: {'center_x':0.5}
 
 <AddToAlbumPopup>:
-    title: "Add to album"
-    size_hint: (1,.5)
-    md_bg_color: "#000217"
+    title: ""
+    separator_height: 0
+    size_hint: (.9,.5)
 
-    MDBoxLayout:
-        orientation: 'vertical'
+    PopupBody:
+        MDRelativeLayout:
+            Label:
+                text: 'Add track to album'
+                color: (0,0,0,1)
+                font_size: "18sp"
+                pos_hint: {'center_x':0.5, 'center_y':1.02}
+                haling: "center"
 
-        MDScrollView:
-            do_scroll_x: False
-            MDList:
-                adaptive_height: True
-                id: container
+            MDScrollView:
+                size_hint: (1,0.95)
+                do_scroll_x: False
+                MDList:
+                    adaptive_height: True
+                    id: container
 
 <ConfirmationPopup>:
     title: ""
-    size_hint: (None, None)
-    size: ("420dp","150dp")
+    size_hint: (.8,.15)
     separator_height: 0
     pos_hint: {'center_x':0.5}
-    background_color: "#b5b9ba"
     on_dismiss: 
         self.ids.info.text = ''
-        self.ids.action.clear_widgets()
 
-    BoxLayout:
-        orientation: "vertical"
-        size: root.width, root.height
-        canvas.before:
-            Color:
-                rgba: 1, 1, 1, 1
-
-            RoundedRectangle:
-                pos: self.x - 20, self.y - 20
-                size: self.width + 40, self.height + 60
-                radius: [10]
-
-            Color:
-                rgba: .5, .5, .5, 1
-            Line:
-                width: 2
-                rounded_rectangle: (self.x - 20, self.y - 20, self.width + 40, self.height + 60, 10)
-
+    PopupBody:
         MDRelativeLayout:
-            orientation: 'vertical'
         
-            MDLabel:
+            Label:
         	    id: info
-                text: 'Are you shour want to delete album'
-                font_size: "24sp"
-                pos_hint: {'center_x':0.5, 'center_y':0.9}
+                text: 'Are you sure want to delete album'
+                color: (0,0,0,1)
+                font_size: "18sp"
+                pos_hint: {'center_x':0.5, 'center_y':1.02}
+                haling: "center"
 
-    	    MDRelativeLayout:
-    		    id: action
+    	    PopupActionButton:
+                id: action
+                pos_hint: {'center_x':0.25}
+                on_release: print(123)
+
+            PopupActionButton:
+                id: cancel
+                pos_hint: {'center_x':0.75}
+                on_release: print(123)
 
 
 

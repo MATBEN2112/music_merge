@@ -33,24 +33,39 @@ class PlayerUI:
                 self.track_list = self.app.album_screen.track_list
             else:
                 self.track_list = self.app.main_screen.track_list
-                
+
+        for i in range(len(self.track_list)):
+            if self.track_list[i][1] == track_obj.track[1]:
+                self.key = i
+                break
+            
         self.current_track = track_obj.track
         print('New track to play arrived: ', self.current_track)
         # work with UI and load audio to player
         self._start_player_session(track_obj)
-        
+
     def _start_player_session(self, track_obj):
-        ''' Function starts music play. Cases '''
-        # clean old player widgets if exists
-        #self.app.screen_container.add_widget(self.app.audio_bar)
+        ''' Function starts music playback. Cases '''
 
         # highlighte and save track as element of UI
         if self.current_track_obj:
             self.current_track_obj.unhighlighte()
+
+        if self.app.manager.current == 'search':
+            track_obj.highlighte()
+            for child in self.app.main_screen.ids.container.children:
+                if not isinstance(child, (Track,VKTrack)):
+                    continue
+                
+                if child.path == self.current_track[1]:
+                    self.current_track_obj = child
+                    break
+                    
+        else:
+            self.current_track_obj = track_obj
             
-        self.current_track_obj = track_obj
         self.current_track_obj.highlighte()
-        print('Play audio')
+
         self.load()
         print('audio loaded')
         if self.app.audio_bar.status == 'closed':
@@ -81,7 +96,6 @@ class PlayerUI:
                 self.app.player_screen.ids.song_timer.text = current_time  
                 
             if 'info_dict' not in dir(self) or self.info_dict['file'] != info_dict['file']: # track
-                #self.track = (info_dict['key'],info_dict['file'],info_dict['author'],info_dict['song'],info_dict['img'])
                 # player image
                 if 'img_back' in dir(self):
                     self.app.player_screen.remove_widget(self.img_back)
@@ -112,8 +126,8 @@ class PlayerUI:
                             self.current_track_obj.highlighte()
                             break
 
-                except (IndexError, AttributeError):
-                    print('UI element is not loaded')
+                except (IndexError, AttributeError) as e:
+                    print('UI element is not loaded:', e)
             
             if 'info_dict' not in dir(self) or self.info_dict['status'] != info_dict['status']: # play/stop button
                 img = "./icons/stop.png" if info_dict['status'] else "./icons/play.png"
@@ -133,43 +147,14 @@ class PlayerUI:
         if self.app.audio_bar.status == 'open':
             self.app.audio_bar.hide()
 
-    def _next(self,n):
-        for track in self.track_list: 
-            if track[0:5] == self.current_track[0:5]:
-                i = self.track_list.index(track)
-                break
-                
-        if n+i < 0:
-            print("List out of range.")
-            self.pause()
-            self.seek(0.1)
-            return
-        
-        try:
-            if self.track_list[n+i] == 'EOF':
-                print("List out of range.")
-                self.pause()
-                self.seek(0.1)
-                return
-            else:
-                self.current_track = self.track_list[n+i]
-                        
-        except IndexError:
-            print('Track data is not loaded')
-            if isinstance(self.current_track_obj, VKTrack):
-                self.track_list += self.current_track[5].load_more_t()
-                                 
-            if self.track_list[n+i] == 'EOF':
-                print("List out of range.")
-                self.pause()
-                self.seek(0.1)
-                return
-            else:
-                self.current_track = self.track_list[n+i]
+    def get_current_track(self):
+        info = self.get_info()
+        return info['file'] if info else None
 
 
 class DesktopPlayer(PlayerUI):
     def __init__(self, app):
+        self.key = 0
         self.current_track = None
         self.current_track_obj = None
         self.track_list = None
@@ -207,7 +192,7 @@ class DesktopPlayer(PlayerUI):
             self.player.stop()
         
     def stop(self):
-        if 'player' in dir(self) and self.player:
+        if self.player:
             print("stop")
             self.pause()
             self._stop_player_session()
@@ -219,7 +204,32 @@ class DesktopPlayer(PlayerUI):
             self.album_key = None
         
     def play_next(self, n):
-        self._next(n)
+        print(self.key)
+        def _():
+            if self.track_list[n+self.key] == 'EOL':
+                print("List out of range.")
+                self.pause()
+                self.seek(0.1)
+                return
+            else:
+                self.current_track = self.track_list[n+self.key]
+                self.key += n
+                
+        if n+self.key < 0:
+            print("List out of range.")
+            self.pause()
+            self.seek(0.1)
+            return
+        
+        try:
+            _()
+                        
+        except IndexError:
+            print('Track data has not loaded yet')
+            if isinstance(self.current_track_obj, VKTrack):
+                self.track_list += self.current_track[5].load_more_t()
+                                 
+            _()
 
         self.pause()
         self.seek(0.1)
@@ -242,11 +252,10 @@ class DesktopPlayer(PlayerUI):
 
     def get_length(self):
         return self.player.length if self.player else 0
-    
-    def get_current_track(self):
-        return self.current_track if self.current_track else (None,)*5
 
     def get_info(self):
+        if not self.current_track_obj:
+            return
 
         status = True if self.player and self.player.state == 'play' else False
         info_dict = {
@@ -261,6 +270,7 @@ class DesktopPlayer(PlayerUI):
 
         if self.player and int(info_dict['song_len'] - 1) <= int(info_dict['song_pos']):
             self.end_of_track()
+            
         return info_dict
 
     def end_of_track(self):
@@ -284,7 +294,7 @@ class IOSPlayer(PlayerUI):
         
         track_arr = NSMutableArray.arrayWithCapacity_(len(self.track_list))
         for track in self.track_list:
-            if track == 'EOF':
+            if track == 'EOL':
                 track_arr.addObject_(NSString.alloc().initWithUTF8String_(track))
             else:
                 img = NSString.alloc().initWithUTF8String_(track[4])
@@ -368,16 +378,10 @@ class IOSPlayer(PlayerUI):
             return
         
         return self.player.get_len() # obj-c method of class IOS_player
-
-    def get_current_track(self):
-        if not self.current_track_obj:
-            return
-        
-        info = self.get_info()
-        return (info['key'], info['file'], info['author'], info['song'], info['img'],) if info else (None,)*5
         
     def get_info(self):
         info_dict = self.player.get_info() # obj-c method of class IOS_player
+        print(info_dict)
         if not info_dict:
             return
         
@@ -406,5 +410,4 @@ class IOSPlayer(PlayerUI):
         song_pos = info_dict.objectForKey_(objc_str('pos')).floatValue()
         status = info_dict.objectForKey_(objc_str('status')).boolValue()
         info_dict = {'key':key, 'author':author, 'song':song, 'file':file, 'img':img, 'song_len':song_len, 'song_pos':song_pos,'status':status}
-        print(info_dict)
         return info_dict

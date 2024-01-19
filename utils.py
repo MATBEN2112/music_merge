@@ -45,14 +45,14 @@ def search_audio(data, q=''):
         
     q_regexp = re.compile(rf'(.*){qq}(.*)', re.IGNORECASE)
     for track in data:
-        if track == 'EOF':
+        if track == 'EOL':
             break
         s = q_regexp.search(track[2]+track[3])
 
         if s:
             result.append(track)
 
-    return result + ['EOF']
+    return result + ['EOL']
         
 
 import os
@@ -111,7 +111,6 @@ class Meta(object):
             else:
                 row_to_delete.append(track[0])
 
-        ','.join(['?']*len(row_to_delete))
         self.cursor.execute('DELETE FROM TrackList WHERE id IN (' + ','.join(['?']*len(row_to_delete)) + ');',tuple(row_to_delete))
         self.cursor.execute('DELETE FROM Relationship WHERE track_id IN (' + ','.join(['?']*len(row_to_delete)) + ');',tuple(row_to_delete))
         for row in row_to_fix:
@@ -150,7 +149,7 @@ class Meta(object):
         for e in os.listdir(self.app_path+'/downloads/'):
             try:
                 os.remove(self.app_path+'/downloads/' + e)
-            except PermissionError: # file will be overrided anyway i do not care
+            except (PermissionError,FileNotFoundError): # file will be overrided anyway i do not care
                 pass
             
         self.start_db()
@@ -165,7 +164,7 @@ class Meta(object):
         self.cursor.execute('''SELECT * FROM TrackList WHERE id in
             (SELECT track_id FROM Relationship WHERE album_id is ?);''', (key,)
         )
-        return self.cursor.fetchall()[::-1] + ['EOF']
+        return self.cursor.fetchall()[::-1] + ['EOL']
         
     def add_album(self, name, img=None):
         ''' Create new album '''
@@ -214,12 +213,12 @@ class Meta(object):
         for path, img in self.cursor.fetchall():
             try:
                 os.remove(path)
-            except PermissionError: # if file loaded to player
+            except (PermissionError,FileNotFoundError): # if file loaded to player
                 pass
             if img != './icons/track.png':
                 try:
                     os.remove(img)
-                except PermissionError:
+                except (PermissionError,FileNotFoundError):
                     pass
     
         self.cursor.execute('''DELETE FROM TrackList WHERE id IN (
@@ -235,13 +234,13 @@ class Meta(object):
         for path, img in self.cursor.fetchall():
             try:
                 os.remove(path)
-            except PermissionError: # if file loaded to player
+            except (PermissionError,FileNotFoundError): # if file loaded to player
                 pass
             
             if img != './icons/track.png':
                 try:
                     os.remove(img)
-                except PermissionError:
+                except (PermissionError,FileNotFoundError):
                     pass
         self.cursor.execute('''DELETE FROM TrackList WHERE id IN (
             SELECT id FROM TrackList WHERE id NOT IN (SELECT track_id FROM Relationship));''')
