@@ -80,7 +80,8 @@ class CustomScreen(Screen):
         offset = 0,
         album_key = None,
         search_query='',
-        global_search=False
+        global_search=False,
+        reload = False
         ):
 
         number_to_load = 50
@@ -126,13 +127,14 @@ class CustomScreen(Screen):
                 state = 'search vk audio'
 
             elif track_list and len(track_list[offset:offset+number_to_load]) < number_to_load: # load more
+                print('######')
                 track_list += await self.session.load_more_t()
                 state = 'lode more vk audio'
                 
             elif not track_list: # load user audios
                 self.app.load_event_start()
                     
-                track_list = await self.session.load_user_audios()
+                track_list = await self.session.load_user_audios(reload=reload)
                 state = 'load vk audio'
                 
             for track in track_list[offset:offset + number_to_load]:
@@ -195,7 +197,8 @@ Count: {len(track_list)}'''
         album_list = None,
         offset = 0,
         search_query='',
-        global_search=False
+        global_search=False,
+        reload=False
         ):
 
         number_to_load = 12
@@ -229,7 +232,7 @@ Count: {len(track_list)}'''
                 
             elif not album_list: # load user albums
                 self.app.load_event_start()
-                album_list = await self.session.load_playlists()
+                album_list = await self.session.load_playlists(reload=reload)
                 
             for album in album_list[offset:offset + number_to_load]:
                 if album == 'EOL': # list is ended
@@ -267,19 +270,19 @@ Count: {len(album_list)}'''
         if self.name in ['start','search']:
             scroll_view.loading_container_up.load_sign.start_anim()
             self.ids.container.clear_widgets()
-            await self.load_music()
+            await self.load_music(reload=True)
             scroll_view.loading_container_up.load_sign.stop_anim()
         
         elif self.name == 'album':
             scroll_view.loading_container_up.load_sign.start_anim()
             self.ids.container.clear_widgets()
-            await self.load_music(album_key = self.album[0])
+            await self.load_music(album_key = self.album[0],reload=True)
             scroll_view.loading_container_up.load_sign.stop_anim()
 
         elif self.name == 'album_list':
             scroll_view.loading_container_up.load_sign.start_anim()
             self.ids.container.clear_widgets()
-            await self.load_albums()
+            await self.load_albums(reload=True)
             scroll_view.loading_container_up.load_sign.stop_anim()
 
 
@@ -632,10 +635,16 @@ class Search(CustomScreen):
             pass
         
         # prepare track listing
-        self.task_manager() # cancel priviously initiated tasks
-        self.app.task = self.app.web_tasks_loop.create_task(
-            self.load_music()
-        ) # [async music loader]
+        if len(self.app.main_screen.track_list) > 10:
+            self.task_manager() # cancel priviously initiated tasks
+            self.app.task = self.app.web_tasks_loop.create_task(
+                self.load_music(track_list=self.app.main_screen.track_list)
+            ) # [async music loader]
+        else:
+            self.task_manager() # cancel priviously initiated tasks
+            self.app.task = self.app.web_tasks_loop.create_task(
+                self.load_music()
+            ) # [async music loader]
         
     def search(self,q):
         self.dd.search(q)

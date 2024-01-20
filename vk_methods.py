@@ -42,6 +42,8 @@ def clear_string(s):
 
 class VK_session(object):
     def __init__(self, session_obj, session_name):
+        self.album_list = []
+        self.audio_list = []
         self.session_obj = session_obj
         self.session_name = session_name
         self.path = session_obj.app.app_dir + f'/sessions/{self.session_name}/'
@@ -129,6 +131,7 @@ class VK_session(object):
             cookies_list.append((c.name, c.value, c.domain, c.path,c.expires))
 
         self.cookies_list = cookies_list
+        print(self.cookies_list)
         self.session.cookie_jar.update_cookies(self.cookies)
         
     def parse_audio_list(self, data):
@@ -148,7 +151,10 @@ class VK_session(object):
                 ))
         return audio_list
             
-    async def load_user_audios(self):
+    async def load_user_audios(self,reload=False):
+        if not reload and self.audio_list:
+            print('Local audio list used.')
+            return self.audio_list
         # GET
         url = f'https://vk.com/audios{self.u_id}?section=all'
         response = await self.send_get_request(url)
@@ -196,7 +202,11 @@ class VK_session(object):
         audio_list += self.parse_audio_list(response_json['payload'][1][1]['playlist']['list'])
         self.section_id_t = payload['section_id']
 
-        return audio_list if self.next_from_t else audio_list + ['EOL']
+        if not self.next_from_t: 
+            audio_list += ['EOL']
+            
+        self.audio_list += audio_list
+        return audio_list
 
     async def load_more_t(self):
         if not self.next_from_t:
@@ -215,7 +225,12 @@ class VK_session(object):
         response_json = json.loads(response.lstrip('<!--'))
         self.next_from_t = response_json['payload'][1][1]['playlist']['nextOffset']
         audio_list = self.parse_audio_list(response_json['payload'][1][1]['playlist']['list'])
-        return audio_list if self.next_from_t else audio_list + ['EOL']
+        
+        if not self.next_from_t: 
+            audio_list += ['EOL']
+            
+        self.audio_list += audio_list
+        return audio_list
 
     def parse_album_list(self, data):
         album_list = []
@@ -226,7 +241,10 @@ class VK_session(object):
                 album_list.append((playlist_id,convert_ASCII(playlist_name),playlist['coverUrl']))
         return album_list
     
-    async def load_playlists(self):
+    async def load_playlists(self, reload=False):
+        if not reload and self.album_list:
+            print('Local audio list used.')
+            return self.album_list
         url = f'https://vk.com/audios{self.u_id}?block=my_playlists&section=all'
         #response = self.session.get(url)
         response = await self.send_get_request(url)
@@ -253,7 +271,12 @@ class VK_session(object):
             return ['EOL']
             
         album_list = self.parse_album_list(response_json['payload'][1][1]['playlists'])
-        return album_list if self.next_from_a else album_list + ['EOL']
+        
+        if not self.next_from_a: 
+            album_list += ['EOL']
+            
+        self.album_list += album_list
+        return album_list
             
     async def load_more_a(self):
         if not self.next_from_a:
@@ -272,7 +295,12 @@ class VK_session(object):
         response_json = json.loads(response.lstrip('<!--'))
         self.next_from_a = search_re(REGEXP['section_id'], response_json['payload'][1][0][0])
         album_list = self.parse_album_list(response_json['payload'][1][1]['playlists'])
-        return album_list if self.next_from_a else album_list + ['EOL']
+
+        if not self.next_from_a: 
+            album_list += ['EOL']
+            
+        self.album_list += album_list
+        return album_list
 
     async def load_playlist_content(self, playlist_data):
         owner_id, playlist_id = playlist_data.split('_')

@@ -292,7 +292,6 @@ class IOSPlayer(PlayerUI):
         if not self.current_track_obj:
             return
 
-        print(self.track_list)
         track_arr = NSMutableArray.arrayWithCapacity_(len(self.track_list))
         for track in self.track_list:
             if track == 'EOL':
@@ -317,6 +316,7 @@ class IOSPlayer(PlayerUI):
                 next_from = NSString.alloc().initWithUTF8String_(self.current_track[5].next_from_t)
                 
             cookies_list = self.current_track[5].cookies_list
+            print(cookies_list)
             cookies_arr = NSMutableArray.arrayWithCapacity_(len(cookies_list))
             for cookie in cookies_list:
                 name = NSString.alloc().initWithUTF8String_(cookie[0])
