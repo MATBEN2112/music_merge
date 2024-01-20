@@ -309,11 +309,12 @@ class IOSPlayer(PlayerUI):
             self.player.loadPlaylist_key_(track_arr,key) # obj-c method of class IOS_player
             
         elif isinstance(self.current_track_obj, VKTrack):
-            uid = self.current_track[5].u_id
+            uid = int(self.current_track[5].u_id)
             if self.current_track_obj.album_key:
                 section_id,next_from = None,None
             else:
-                section_id,next_from = self.current_track[5].section_id_t, self.current_track[5].next_from_t
+                section_id = NSString.alloc().initWithUTF8String_(self.current_track[5].section_id_t)
+                next_from = NSString.alloc().initWithUTF8String_(self.current_track[5].next_from_t)
                 
             cookies_list = self.current_track[5].cookies_list
             cookies_arr = NSMutableArray.arrayWithCapacity_(len(cookies_list))
@@ -328,21 +329,12 @@ class IOSPlayer(PlayerUI):
             
         
     def play(self):
-        if not self.current_track_obj:
-            return
-        
         self.player.play() # obj-c method of class IOS_player
 
     def pause(self):
-        if not self.current_track_obj:
-            return
-        
         self.player.pause() # obj-c method of class IOS_player
         
     def stop(self):
-        if not self.current_track_obj:
-            return
-        
         self.player.stop() # obj-c method of class IOS_player
 
     def play_next(self, n): # error
@@ -361,15 +353,9 @@ class IOSPlayer(PlayerUI):
                 self.player.seek_(int(slider.value)) # obj-c method of class IOS_player
 
     def get_pos(self):
-        if not self.current_track_obj:
-            return
-        
         return self.player.get_pos() # obj-c method of class IOS_player
 
     def get_length(self):
-        if not self.current_track_obj:
-            return
-        
         return self.player.get_len() # obj-c method of class IOS_player
         
     def get_info(self):
@@ -397,7 +383,7 @@ class IOSPlayer(PlayerUI):
         img = info_dict.objectForKey_(objc_str('img')).UTF8String()
         if type(img) == bytes:
             img = img.decode('unicode_escape')
-            
+
         song_len = info_dict.objectForKey_(objc_str('len')).floatValue()
         song_pos = info_dict.objectForKey_(objc_str('pos')).floatValue()
         status = info_dict.objectForKey_(objc_str('status')).boolValue()
