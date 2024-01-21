@@ -127,11 +127,10 @@ class VK_session(object):
     def read_cookieJar(self, cookies):
         cookies_list = []
         self.cookies = cookies
-        for c in cookies:
-            cookies_list.append((c.name, c.value, c.domain, c.path,c.expires))
+        for c in cookies: # c.value is ref not object!!!
+            cookies_list.append((c.name, str(c.value), c.domain, c.path,c.expires)) 
 
         self.cookies_list = cookies_list
-        print(self.cookies_list)
         self.session.cookie_jar.update_cookies(self.cookies)
         
     def parse_audio_list(self, data):
