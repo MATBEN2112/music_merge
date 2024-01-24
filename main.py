@@ -46,6 +46,7 @@ from custom_widgets import *
 # 9) track highlight does not work properly sometimes
 # 10) side menu touch event should not trigger scrollview and scrollview elements
 # 11) rebuild login scheam
+# 12)
 
 
 class CustomScreen(Screen):
@@ -348,13 +349,11 @@ class Start(CustomScreen):
             self.load_music()
         ) # [async music loader]
 
-
-    ### EDIT TOOLS ### 
     def edit_menu(self):
         menu_items = [
             {"viewclass": "OneLineListItem","text": f"Selection","on_release": self.open_selection_menu},
             {"viewclass": "OneLineListItem","text": f"Delete all","on_release": self.delete_all},
-            {"viewclass": "OneLineListItem","text": f"Popup debug","on_release": self.show_popup},
+            # dev purpose{"viewclass": "OneLineListItem","text": f"Popup debug","on_release": self.show_popup},
         ]
         self.drop_down_menu = MDDropdownMenu(
             caller=self.ids.menu_row, items=menu_items,position="center",width_mult=4
@@ -365,13 +364,23 @@ class Start(CustomScreen):
         self.drop_down_menu.dismiss()
         self.add_widget(SelectionBottomMenu(self.app, self))
 
-    def delete_all(self):
-        self.app.meta.delete_all() # DB class method
-        for screen in self.app.manager.screens:
-            if 'session' in dir(screen):
-                delattr(screen,'session')
-                
-        self.audios_listing()
+    def delete_all(self, state=None):
+        self.drop_down_menu.dismiss()
+        if state:
+            self.popup.dismiss()
+            self.app.meta.delete_all() # DB class method
+            for screen in self.app.manager.screens:
+                if 'session' in dir(screen):
+                    delattr(screen,'session')
+
+            return self.audios_listing()
+        
+        self.popup = ConfirmationPopup()
+        self.popup.ids.info.text = 'Are you sure want to delete all'
+        self.popup.ids.action.ids.text.text = "Confirm"
+        self.popup.ids.action.bind(on_release=lambda *args:self.delete_all(state = True))
+        self.popup.ids.cancel.ids.text.text = "Cancel"
+        self.popup.open()
 
     def show_popup(self):
         if 'popup_list' not in dir(self):
@@ -409,7 +418,6 @@ class Start(CustomScreen):
 
 class Player(CustomScreen):
     def open_player(self, *args, app = None):
-        print(args)
         app.audio_bar.hide() if app.screen_container.isopen else app.audio_bar.show()
         app.main_screen.ids.nav_drawer.enable_swiping = not app.main_screen.ids.nav_drawer.enable_swiping
 
@@ -484,21 +492,17 @@ class Album(CustomScreen):
 
     def delete_album(self, state=None):
         self.drop_down_menu.dismiss()
-        if state == "Confirm":
+        if state:
             self.app.meta.delete_album(self.album[0]) # [DB class method]
                 
             self.popup.dismiss()
             return self.close_album()
         
-        elif state == "Cancel":
-            return self.popup.dismiss()
-            
         self.popup = ConfirmationPopup()
         self.popup.ids.info.text = 'Are you sure want to delete album'
         self.popup.ids.action.ids.text.text = "Confirm"
-        self.popup.ids.action.bind(on_release=lambda *args:self.delete_album(state = "Confirm"))
+        self.popup.ids.action.bind(on_release=lambda *args:self.delete_album(state = True))
         self.popup.ids.cancel.ids.text.text = "Cancel"
-        self.popup.ids.cancel.on_release=lambda *args:self.delete_album(state = "Cancel")
         self.popup.open()
     
     def rename_album(self, album_name=None):
@@ -521,6 +525,7 @@ class Album(CustomScreen):
                 album_name=self.popup.ids.album_name.text
             )
         )
+        self.popup.ids.cancel.ids.text.text = "Cancel"
         self.popup.open()
 
     def open_selection_menu(self):
@@ -594,6 +599,7 @@ class AlbumList(CustomScreen):
                 album_name=self.popup.ids.album_name.text
             )
         )
+        self.popup.ids.cancel.ids.text.text = "Cancel"
         self.popup.open()
 
     async def load_more(self,scroll_view):
@@ -692,7 +698,9 @@ class Login(CustomScreen):
     def open_login_page(self,media):
         if 'app' not in dir(self):
             self.app = MDApp.get_running_app()
-            
+            self.action_func = None
+
+        self.app.player.stop()
         if media == "./icons/vk.png": 
             self.secure_code_popup = SecureCodePopup()
             self.captcha_popup = CaptchaPopup()
@@ -741,31 +749,39 @@ class Login(CustomScreen):
             self.end_login_vk()
         
         elif status == 'Secure code':
+            self.ids.error.text = ''
             self.captcha_popup.dismiss()
             #popup with secure code appear
-
-            func = lambda *args: self.do_login_vk_secure_code(
+            self.secure_code_popup.ids.error.text = ''
+            self.secure_code_popup.ids.action.unbind(on_release= self.action_func)
+            self.action_func = lambda *args: self.do_login_vk_secure_code(
                 self.secure_code_popup.ids.secure_code.text,
                 auth_hash
             )
             self.secure_code_popup.ids.action.ids.text.text = "Confirm"
-            self.secure_code_popup.ids.action.bind(on_release= func)
+            self.secure_code_popup.ids.action.bind(on_release= self.action_func)
+            self.secure_code_popup.ids.cancel.ids.text.text = "Cancel"
             self.secure_code_popup.open()
             
         elif status == 'Captcha needed':
+            self.ids.error.text = ''
             if captcha_key:
                 self.captcha_popup.ids.error.text = 'Incorrect captcha'
-            vk.captcha(self.session, self.captcha_sid)# load captcha img
+            else:
+                self.captcha_popup.ids.error.text = ''
+            vk.captcha(self.app.app_dir,self.session, self.captcha_sid)# load captcha img
             #popup with captcha appear
-            func = lambda *args: self.do_login_vk(
+            self.captcha_popup.ids.action.unbind(on_release= self.action_func)
+            self.action_func = lambda *args: self.do_login_vk(
                 login,
                 password,
                 captcha_sid=captcha_sid,
                 captcha_key=self.captcha_popup.ids.captcha_key.text)
             self.captcha_popup.ids.action.ids.text.text = "Confirm"
-            self.captcha_popup.ids.action.bind(on_release= func)
+            self.captcha_popup.ids.action.bind(on_release= self.action_func)
+            self.captcha_popup.ids.cancel.ids.text.text = "Cancel"
             
-            self.captcha_popup.ids.captcha.source = 'captcha.jpg' #[FIX] provide app full path
+            self.captcha_popup.ids.captcha.source = self.app.app_dir+'captcha.jpg' #[FIX] provide app full path
             self.captcha_popup.ids.captcha.reload()# provide img up to date
             self.captcha_popup.open()
             
@@ -789,35 +805,43 @@ class Login(CustomScreen):
             self.end_login_vk()
             
         elif status == 'Captcha needed':
+            self.ids.error.text = ''
             if captcha_key:
                 self.captcha_popup.ids.error.text = 'Incorrect captcha'
+            else:
+                self.captcha_popup.ids.error.text = ''
                 
             self.secure_code_popup.dismiss()
             vk.captcha(self.session, self.captcha_sid) # load captcha img
             #popup with captcha appear
-            func = lambda *args: self.do_login_vk_secure_code(
+            self.captcha_popup.ids.action.unbind(on_release= self.action_func)
+            self.action_func = lambda *args: self.do_login_vk_secure_code(
                 secure_code,
                 auth_hash,
                 captcha_sid=captcha_sid,
                 captcha_key=self.captcha_popup.ids.captcha_key.text
             )
             self.captcha_popup.ids.action.ids.text.text = "Confirm"
-            self.captcha_popup.ids.action.bind(on_release= func)
+            self.captcha_popup.ids.action.bind(on_release= self.action_func)
+            self.captcha_popup.ids.cancel.ids.text.text = "Cancel"
             
-            self.captcha_popup.ids.captcha.source = 'captcha.jpg'
+            self.captcha_popup.ids.captcha.source = self.app.app_dir+'captcha.jpg'
             self.captcha_popup.ids.captcha.reload()# provide img up to date
             self.captcha_popup.open()
             
         elif status == 'Secure code':
+            self.ids.error.text = ''
             # show error
             self.secure_code_popup.ids.error.text = 'Incorrect secure code'
             #popup with secure code appear
-            func = lambda *args: self.do_login_vk_secure_code(
+            self.secure_code_popup.ids.action.unbind(on_release= self.action_func)
+            self.action_func = lambda *args: self.do_login_vk_secure_code(
                 self.secure_code_popup.ids.secure_code.text,
                 auth_hash
             )
             self.secure_code_popup.ids.action.ids.text.text = "Confirm"
-            self.secure_code_popup.ids.action.bind(on_release= func)
+            self.secure_code_popup.ids.action.bind(on_release= self.action_func)
+            self.secure_code_popup.ids.cancel.ids.text.text = "Cancel"
             
             self.secure_code_popup.open()
             
@@ -858,6 +882,7 @@ class LoginApp(MDApp):
     secondary_clr1 = ColorProperty(defaultvalue=(222/255, 222/255, 222/255, 1))
     secondary_clr2 = ColorProperty(defaultvalue=(184/255, 184/255, 184/255, 1))
     text_clr = ColorProperty(defaultvalue=(0,0,0,1))
+    err_text_clr = ColorProperty(defaultvalue=(1,0,0,1))
     interactive_text_clr = ColorProperty()
     btn_hitbox_clr = ColorProperty(defaultvalue=(1,0,0,0))
     
@@ -956,7 +981,6 @@ class LoginApp(MDApp):
         self.manager.add_widget(self.login_screen)
         self.manager.add_widget(self.search_screen)
         
-        
         self.screen_container.add_widget(self.manager)
         self.screen_container.add_widget(self.player_screen)
         self.screen_container.add_widget(self.audio_bar)
@@ -1000,13 +1024,15 @@ class LoginApp(MDApp):
         self.sessions = []
         session_list = DrawerList()
         session_dir_list = os.listdir(self.app_dir + '/sessions/')
-        if session_dir_list:
-            self.main_screen.ids.session_container.clear_widgets()
+        self.main_screen.ids.session_container.clear_widgets()
+        if not session_dir_list:
+            pass
             
         for elem in session_dir_list:
             session_obj = SessionListElement(self, elem)
-            self.sessions.append(session_obj)
-            self.main_screen.ids.session_container.add_widget(session_obj)
+            if session_obj.is_session:
+                self.sessions.append(session_obj)
+                self.main_screen.ids.session_container.add_widget(session_obj)
     
 if __name__ == '__main__':
     if True:

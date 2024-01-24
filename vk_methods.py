@@ -7,6 +7,7 @@ import re
 import aiohttp
 import asyncio
 import vk_audio
+import shutil
 from utils import *
 
 REGEXP = {
@@ -30,11 +31,12 @@ REGEXP = {
     }
 
 def search_re(reg, string):
-    print(type(string))
     s = reg.search(string)
     if s:
         groups = s.groups()
         return groups[0]
+    else:
+        return ''
     
 def clear_string(s):
     if s:
@@ -59,7 +61,7 @@ class VK_session(object):
             
         except FileNotFoundError:
             print('No valid session file')
-            shutil.rmtree(self.path)
+            return shutil.rmtree(self.path)
 
         try:
             with open(self.path + 'uid', 'rb') as f:
@@ -69,7 +71,7 @@ class VK_session(object):
                 
         except:
             print('No user id')
-            shutil.rmtree(self.path)
+            return shutil.rmtree(self.path)
         else:
             try:
                 with open(self.path + 'uid', 'rb') as f:
@@ -111,6 +113,7 @@ class VK_session(object):
     async def send_get_request(self,url):
         try:
             async with self.session.get(url, timeout=15) as response:
+                print(response.real_url)
                 return await response.text()
             
         except asyncio.exceptions.TimeoutError:
@@ -127,8 +130,8 @@ class VK_session(object):
     def read_cookieJar(self, cookies):
         cookies_list = []
         self.cookies = cookies
-        for c in cookies: # c.value is ref not object!!!
-            cookies_list.append((c.name, str(c.value), c.domain, c.path,c.expires)) 
+        for c in cookies:
+            cookies_list.append((c.name, c.value, c.domain, c.path,c.expires)) 
 
         self.cookies_list = cookies_list
         self.session.cookie_jar.update_cookies(self.cookies)
@@ -479,6 +482,7 @@ def two_fa(session, code, auth_hash = '', captcha_sid='', captcha_key=''):
         payload['captcha_key'] = captcha_key
 
     response = session.post('https://vk.com/al_login.php?act=a_authcheck_code', payload)
+    print(response.text)
     response_json = json.loads(response.text.lstrip('<!--'))
     status = response_json['payload'][0]
     
@@ -539,22 +543,17 @@ def code_from_number(prefix, postfix, number):
     if (prefix_len + postfix_len) >= len(number):
         return
 
-    # Сравниваем начало номера
     if number[:prefix_len] != prefix:
         return
 
-    # Сравниваем конец номера
     if number[-postfix_len:] != postfix:
         return
 
     return number[prefix_len:-postfix_len]
 
 # Captcha case        
-def captcha(session=requests.Session(), sid='123'):
+def captcha(app_dir,session=requests.Session(), sid='123'):
     captcha_img_link = f'https://api.vk.com/captcha.php?sid={sid}'
-    with open('captcha.jpg', 'wb') as f:
+    with open(app_dir+'captcha.jpg', 'wb') as f:
         f.write(session.get(captcha_img_link).content)
-
-
-
 

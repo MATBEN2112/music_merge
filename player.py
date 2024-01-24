@@ -204,7 +204,6 @@ class DesktopPlayer(PlayerUI):
             self.album_key = None
         
     def play_next(self, n):
-        print(self.key)
         def _():
             if self.track_list[n+self.key] == 'EOL':
                 print("List out of range.")
@@ -316,7 +315,6 @@ class IOSPlayer(PlayerUI):
                 next_from = NSString.alloc().initWithUTF8String_(self.current_track[5].next_from_t)
                 
             cookies_list = self.current_track[5].cookies_list
-            print(cookies_list)
             cookies_arr = NSMutableArray.arrayWithCapacity_(len(cookies_list))
             for cookie in cookies_list:
                 name = NSString.alloc().initWithUTF8String_(cookie[0])
@@ -336,6 +334,11 @@ class IOSPlayer(PlayerUI):
         
     def stop(self):
         self.player.stop() # obj-c method of class IOS_player
+        self._stop_player_session()
+        self.current_track = None
+        self.current_track_obj = None
+        self.track_list = None
+        self.album_key = None
 
     def play_next(self, n): # error
         if n > 0:

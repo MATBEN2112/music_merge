@@ -83,17 +83,26 @@ class LoginButton(MDRelativeLayout, TouchBehavior):
         if self.collide_point(touch.x, touch.y):
             self.func()
 
-class PlayerBack(MDRelativeLayout):
+class PlayerBack(Widget):
     def __init__(self, img):
         super(PlayerBack, self).__init__()
+        self.fbind('pos',self._draw,'size',self._draw)
+        self.img = AsyncImage(
+            size_hint=(None,None),
+            fit_mode = 'fill',
+            size=("320dp","320dp"),
+            source = './icons/player_back.png' if img == './icons/track.png' else img
+        )
         self.size_hint=(None,None)
         self.pos_hint={'center_x':0.5, 'center_y':0.65}
         self.size=("320dp","320dp")
-        img = './icons/player_back.png' if img == './icons/track.png' else img
-        with self.canvas:
-            Color((1,1,1,1), mode='rgba')
-            RoundedRectangle(pos=self.pos, size=self.size, radius=[dp(20)], source = img)
         
+    def _draw(self,*args):
+        with self.canvas:
+            self.canvas.clear()
+            Color((0,0,0,0.2), mode='rgba')
+            RoundedRectangle(texture = self.img.texture, pos=self.pos, size=self.size, radius=[dp(20)])
+            
 class ContentNavigationDrawer(MDRelativeLayout):
     pass
 
@@ -267,15 +276,13 @@ class Track(TwoLineAvatarIconListItem):
         self.popup.ids.song.text = self.secondary_text
         self.popup.ids.author.text = self.text
         self.popup.ids.action.bind(on_release=func)
+        self.popup.ids.cancel.ids.text.text = "Cancel"
         self.popup.open()
         
     def delete_track(self, state=None):
-        if state == "Confirm":
+        if state:
             self.app.meta.delete_track(self.key, key_album=self.album_key) # DB class method
             self.parent.remove_widget(self)    
-            return self.popup.dismiss()
-                    
-        elif state == "Cancel":
             return self.popup.dismiss()
 
         self.drop_down_menu.dismiss()
@@ -284,9 +291,8 @@ class Track(TwoLineAvatarIconListItem):
 
         self.popup.ids.info.text = 'Are you sure want to delete track'
         self.popup.ids.action.ids.text.text = "Confirm"
-        self.popup.ids.action.bind(on_release=lambda *args:self.delete_track(state = "Confirm"))
+        self.popup.ids.action.bind(on_release=lambda *args:self.delete_track(state = True))
         self.popup.ids.cancel.ids.text.text = "Cancel"
-        self.popup.ids.cancel.bind(on_release=lambda *args:self.delete_track(state = "Cancel"))
         self.popup.open()
 
 class AlbumListItem(OneLineAvatarIconListItem):
@@ -328,7 +334,7 @@ class SelectionBottomMenu(MDBoxLayout):
             self.screen.audios_listing(session = 1)
 
     def delete_selected(self, state=None):
-        if state == "Confirm":
+        if state:
             children = [*self.screen.ids.container.children]
             for child in children:
                 if isinstance(child, TrackWithCheckBox):
@@ -336,19 +342,14 @@ class SelectionBottomMenu(MDBoxLayout):
                 
             self.popup.dismiss()
             return self.close_selection()
-                    
-        elif state == "Cancel":
-            return self.popup.dismiss()
         
         self.popup = ConfirmationPopup()
 
         self.popup.ids.info.text = 'Are you sure want to delete selected tracks'
         self.popup.ids.action.ids.text.text = "Confirm"
-        self.popup.ids.action.bind(on_release=lambda *args:self.delete_selected(state = "Confirm"))
+        self.popup.ids.action.bind(on_release=lambda *args:self.delete_selected(state = True))
         self.popup.ids.cancel.ids.text.text = "Cancel"
-        self.popup.ids.cancel.bind(on_release=lambda *args:self.delete_selected(state = "Cancel"))
         self.popup.open()
-
         
     def create_album(self, album_name=None):
         if album_name:
@@ -369,6 +370,7 @@ class SelectionBottomMenu(MDBoxLayout):
         self.popup.ids.action.bind(
             on_release=lambda *args:self.create_album(album_name=self.popup.ids.album_name.text)
         )
+        self.popup.ids.cancel.ids.text.text = "Cancel"
         self.popup.open()
         
     def close_selection(self):
@@ -387,6 +389,7 @@ class SelectionBottomMenu(MDBoxLayout):
 class SessionListElement(TwoLineAvatarIconListItem):
     def __init__(self, app, session_name):
         super(SessionListElement, self).__init__()
+        self.is_session = True
         self.app = app
         self.bg_color = (1,0.8,0.8,1)
         self.add_widget(IconRightWidget(
@@ -396,6 +399,11 @@ class SessionListElement(TwoLineAvatarIconListItem):
 
         if 'vk_' in session_name:
             self.session = VK_session(self,session_name)
+        elif 'ya_' in session_name:
+            pass
+        else:
+            self.is_session = False
+            return
             
         self.text = self.session.u_name
         self.secondary_text ='Connecting...'
