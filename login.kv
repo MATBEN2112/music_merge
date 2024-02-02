@@ -2,6 +2,207 @@
 #:import dp kivy.metrics.dp
 #:import CoreLabel kivy.core.text.Label
 #:import Factory kivy.factory.Factory
+<UpdatableListingContainer>:
+    id: outer_container
+    container: container
+    load_sign: load_sign
+    scroll_view: scroll_view
+    StencilView:
+        id: refresh_container
+        size_hint: None, None
+        size: (scroll_view.size[0],abs(scroll_view.min__overscroll))
+        pos: (scroll_view.x,scroll_view.y+scroll_view.height-self.height)
+
+        LoadSign:
+            id: load_sign
+            size_hint: None, None
+            body_clr: (0,0,0,0)
+            dot1_clr: (59/255, 85/255, 158/255, 1)
+            dot2_clr: (129/255, 190/255, 247/255, 1)
+            dot3_clr: (59/255, 85/255, 158/255, 1)
+            dot_spacing: "50dp"
+            pos: (self.parent.x+(scroll_view.width-self.width)/2,self.parent.y-scroll_view.min__overscroll)
+            height: abs(scroll_view.min__overscroll)
+            scroll_view: scroll_view
+            
+                
+    UpdatableScrollView:
+        id: scroll_view
+        size_hint: None, None
+        size: self.parent.size
+        pos: self.parent.pos
+        min__overscroll: dp(-100)
+        HighPerformanceContainer:
+            id: container
+            app: app
+            child_args: (app,)
+            size_hint_y: None
+            height: self.minimum_height
+
+<Track>:
+    on_release: self.play()
+
+    TrackImage:
+        id: title
+        pos: (self.parent.x + self.parent.offset, self.parent.y + self.parent.offset)
+        size: (self.parent.height-2*self.parent.offset, self.parent.height-2*self.parent.offset)
+        size_hint: (None,None)
+        source: self.parent.title
+
+    Label:
+        id: artist
+        pos: (title.x + title.width + self.parent.offset,title.y + dp(4))
+        size: (self.parent.size[0]-4*self.parent.offset-2*title.size[0],"20dp")
+        text_size: (self.parent.size[0]-4*self.parent.offset-2*title.size[0],dp(20))
+        size_hint: (None,None)
+        text: self.parent.artist
+        font_size: "16sp"
+        color: (0,0,0,1)
+        shorten: True
+        shorten_from: "right"
+        
+    Label:
+        id: song
+        pos: (title.x + title.width + self.parent.offset,title.y + title.height - dp(4) - self.height)
+        size: (self.parent.size[0]-4*self.parent.offset-2*title.size[0],"20dp")
+        text_size: (self.parent.size[0]-4*self.parent.offset-2*title.size[0],dp(20))
+        size_hint: (None,None)
+        text: self.parent.song
+        font_size: "16sp"
+        color: (0.46,0.46,0.46,1)
+        shorten: True
+        shorten_from: "right"
+
+    TrackAtion:
+        id: action
+        pos: (self.parent.x + self.parent.width - self.parent.height,self.parent.y + self.parent.offset)
+        size: (self.parent.height-2*self.parent.offset, self.parent.height-2*self.parent.offset)
+        size_hint: (None,None)
+        on_release: self.open_edit_menu()
+
+<VKTrack>:
+    on_release: self.play()
+
+    TrackImage:
+        id: title
+        pos: (self.parent.x + self.parent.offset, self.parent.y + self.parent.offset)
+        size: (self.parent.height-2*self.parent.offset, self.parent.height-2*self.parent.offset)
+        size_hint: (None,None)
+        source: self.parent.title
+
+    Label:
+        id: artist
+        pos: (title.x + title.width + self.parent.offset,title.y + dp(4))
+        size: (self.parent.size[0]-4*self.parent.offset-2*title.size[0],"20dp")
+        text_size: (self.parent.size[0]-4*self.parent.offset-2*title.size[0],dp(20))
+        size_hint: (None,None)
+        text: self.parent.artist
+        font_size: "16sp"
+        color: (0,0,0,1)
+        shorten: True
+        shorten_from: "right"
+        
+    Label:
+        id: song
+        pos: (title.x + title.width + self.parent.offset,title.y + title.height - dp(4) - self.height)
+        size: (self.parent.size[0]-4*self.parent.offset-2*title.size[0],"20dp")
+        text_size: (self.parent.size[0]-4*self.parent.offset-2*title.size[0],dp(20))
+        size_hint: (None,None)
+        text: self.parent.song
+        font_size: "16sp"
+        color: (0.46,0.46,0.46,1)
+        shorten: True
+        shorten_from: "right"
+
+    VKTrackAtion:
+        id: action
+        pos: (self.parent.x + self.parent.width - self.parent.height,self.parent.y + self.parent.offset)
+        size: (self.parent.height-2*self.parent.offset, self.parent.height-2*self.parent.offset)
+        size_hint: (None,None)
+        on_release: self.download()
+                
+<TrackWithCheckBox>:
+    on_release: self.select(action)
+
+    TrackImage:
+        id: title
+        pos: (self.parent.x + self.parent.offset, self.parent.y + self.parent.offset)
+        size: (self.parent.height-2*self.parent.offset, self.parent.height-2*self.parent.offset)
+        size_hint: (None,None)
+        source: self.parent.title
+
+    Label:
+        id: artist
+        pos: (title.x + title.width + self.parent.offset,title.y + dp(4))
+        size: (self.parent.size[0]-4*self.parent.offset-2*title.size[0],"20dp")
+        text_size: (self.parent.size[0]-4*self.parent.offset-2*title.size[0],dp(20))
+        size_hint: (None,None)
+        text: self.parent.artist
+        font_size: "16sp"
+        color: (0,0,0,1)
+        shorten: True
+        shorten_from: "right"
+        
+    Label:
+        id: song
+        pos: (title.x + title.width + self.parent.offset,title.y + title.height - dp(4) - self.height)
+        size: (self.parent.size[0]-4*self.parent.offset-2*title.size[0],"20dp")
+        text_size: (self.parent.size[0]-4*self.parent.offset-2*title.size[0],dp(20))
+        size_hint: (None,None)
+        text: self.parent.song
+        font_size: "16sp"
+        color: (0.46,0.46,0.46,1)
+        shorten: True
+        shorten_from: "right"
+
+    CheckBox:
+        id: action
+        pos: (self.parent.x + self.parent.width - self.parent.height,self.parent.y + self.parent.offset)
+        size: (self.parent.height-2*self.parent.offset, self.parent.height-2*self.parent.offset)
+        size_hint: (None,None)
+        background_checkbox_down: './icons/checkbox_active.png'
+        background_checkbox_normal: './icons/checkbox.png'
+                
+<NoAvailableTracks>:
+    size_hint_y: None
+    height: "72dp"
+    Image:
+        id: title
+        pos: (self.parent.x + dp(5), self.parent.y + dp(5))
+        size: (self.parent.height-dp(10), self.parent.height-dp(10))
+        size_hint: (None,None)
+        source: "./icons/sadness.png"
+
+    Label:
+        pos: (title.x + title.width + dp(25),title.y + (title.height - self.height)/2)
+        size_hint: (None,None)
+        text: 'No available tracks'
+        font_size: "16sp"
+        color: (0,0,0,1)
+
+<Tool>:
+    on_release: self._do()
+    Image:
+        id: title
+        pos: (self.parent.x + self.parent.offset, self.parent.y + self.parent.offset)
+        size: (self.parent.height-2*self.parent.offset, self.parent.height-2*self.parent.offset)
+        size_hint: (None,None)
+        source: self.parent.title
+
+    Label:
+        id: label_name
+        pos: (title.x + title.width + self.parent.offset,self.parent.y + (self.parent.height - self.height)/2)
+        size: (self.parent.size[0]-4*self.parent.offset-2*title.size[0],"20dp")
+        text_size: (self.parent.size[0]-4*self.parent.offset-2*title.size[0],dp(20))
+        size_hint: (None,None)
+        text: self.parent.text
+        font_size: "16sp"
+        color: (0,0,0,1)
+        shorten: True
+        shorten_from: "right"
+        
+
+
 <SelectionBottomMenu>:
 	id: selection_row
     md_bg_color: app.main_clr
@@ -117,87 +318,87 @@
 		value: 1
 
 <Album>
-	MDBoxLayout:
+    canvas.before:
+        Color:
+            rgba: app.load_clr
+
+        Rectangle:
+            pos: self.pos
+            size: self.size
+
+    FloatLayout:
+        id: album_header
         orientation: "vertical"
+        size_hint: 1, None
+        height: "180dp"
+        pos: root.pos[0],root.top-self.height - menu_row.height
         canvas.before:
             Color:
-                rgba: app.load_clr
-
+                rgba: app.main_clr2
             Rectangle:
                 pos: self.pos
                 size: self.size
-        MDRelativeLayout:
-            id: menu_row
-            orientation: "vertical"
-            size: (root.size[0],"100dp")
+
+            Color:
+                rgba: (0,0,0,1)
+
+            Line:
+                points: self.pos[0],self.pos[1],self.pos[0]+self.width,self.pos[1]
+                width: dp(2)
+
+            Color:
+                rgba: (0,0,0,1)
+
+            Line:
+                points: self.pos[0],self.top,self.pos[0]+self.width,self.top
+                width: dp(2)
+
+        AsyncImage:
+            id: album_image
             size_hint: (None,None)
-            pos_hint: {'center_x':0.5, 'center_y':0.95}
-            md_bg_color: app.main_clr
+            fit_mode: 'fill'
+            size: self.parent.height - dp(4),self.parent.height - dp(4)
+            pos: self.parent.pos[0],self.parent.pos[1]+dp(2)
 
-        MDBoxLayout:
-            UpdatableScrollView:
-                id: scrollable_container
-                #hide_animation_up: app.upper_anim
-                #hide_animation_down: app.bottom_anim
-                load_sign_up: app.ls_up_album
-                load_sign_down: app.ls_down_album
-                overscroll_up_callback: (root.force_screen_update,(),{})
-                overscroll_down_callback: (root.load_more,(),{})
-            	MDBoxLayout:
-            		orientation: "vertical"
-            		size_hint: 1, None
-            		height: self.minimum_height
-                    MDBoxLayout:
-                        size_hint: (1,None)
-                        height: "10dp"
+        Label:
+            id: album_name
+            text: ""
+            font_size: '25sp'
+            color: (0,0,0,1)
+            pos: album_image.right + dp(20), self.parent.top - self.height - dp(20)
+            size: (self.parent.size[0]-album_image.size[0] - dp(50),"25dp")
+            text_size: (self.parent.size[0]-album_image.size[0] - dp(50),dp(25))
+            size_hint: (None,None)
+            shorten: True
+            shorten_from: "right"
 
-                        canvas.before:
+        Label:
+            id: count
+            text: str(0) + " track in album"
+            font_size: '14sp'
+            color: (0,0,0,1)
+            pos: album_image.right + dp(20), self.parent.pos[1] + dp(20)
+            size: (self.parent.size[0]-album_image.size[0] - dp(50),"20dp")
+            text_size: (self.parent.size[0]-album_image.size[0] - dp(50),dp(20))
+            size_hint: (None,None)
+            shorten: True
+            shorten_from: "right"
+            
+    MDRelativeLayout:
+        id: menu_row
+        orientation: "vertical"
+        height: "100dp"
+        size_hint: 1, None
+        pos: self.parent.pos[0], self.parent.top-self.height
+        md_bg_color: app.main_clr
 
-                            Color:
-                                rgba: (0,0,0,1)
-
-                            Rectangle:
-                                pos: self.pos
-                                size: self.size
-                    MDBoxLayout:
-                        size_hint: (1,None)
-                        height: "160dp"
-                        MDBoxLayout:
-                            md_bg_color: app.main_clr2
-                            orientation: "vertical"
-                            MDLabel:
-                                id: album_name
-                                text: ""
-                                font_size: '25sp'
-                                padding: "25dp"
-                            MDLabel:
-                                id: count
-                                text: str(0) + " track in album"
-                                font_size: '14sp'
-                                padding: "35dp"
-
-            		    AsyncImage:
-        				    id: album_image
-            			    size_hint: (None,None)
-            			    size: "160dp","160dp"
-
-                    MDBoxLayout:
-                        size_hint: (1,None)
-                        height: "10dp"
-
-                        canvas.before:
-
-                            Color:
-                                rgba: (0,0,0,1)
-
-                            Rectangle:
-                                pos: self.pos
-                                size: self.size
-
-                	MDList:
-                    	adaptive_height: True
-                    	id: container
-
+    UpdatableListingContainer:
+        id: container
+        header: album_header
+        size_hint: 1, None
+        height: root.size[1]-menu_row.height
+        pos: self.parent.pos[0], album_header.pos[1] - self.height - dp(2)
+        overscroll_callback: (root.force_screen_update,(),{})
 
 
 <AlbumList>
@@ -219,29 +420,9 @@
             md_bg_color: app.main_clr
 
 
-        UpdatableScrollView:
-            id: scrollable_container
-            #hide_animation_up: app.upper_anim
-            #hide_animation_down: app.bottom_anim
-            load_sign_up: app.ls_up_albumlist
-            load_sign_down: app.ls_down_albumlist
-            overscroll_up_callback: (root.force_screen_update,(),{})
-            overscroll_down_callback: (root.load_more,(),{})
-            size: root.size
-            pos_hint: {'center_x':0.5}
-            MDBoxLayout:
-                size_hint_y: None
-                height: self.minimum_height
-                GridLayout:
-                    id: container
-                    cols: 2
-                    padding: root.size[0]*(1-2/2.5)/3
-                    spacing: root.size[0]*(1-2/2.5)/3
-                    size_hint_y: None
-                    height: self.minimum_height
-
-                #size_hint_y: None
-
+        UpdatableListingContainer:
+            id: container
+            overscroll_callback: (root.force_screen_update,(),{})
 
 
 <Login>:
@@ -842,116 +1023,56 @@
             orientation: "vertical"
             size_hint: (None,None)
             size: (root.size[0],root.size[1]-search_row.height)
-            MDScrollView:
-                id: scrollable_container
-                #size_hint:(1, None)
-                always_overscroll: False
-                do_scroll_x: False
-                MDBoxLayout:
-                    id: box
-                    orientation: "vertical"
-                    size_hint: 1, None
-                    height: self.minimum_height
-                    
-
-                    MDBoxLayout:
-                        id: outer_track_container
-                        size_hint: 1, None
-                        height: self.minimum_height
-                        MDList:
-                            id: container
+            UpdatableListingContainer:
+                id: container
 
 
 <Start>:
-    MDBoxLayout:
-        id: main_container
+    canvas.before:
+        Color:
+            rgba: app.load_clr
+
+        Rectangle:
+            pos: self.pos
+            size: self.size
+        
+    BoxLayout:
+        id: main_screen_header
         orientation: "vertical"
-        outer_track_container: outer_track_container.__self__
-        outer_tools_container: outer_tools_container.__self__
-        #outer_track_container: album_info.__self__
+        size_hint: 1, None
+        height: len(self.children)*self.children[0].height if self.children else 0
+        pos: root.pos[0],root.top-self.height - menu_row.height - dp(2)
         canvas.before:
             Color:
-                rgba: app.load_clr
+                rgba: (0,0,0,1)
 
-            Rectangle:
-                pos: self.pos
-                size: self.size
+            Line:
+                points: self.pos[0],self.pos[1],self.pos[0]+self.width,self.pos[1]
+                width: dp(2)
 
+            Color:
+                rgba: (0,0,0,1)
 
-        MDRelativeLayout:
-            id: menu_row
-            orientation: "vertical"
-            size: (root.size[0],"100dp")
-            size_hint: (None,None)
-            pos_hint: {'center_x':0.5, 'center_y':0.95}
-            md_bg_color: app.main_clr
+            Line:
+                points: self.pos[0],self.top,self.pos[0]+self.width,self.top
+                width: dp(2)
             
 
-        MDBoxLayout:
-        	
-            orientation: "vertical"
-            size_hint: (None,None)
-            size: (root.size[0],root.size[1]-menu_row.height)
-            UpdatableScrollView:
-                id: scrollable_container
-                #hide_animation_up: app.upper_anim
-                #hide_animation_down: app.bottom_anim
+    MDRelativeLayout:
+        id: menu_row
+        orientation: "vertical"
+        height: "100dp"
+        size_hint: (1,None)
+        pos: root.pos[0],root.top-self.height
+        md_bg_color: app.main_clr
 
-                load_sign_up: app.ls_up_start
-                load_sign_down: app.ls_down_start
-                overscroll_up_callback: (root.force_screen_update,(),{})
-                overscroll_down_callback: (root.load_more,(),{})
-                
-
-                MDBoxLayout:
-                    id: box
-                    orientation: "vertical"
-                    size_hint: 1, None
-                    height: self.minimum_height
-                    MDBoxLayout:
-                        id: outer_tools_container
-                        orientation: "vertical"
-                        size_hint: 1, None
-                        height: self.minimum_height
-                        MDBoxLayout:
-                            id: divide_line1
-                            size_hint: (1,None)
-                            height: "10dp"
-                            canvas.before:
-                                Color:
-                                    rgba: (0,0,0,1)  # visual feedback of press
-                                Rectangle:
-                                    pos: self.pos
-                                    size: self.size
-
-
-                        MDBoxLayout:
-                            size_hint: 1, None
-                            height: self.minimum_height
-                            MDList:
-                                id: tools_container
-                                
-
-                        MDBoxLayout:
-                            id: divide_line2
-                            size_hint: (1,None)
-                            height: "10dp"
-
-                            canvas.before:
-
-                                Color:
-                                    rgba: (0,0,0,1)
-
-                                Rectangle:
-                                    pos: self.pos
-                                    size: self.size
-
-                    MDBoxLayout:
-                        id: outer_track_container
-                        size_hint: 1, None
-                        height: self.minimum_height
-                        MDList:
-                            id: container
+    UpdatableListingContainer:
+        id: container
+        size_hint: 1, None
+        height: root.height - menu_row.height
+        pos: root.pos[0],main_screen_header.pos[1] - self.height - dp(2)
+        header: main_screen_header
+        overscroll_callback: (root.force_screen_update,(),{})
 
 
 	SideMenu:
@@ -1175,3 +1296,39 @@
             size_hint: (None,None)
             opacity: 0
             on_release: app.player.play_next(1)
+
+        Image:
+            pos_hint: {'center_x':0.2, 'center_y':0.1}
+            source: "./icons/mix.png"
+            size: ("50dp","50dp")
+            size_hint: (None,None)
+
+        Button:
+            pos_hint: {'center_x':0.2, 'center_y':0.1}
+            size: ("65dp","65dp")
+            size_hint: (None,None)
+            opacity: 0
+
+        Image:
+            pos_hint: {'center_x':0.5, 'center_y':0.1}
+            source: "./icons/list.png"
+            size: ("50dp","50dp")
+            size_hint: (None,None)
+
+        Button:
+            pos_hint: {'center_x':0.5, 'center_y':0.1}
+            size: ("65dp","65dp")
+            size_hint: (None,None)
+            opacity: 0
+
+        Image:
+            pos_hint: {'center_x':0.8, 'center_y':0.1}
+            source: "./icons/repeat.png"
+            size: ("50dp","50dp")
+            size_hint: (None,None)
+
+        Button:
+            pos_hint: {'center_x':0.8, 'center_y':0.1}
+            size: ("65dp","65dp")
+            size_hint: (None,None)
+            opacity: 0

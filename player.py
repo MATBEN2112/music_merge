@@ -19,20 +19,9 @@ except:
 class PlayerUI:
     def start_playback(self, track_obj):
         self.pause()
-        # save album id if audio in album
-        self.album_key = track_obj.album_key
-        # save track data
-        if isinstance(track_obj, Track):
-            if self.album_key:
-                self.track_list = self.app.album_screen.track_list
-            else:
-                self.track_list = self.app.main_screen.track_list
-                    
-        elif isinstance(track_obj, VKTrack):
-            if self.album_key:
-                self.track_list = self.app.album_screen.track_list
-            else:
-                self.track_list = self.app.main_screen.track_list
+        # save track listing data
+        screen = self.app.manager.current_screen
+        track_obj_class, args, self.track_list, self.album_key = screen.ids.container.get_listing()
 
         for i in range(len(self.track_list)):
             if self.track_list[i][1] == track_obj.track[1]:
@@ -48,24 +37,14 @@ class PlayerUI:
         ''' Function starts music playback. Cases '''
 
         # highlighte and save track as element of UI
-        if self.current_track_obj:
-            self.current_track_obj.unhighlighte()
-
-        if self.app.manager.current == 'search':
-            track_obj.highlighte()
-            for child in self.app.main_screen.ids.container.children:
-                if not isinstance(child, (Track,VKTrack)):
-                    continue
-                
-                if child.path == self.current_track[1]:
-                    self.current_track_obj = child
-                    break
-                    
-        else:
-            self.current_track_obj = track_obj
+        for t_obj in self._highlighted:
+            t_obj.unhighlighte()
             
+        self._highlighted.clear()
+        self.current_track_obj = track_obj
+        
         self.current_track_obj.highlighte()
-
+        self._highlighted.append(track_obj)
         self.load()
         print('audio loaded')
         if self.app.audio_bar.status == 'closed':
@@ -89,7 +68,7 @@ class PlayerUI:
                 # progress bar
                 self.app.audio_bar.ids.song_progress.value = info_dict['song_pos']
                 self.app.player_screen.ids.song_progress.value = info_dict['song_pos']
-                print(f"Audio bar current value: {info_dict['song_pos']} Ends in: {info_dict['song_len']}")
+                #print(f"Audio bar current value: {info_dict['song_pos']} Ends in: {info_dict['song_len']}")
                 # timer
                 current_time = time.strftime('%M:%S', time.gmtime(info_dict['song_pos']))
                 self.app.audio_bar.ids.song_timer.text = current_time
@@ -114,20 +93,21 @@ class PlayerUI:
                 self.app.player_screen.ids.song_progress.max = info_dict['song_len']
                 self.app.player_screen.ids.song_len.text= time.strftime('%M:%S', time.gmtime(info_dict['song_len']))
                 # highlighte
-                try: # if UI element loaded try to highlighte element
-                    for track_obj in self.current_track_obj.parent.children:
-                        if not isinstance(track_obj, (Track,VKTrack)):
-                            continue
-                        if track_obj.track[1] == info_dict['file']:
-                            if self.current_track_obj:
-                                self.current_track_obj.unhighlighte()
-                                
-                            self.current_track_obj = track_obj
-                            self.current_track_obj.highlighte()
-                            break
+                screen = self.app.manager.current_screen
+                # if UI element loaded try to highlighte element
+                for track_obj in screen.ids.container.container.children:
+                    for t_obj in self._highlighted:
+                        t_obj.unhighlighte()
 
-                except (IndexError, AttributeError) as e:
-                    print('UI element is not loaded:', e)
+                    self._highlighted.clear()
+                    
+                    if not isinstance(track_obj, (Track,VKTrack)):
+                        continue
+                    if track_obj.track[1] == info_dict['file']:
+                        self.current_track_obj = track_obj
+                        self.current_track_obj.highlighte()
+                        self._highlighted.append(track_obj)
+                        break
             
             if 'info_dict' not in dir(self) or self.info_dict['status'] != info_dict['status']: # play/stop button
                 img = "./icons/stop.png" if info_dict['status'] else "./icons/play.png"
@@ -161,6 +141,7 @@ class DesktopPlayer(PlayerUI):
         self.album_key = None
         self.app = app
         self.player = None
+        self._highlighted = []
 
     def load(self):
         if not self.current_track_obj:
@@ -171,7 +152,7 @@ class DesktopPlayer(PlayerUI):
                 self.player = SoundLoader.load(self.current_track[1])
             
             elif isinstance(self.current_track_obj, VKTrack):
-                pass
+                return
                 #m3u8 = await self.current_track[5].get_link(self.current_track[1])
                 #self.player = SoundLoader.load(m3u8)   [FIX unable to play m3u8 links (mp3 too :( )]
 
@@ -206,29 +187,28 @@ class DesktopPlayer(PlayerUI):
     def play_next(self, n):
         def _():
             if self.track_list[n+self.key] == 'EOL':
-                print("List out of range.")
+                print("List out of range. [POST]")
                 self.pause()
                 self.seek(0.1)
-                return
+                return False
             else:
                 self.current_track = self.track_list[n+self.key]
                 self.key += n
+                return True
                 
         if n+self.key < 0:
-            print("List out of range.")
+            print("List out of range. [PRE]")
             self.pause()
             self.seek(0.1)
             return
         
         try:
-            _()
+            if not _():
+                return
                         
         except IndexError:
-            print('Track data has not loaded yet')
             if isinstance(self.current_track_obj, VKTrack):
-                self.track_list += self.current_track[5].load_more_t()
-                                 
-            _()
+                print('Track data has not loaded yet')
 
         self.pause()
         self.seek(0.1)

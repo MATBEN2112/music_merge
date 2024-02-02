@@ -85,7 +85,7 @@ class Meta(object):
             path             TEXT NOT NULL,
             artist            TEXT,
             song            TEXT,
-            img              TEXT DEFAULT ('./icons/track.png'));
+            img              TEXT DEFAULT ('./icons/player_back.png'));
         """)
         self.cursor.execute(f"""CREATE TABLE IF NOT EXISTS Relationship (
         
@@ -215,7 +215,7 @@ class Meta(object):
                 os.remove(path)
             except (PermissionError,FileNotFoundError): # if file loaded to player
                 pass
-            if img != './icons/track.png':
+            if not (img == './icons/player_back.png' or not img):
                 try:
                     os.remove(img)
                 except (PermissionError,FileNotFoundError):
@@ -237,7 +237,7 @@ class Meta(object):
             except (PermissionError,FileNotFoundError): # if file loaded to player
                 pass
             
-            if img != './icons/track.png':
+            if not (img == './icons/player_back.png' or not img):
                 try:
                     os.remove(img)
                 except (PermissionError,FileNotFoundError):

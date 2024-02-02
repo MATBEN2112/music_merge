@@ -9,9 +9,52 @@ import asyncio
 import vk_audio
 import shutil
 from utils import *
+from bs4 import BeautifulSoup
+
+DEFAULT_COOKIES = { 'remixaudio_show_alert_today':
+    {
+        'version': 0,
+        'name': 'remixaudio_show_alert_today',
+        'value': '0',
+        'port': None,
+        'port_specified': False,
+        'domain': '.vk.com',
+        'domain_specified': True,
+        'domain_initial_dot': True,
+        'path': '/',
+        'path_specified': True,
+        'secure': True,
+        'expires': None,
+        'discard': False,
+        'comment': None,
+        'comment_url': None,
+        'rfc2109': False,
+        'rest': {}
+    }, 'remixmdevice': {
+        'version': 0,
+        'name': 'remixmdevice',
+        'value': '1920/1080/2/!!-!!!!',
+        'port': None,
+        'port_specified': False,
+        'domain': '.vk.com',
+        'domain_specified': True,
+        'domain_initial_dot': True,
+        'path': '/',
+        'path_specified': True,
+        'secure': True,
+        'expires': None,
+        'discard': False,
+        'comment': None,
+        'comment_url': None,
+        'rfc2109': False,
+        'rest': {}
+    }
+}
 
 REGEXP = {
     'ascii': re.compile(r'&#([0-9]+);'),
+    'album_id': re.compile(r'act=audio_playlist(-?\d+)_(\d+)'),
+    'access_hash': re.compile(r'access_hash=(\w+)'),
     'section_id': re.compile(r'"sectionId":"(.*?)",'),
     'data_next': re.compile(r"data-next='(.*?)'"),
     'next_from': re.compile(r'"nextFrom":"(.*?)",'),
@@ -28,7 +71,11 @@ REGEXP = {
     'number_hash': re.compile(r"al_page: '3', hash: '([a-z0-9]+)'"),
     'phone_postfix': re.compile(r'phone_postfix">.*?(\d+).*?<'),
     'phone_prefix': re.compile(r'label ta_r">\+(.*?)<')
-    }
+}
+
+TRACKS_PER_USER_PAGE = 2000
+TRACKS_PER_ALBUM_PAGE = 2000
+ALBUMS_PER_USER_PAGE = 100
 
 def search_re(reg, string):
     s = reg.search(string)
@@ -45,7 +92,8 @@ def clear_string(s):
 class VK_session(object):
     def __init__(self, session_obj, session_name):
         self.album_list = []
-        self.audio_list = []
+        self.audio_list = {}
+        self._offset_a = 0
         self.session_obj = session_obj
         self.session_name = session_name
         self.path = session_obj.app.app_dir + f'/sessions/{self.session_name}/'
@@ -110,24 +158,26 @@ class VK_session(object):
             self.session_obj.on_release=lambda :self.session_obj.session_unavalible()
 
     
-    async def send_get_request(self,url):
+    async def send_get_request(self, url, params={}, allow_redirects = True):
         try:
-            async with self.session.get(url, timeout=15) as response:
+            async with self.session.get(url, timeout=15, params=params,allow_redirects=allow_redirects) as response:
                 print(response.real_url)
                 return await response.text()
             
         except asyncio.exceptions.TimeoutError:
             return None
                 
-    async def send_post_request(self,url, payload={}):
+    async def send_post_request(self, url, params={}, allow_redirects = True):
         try:
-            async with self.session.post(url,params=payload, timeout=15) as response:
+            async with self.session.post(url, params=params, timeout=15,allow_redirects=allow_redirects) as response:
                 return await response.text()
                 
         except asyncio.exceptions.TimeoutError:
             return None
         
     def read_cookieJar(self, cookies):
+        
+        self.session.cookie_jar.unsafe=True
         cookies_list = []
         self.cookies = cookies
         for c in cookies:
@@ -135,6 +185,8 @@ class VK_session(object):
 
         self.cookies_list = cookies_list
         self.session.cookie_jar.update_cookies(self.cookies)
+        self.session.cookie_jar.update_cookies(DEFAULT_COOKIES)
+        
         
     def parse_audio_list(self, data):
         audio_list = []
@@ -153,189 +205,130 @@ class VK_session(object):
                 ))
         return audio_list
             
-    async def load_user_audios(self,reload=False):
-        if not reload and self.audio_list:
+    async def load_user_audios(self,reload=False, album_id='__', load_more = False):
+        print(f'### Load local {reload}. Album id: {album_id} ###')
+        a_id = album_id.split('_')
+        owner_id = a_id[0] if a_id[0] else self.u_id
+        album_id = a_id[1] if a_id[1] else -1
+        access_hash = a_id[2]
+
+        if not reload and album_id in self.audio_list and not load_more:
             print('Local audio list used.')
-            return self.audio_list
-        # GET
-        url = f'https://vk.com/audios{self.u_id}?section=all'
+            return self.audio_list[album_id][0]
+
+
+        url = 'https://m.vk.com/'
         response = await self.send_get_request(url)
         if not response:
-            return ['EOL']
-        # POST
-        section_id_t = search_re(REGEXP['section_id'], response)
-        if not section_id_t:
+            print('No response')
             return ['EOL']
         
-        url = 'https://vk.com/audio?act=load_catalog_section'
-        payload = {
-            'al': '1',
-            'section_id': section_id_t
+        url = 'https://m.vk.com/audio'
+        params = {
+            'act': 'load_section',
+            'owner_id': owner_id,
+            'playlist_id': album_id,
+            'offset':  self.audio_list[album_id][1] if load_more else 0,
+            'type': 'playlist',
+            'access_hash': access_hash,
+            'is_loading_all': 1
         }
-        response = await self.send_post_request(url,payload=payload)
-        if not response:
-            return ['EOL']
-        # POST
-        next_from_t = search_re(REGEXP['next_from'], response)
-        response_json = json.loads(response.lstrip('<!--'))
-        audio_list = self.parse_audio_list(response_json['payload'][1][1]['playlist']['list'])
-        if not next_from_t:
-            return audio_list + ['EOL']
-        url = 'https://vk.com/al_audio.php?act=load_catalog_section'
-        payload['start_from'] = next_from_t
-        response = await self.send_post_request(url,payload=payload)
-        if not response:
-            return audio_list + ['EOL']
-        # POST
-        next_from_t = search_re(REGEXP['next_from'], response)
-        response_json = json.loads(response.lstrip('<!--'))
-        audio_list += self.parse_audio_list(response_json['payload'][1][1]['playlist']['list'])
-        if not next_from_t:
-            return audio_list + ['EOL']
-
-        payload['section_id'] = next_from_t.split(' ')[1]
-        payload['start_from'] = next_from_t
-        response = await self.send_post_request(url,payload=payload)
-        if not response:
-            return audio_list + ['EOL']
-
-        self.next_from_t = search_re(REGEXP['next_from'], response)
-        response_json = json.loads(response.lstrip('<!--'))
-        audio_list += self.parse_audio_list(response_json['payload'][1][1]['playlist']['list'])
-        self.section_id_t = payload['section_id']
-
-        if not self.next_from_t: 
-            audio_list += ['EOL']
-            
-        self.audio_list += audio_list
-        return audio_list
-
-    async def load_more_t(self):
-        if not self.next_from_t:
-            return ['EOL']
+        response = await self.send_post_request(url,params=params, allow_redirects=False)
+        response_json = json.loads(response)
         
-        url = 'https://vk.com/al_audio.php?act=load_catalog_section'
-        payload = {
-            'al': '1',
-            'section_id': self.section_id_t,
-            'start_from': self.next_from_t
-        }
-        response = await self.send_post_request(url,payload=payload)
-        if not response:
+        if not response_json['data'][0]: # no permissions
+            print('No permissions')
             return ['EOL']
-        #response = self.session.post(url, data=payload)
-        response_json = json.loads(response.lstrip('<!--'))
-        self.next_from_t = response_json['payload'][1][1]['playlist']['nextOffset']
-        audio_list = self.parse_audio_list(response_json['payload'][1][1]['playlist']['list'])
-        
-        if not self.next_from_t: 
-            audio_list += ['EOL']
-            
-        self.audio_list += audio_list
-        return audio_list
 
-    def parse_album_list(self, data):
+        audio_list = self.parse_audio_list(response_json['data'][0]['list'])
+            
+        if load_more:
+            if  album_id == -1:
+                self.audio_list[album_id] = [
+                    self.audio_list[album_id][0] + audio_list,
+                    self.audio_list[album_id][1] + TRACKS_PER_USER_PAGE
+                ]
+            else:
+                self.audio_list[album_id] = [
+                    self.audio_list[album_id][0] + audio_list,
+                    self.audio_list[album_id][1] + TRACKS_PER_ALBUM_PAGE
+                ]
+
+            if not response_json['data'][0]['hasMore']:
+                self.audio_list[album_id][0] += ['EOL']
+                
+        elif response_json['data'][0]['hasMore']:
+            if  album_id == -1:
+                self.audio_list[album_id] = [audio_list,TRACKS_PER_USER_PAGE]
+                
+            else:
+                self.audio_list[album_id] = [audio_list,TRACKS_PER_ALBUM_PAGE]
+
+        else:
+            self.audio_list[album_id] = [audio_list+ ['EOL'],-1]
+            
+        return self.audio_list[album_id][0]
+
+
+    def parse_album_list(self, html):
         album_list = []
-        for playlist in data:
-            if playlist['permissions']['play']:
-                playlist_name = valid_file_name(playlist['title']) + ' - ' + valid_file_name(playlist['authorName'])
-                playlist_id = str(playlist['ownerId'])+'_'+str(playlist['id'])
-                album_list.append((playlist_id,convert_ASCII(playlist_name),playlist['coverUrl']))
+        soup = BeautifulSoup(html, 'html.parser')
+
+        for album in soup.find_all('div', {'class': 'audioPlaylistsPage__item'}):
+            if album.select_one('.audioPlaylistsPage__cover')['style']:
+                title = album.select_one('.audioPlaylistsPage__cover')['style'].split("'")[1]
+            else:
+                continue
+
+            name = album.select_one('.audioPlaylistsPage__title').text + ' ' + album.select_one('.audioPlaylistsPage__author').text
+            link = album.select_one('.audioPlaylistsPage__itemLink')['href']
+            full_id = [g for g in REGEXP['album_id'].search(link).groups()]
+            access_hash = search_re(REGEXP['access_hash'], link)
+
+            album_list.append((full_id[0]+'_'+full_id[1]+'_'+access_hash,name,title))
+
         return album_list
     
     async def load_playlists(self, reload=False):
+        print(f'### Load local {reload} ###')
         if not reload and self.album_list:
-            print('Local audio list used.')
+            print('### Local audio list used. ###')
             return self.album_list
-        url = f'https://vk.com/audios{self.u_id}?block=my_playlists&section=all'
-        #response = self.session.get(url)
+        else:
+            self.album_list= []
+            self._offset_a = 0
+
+        url = 'https://m.vk.com/'
         response = await self.send_get_request(url)
         if not response:
             return ['EOL']
         
-        self.section_id_a = search_re(REGEXP['section_id'], response)
-        if not self.section_id_a:
-            return ['EOL']
-        
-        url = 'https://vk.com/audio?act=load_catalog_section'
-        payload = {
-            'al': '1',
-            'section_id': self.section_id_a
-        }
-        response = await self.send_post_request(url,payload=payload)
+        url = f'https://m.vk.com/audio?act=audio_playlists{self.u_id}'
+        params = {'offset': self._offset_a}
+        response = await self.send_post_request(url, params=params, allow_redirects = False)
         if not response:
             return ['EOL']
-        #response = self.session.post(url, data=payload)
+                      
+        album_list = self.parse_album_list(response)
 
-        response_json = json.loads(response.lstrip('<!--'))
-        self.next_from_a = search_re(REGEXP['data_next'], response_json['payload'][1][0][0])
-        if not self.next_from_a:
-            return ['EOL']
-            
-        album_list = self.parse_album_list(response_json['payload'][1][1]['playlists'])
+        if not album_list or len(album_list)<ALBUMS_PER_USER_PAGE:
+            self.album_list = album_list + ['EOL']
+            return self.album_list
         
-        if not self.next_from_a: 
-            album_list += ['EOL']
-            
-        self.album_list += album_list
-        return album_list
-            
-    async def load_more_a(self):
-        if not self.next_from_a:
-            return ['EOL']
-        
-        url = 'https://vk.com/al_audio.php?act=load_catalog_section'
-        payload = {
-            'al': '1',
-            'section_id': self.section_id_a,
-            'start_from': self.next_from_a
-        }
-        response = await self.send_post_request(url,payload=payload)
-        if not response:
-            return ['EOL']
-        #response = self.session.post(url, data=payload)
-        response_json = json.loads(response.lstrip('<!--'))
-        self.next_from_a = search_re(REGEXP['section_id'], response_json['payload'][1][0][0])
-        album_list = self.parse_album_list(response_json['payload'][1][1]['playlists'])
+        else:
+            self._offset_a += ALBUMS_PER_USER_PAGE
+            self.album_list += album_list
+            return album_list
 
-        if not self.next_from_a: 
-            album_list += ['EOL']
-            
-        self.album_list += album_list
-        return album_list
-
-    async def load_playlist_content(self, playlist_data):
-        owner_id, playlist_id = playlist_data.split('_')
-        url = 'https://vk.com/al_audio.php?act=load_section'
-        payload = {
-            'al': '1',
-            'claim': '0',
-            'from_id': 0,
-            'is_loading_all': '1',
-            'is_preload': '0',
-            'offset': '0',
-            'owner_id': owner_id,
-            'playlist_id': playlist_id,
-            'type': 'playlist'
-        }
-        response = await self.send_post_request(url, payload=payload)
-        if not response:
-            return ['EOL']
-        #response = self.session.post(url, data=payload)
-        response_json = json.loads(response.lstrip('<!--'))
-        if response_json['payload'][1][0] == False:
-            print('Error load playlist data')
-
-        return self.parse_audio_list(response_json['payload'][1][0]['list']) + ['EOL']
         
     async def get_link(self, audio_id):
         print(audio_id)
         url = 'https://vk.com/al_audio.php?act=reload_audio'
-        payload={
+        params={
             'al': '1',
             'ids': audio_id
         }
-        response = await self.send_post_request(url,payload=payload)
+        response = await self.send_post_request(url, params=params)
         if not response:
             return None
         #response = self.session.post('https://vk.com/al_audio.php?act=reload_audio', data=payload)
@@ -345,7 +338,7 @@ class VK_session(object):
         return url_m3u8
 
     async def search(self, isglobal, q=''):
-        payload = {
+        params = {
             'al': 1,
             'act': 'section',
             'claim': 0,
@@ -355,7 +348,7 @@ class VK_session(object):
             'q': q
         }
         url = 'https://vk.com/al_audio.php'
-        response = await self.send_post_request(url,payload=payload)
+        response = await self.send_post_request(url, params=params)
         if not response:
             return ['EOL']
         #response = self.session.post(url, data = payload)

@@ -1,3 +1,4 @@
+# based on https://stackoverflow.com/questions/68084971/kivy-infinite-looping-scrollview
 from kivy.app import App
 from kivy.clock import Clock
 from kivy.lang import Builder

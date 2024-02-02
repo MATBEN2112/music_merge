@@ -51,10 +51,6 @@ class AudioLoader:
                 progress = int((int(stdout.split('=')[1])/(10**6))/duration*100)
                 self.task_list[0]['progress'] = progress if progress>self.task_list[0]['progress'] else self.task_list[0]['progress']
                 
-            print(f'[stdout] {stdout}, {duration}, {progress}')
-
-        
-        
         
     async def m3u8_parser(self,url, path, key):
         self.task_list.append({'key':key,'link': url, 'path': path, 'progress': 0})
@@ -115,9 +111,10 @@ class DownloadMonitor:
         self.exec = True
         while self.task_list:
             await asyncio.sleep(0.5)
+            tl = list(self.task_list.items())
             progress_dict = self.get_info()
             print('progress dict',progress_dict)
-            for task_key, track_obj in list(self.task_list.items()):
+            for task_key, track_obj in tl:
                 if task_key in progress_dict: # update progress
                     track_obj.progress.value = progress_dict[task_key]
                 else: # task ended
@@ -138,7 +135,7 @@ class DownloadMonitor:
         img = track_obj.app.app_dir + f'/images/t/{task_key}.jpg'
         session_timeout =   aiohttp.ClientTimeout(total=None,sock_connect=5,sock_read=5)
         async with aiohttp.ClientSession(timeout = session_timeout,connector=aiohttp.TCPConnector(verify_ssl=False)) as session:
-            async with session.get(track_obj.img) as response:
+            async with session.get(track_obj.title) as response:
                 if response.status == 200:
                     async with aiofiles.open(img, mode='wb') as f:
                         await f.write(await response.read())
@@ -148,17 +145,18 @@ class DownloadMonitor:
 
     async def task_end(self,track_obj,task_key):
         # load image
-        if track_obj.img != "./icons/track.png":
+        if track_obj.title != './icons/player_back.png':
             img = await self.save_img(track_obj,task_key)
         else:
-            img = "./icons/track.png"
+            img = './icons/player_back.png'
         # change left image widget to downloaded if ui still on screen
         try:
             track_obj.progress.stop_anim()
-            track_obj.children[0].remove_widget(track_obj.progress)
-            track_obj.add_widget(ImageRightWidgetWithoutTouch(source="./icons/done.png"))
-        except:
-            pass
+            track_obj.remove_widget(track_obj.progress)
+            track_obj.ids.action.download_end()
+            #track_obj.add_widget(ImageRightWidgetWithoutTouch(source="./icons/done.png"))
+        except Exception as e:
+            print(e)
             
         track_obj.app.meta.add_new_track(
             track_obj.app.app_dir + '/downloads/' + str(task_key) + '.mp3',
@@ -226,7 +224,7 @@ class DownloadMonitorDesktop(DownloadMonitor):
             self.task_list.update({task_key:track_obj})
             print(track_obj)
             
-            m3u8 = await track_obj.session.get_link(track_obj.id)
+            m3u8 = await track_obj.session.get_link(track_obj.track[1])
             path = track_obj.app.app_dir + '/downloads/' + str(task_key) + '.mp3'
             asyncio.get_event_loop().create_task(self.loader.m3u8_parser(m3u8, path,task_key))
             

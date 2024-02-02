@@ -9,7 +9,7 @@ from kivy.graphics.vertex_instructions import RoundedRectangle
 from kivy.uix.screenmanager import SlideTransition
 
 class AlbumButton(ButtonBehavior, BoxLayout):
-    def __init__(self, session, app, album):
+    def __init__(self, session, app, album = (None, "Untitled album", "./icons/song.png",)):
         super(AlbumButton, self).__init__()
         self.app = app
         self.session = session
@@ -53,7 +53,7 @@ class AlbumButton(ButtonBehavior, BoxLayout):
         screen_to_return = self.app.manager.current
         self.app.manager.transition = SlideTransition(direction="up")
         self.app.manager.current = 'album'
-        self.app.manager.get_screen('album').open_album(self.album)
+        self.app.manager.get_screen('album').open_album(self.album, session = self.session)
 
     def _draw(self,*args):
         with self.canvas.before:
