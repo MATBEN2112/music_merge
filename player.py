@@ -123,7 +123,8 @@ class PlayerUI:
 
 
     def _stop_player_session(self):
-        self.progressbarEvent.cancel()
+        if 'progressbarEvent' in dir(self):
+            self.progressbarEvent.cancel()
         if self.app.audio_bar.status == 'open':
             self.app.audio_bar.hide()
 
