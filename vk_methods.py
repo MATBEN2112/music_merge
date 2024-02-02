@@ -10,6 +10,7 @@ import vk_audio
 import shutil
 from utils import *
 from bs4 import BeautifulSoup
+from hashlib import md5
 
 DEFAULT_COOKIES = { 'remixaudio_show_alert_today':
     {
@@ -162,6 +163,10 @@ class VK_session(object):
         try:
             async with self.session.get(url, timeout=15, params=params,allow_redirects=allow_redirects) as response:
                 print(response.real_url)
+                if str(response.url).startswith('https://vk.com/429.html?'):
+                    hash429_md5 = md5(self.session.cookies['hash429'].encode('ascii')).hexdigest()
+                    self.session.cookies.pop('hash429')
+                    response = await self.send_get_request(f'{response.url}&key={hash429_md5}', timeout=15, params=params,allow_redirects=allow_redirects)
                 return await response.text()
             
         except asyncio.exceptions.TimeoutError:
