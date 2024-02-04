@@ -185,6 +185,7 @@ class AlbumListItem(OneLineAvatarIconListItem):
     def on_touch_up(self, touch):
         if self.collide_point(touch.x, touch.y):
             self.app.meta.add_to_album(self.track[0], self.album[0]) # [DB class method]
+            self.app.change_appear()
             return self.popup.dismiss()
             
         
@@ -210,7 +211,7 @@ class SelectionBottomMenu(MDBoxLayout):
 
     def delete_selected(self, state=None):
         if state:
-            children = [*self.screen.ids.container.children[0].children[0].children]
+            children = [*self.screen.ids.container.container.children]
             for child in children:
                 if isinstance(child, TrackWithCheckBox):
                     child.delete_track()
@@ -229,12 +230,13 @@ class SelectionBottomMenu(MDBoxLayout):
     def create_album(self, album_name=None):
         if album_name:
             album_key = self.app.meta.add_album(album_name, img=None) # [DB class method]
-            children = [*self.screen.ids.container.children[0].children[0].children]
+            children = [*self.screen.ids.container.container.children]
             for child in children:
                 if isinstance(child, TrackWithCheckBox):
                     child.add_to_album(album_key=album_key)
 
-            self.popup.dismiss()          
+            self.popup.dismiss()
+            self.app.change_appear()
             return self.close_selection()
         
         elif isinstance(album_name,str):
@@ -302,9 +304,10 @@ class SessionListElement(TwoLineAvatarIconListItem):
         menu_items = [
             {"viewclass": "OneLineListItem","text": "Delete session", "height": dp(50),
              "on_release":lambda : self.delete_session()},
+            {"viewclass": "OneLineListItem","text": "", "height": dp(20)},
         ]
         self.drop_down_menu = MDDropdownMenu(
-            caller=self, items=menu_items,position="center",width_mult=3, max_height=dp(140)
+            caller=self, items=menu_items,position="center",width_mult=3
         )
         self.drop_down_menu.open()
 
@@ -497,7 +500,6 @@ class TrackBase(ButtonBehavior):
             self.app.meta.delete_track(self.track[0], key_album=self.album_key) # [DB class method]
              
     def add_to_album(self, album_key=None):
-        print(213)
         if album_key and self.ids.action.active:
             self.app.meta.add_to_album(self.track[0], album_key) # [DB class method]
         
@@ -524,9 +526,10 @@ class ActionBase(ButtonBehavior):
             {"viewclass": "OneLineListItem","text": "Delete", "height": dp(50), "on_release":
              lambda : self.delete_track()
              },
+            {"viewclass": "OneLineListItem","text": "", "height": dp(20)},
         ]
         self.drop_down_menu = MDDropdownMenu(
-            caller=self, items=menu_items,position="center",width_mult=3, max_height=dp(190)
+            caller=self, items=menu_items,position="center",width_mult=3
         )
         self.drop_down_menu.open()
 
@@ -615,7 +618,7 @@ class TrackAtion(ActionBase,Widget):
     def delete_track(self, state=None):
         if state:
             self.parent.app.meta.delete_track(self.parent.track[0], key_album=self.parent.album_key) # DB class method
-            self.parent.parent.remove_widget(self.parent)    
+            self.parent.parent.remove_widget(self.parent)
             return self.popup.dismiss()
 
         self.drop_down_menu.dismiss()
@@ -943,7 +946,7 @@ class UpdatableScrollView(ScrollView):
     def on_touch_down(self, *args):
         ''' Creates task if any callback specified '''
 
-        if not self._did_overscroll and 1 > self.scroll_y > 0:
+        if not self._did_overscroll and 1.01 > self.scroll_y > -0.01:
             self._is_human = True
         return super().on_touch_down(*args)
     
@@ -1060,7 +1063,6 @@ class UpdatableListingContainer(FloatLayout):
         
 
     def _selection_start(self):
-        print(self.parent.ids)
         self._hold = True
         self.header.y = self.parent.ids.menu_row.y
         self.y = 0

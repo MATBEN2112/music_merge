@@ -260,14 +260,15 @@ class Start(CustomScreen):
 
     def edit_menu(self):
         menu_items = [
-            {"viewclass": "OneLineListItem","text": f"Selection",  "height": dp(50),
+            {"viewclass": "OneLineListItem","text": "Selection",  "height": dp(50),
              "on_release": self.open_selection_menu},
-            {"viewclass": "OneLineListItem","text": f"Delete all", "height": dp(50),
+            {"viewclass": "OneLineListItem","text": "Delete all", "height": dp(50),
              "on_release": self.delete_all},
+            {"viewclass": "OneLineListItem","text": "", "height": dp(20)},
             # dev purpose{"viewclass": "OneLineListItem","text": f"Popup debug","on_release": self.show_popup},
         ]
         self.drop_down_menu = MDDropdownMenu(
-            caller=self.ids.menu_row, items=menu_items,position="center",width_mult=3, max_height=dp(140)
+            caller=self.ids.menu_row, items=menu_items,position="center",width_mult=4
         )
         self.drop_down_menu.open()
         
@@ -280,9 +281,7 @@ class Start(CustomScreen):
         if state:
             self.popup.dismiss()
             self.app.meta.delete_all() # DB class method
-            for screen in self.app.manager.screens:
-                if 'session' in dir(screen):
-                    delattr(screen,'session')
+            self.app.change_appear()
 
             return self.audios_listing()
         
@@ -390,9 +389,10 @@ class Album(CustomScreen):
              "on_release": self.delete_album},
             {"viewclass": "OneLineListItem","text": f"Rename album",  "height": dp(50),
              "on_release": self.rename_album},
+            {"viewclass": "OneLineListItem","text": "", "height": dp(20)},
         ]
         self.drop_down_menu = MDDropdownMenu(
-            caller=self.ids.menu_row, items=menu_items,position="center",width_mult=3, max_height=dp(190)
+            caller=self.ids.menu_row, items=menu_items,position="center",width_mult=3
         )
         self.drop_down_menu.open()
 
@@ -400,8 +400,8 @@ class Album(CustomScreen):
         self.drop_down_menu.dismiss()
         if state:
             self.app.meta.delete_album(self.album[0]) # [DB class method]
-                
             self.popup.dismiss()
+            self.app.change_appear()
             return self.close_album()
         
         self.popup = ConfirmationPopup()
@@ -417,6 +417,7 @@ class Album(CustomScreen):
             self.app.meta.edit_album(self.album[0], album_name) # [DB class method]
             self.popup.dismiss()
             self.ids.album_name.text = album_name
+            self.app.change_appear()
             return
         
         elif isinstance(album_name,str):
@@ -913,6 +914,11 @@ class LoginApp(MDApp):
             if session_obj.is_session:
                 self.sessions.append(session_obj)
                 self.main_screen.ids.session_container.add_widget(session_obj)
+
+    def change_appear(self):
+        for screen in self.manager.screens:
+                if 'session' in dir(screen) and screen.name != self.manager.current:
+                    delattr(screen,'session')
     
 if __name__ == '__main__':
     if True:
