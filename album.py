@@ -22,6 +22,7 @@ class AlbumButton(ButtonBehavior, BoxLayout):
 
         self.img = AsyncImage(
             size=(self.metric,)*2,
+            fit_mode = 'fill',
             size_hint=(None,None),
             source=self.img
         )

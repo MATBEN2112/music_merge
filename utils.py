@@ -157,7 +157,7 @@ class Meta(object):
     def album_list(self):
         ''' Return list of albums '''
         self.cursor.execute("SELECT * FROM AlbumList;")
-        return self.cursor.fetchall()[::-1]
+        return self.cursor.fetchall()[::-1] + ['EOL']
 
     def track_list(self, key = None):
         ''' Search for album content or outer content '''

@@ -1,35 +1,8 @@
-import kivy
 from kivy.app import async_runTouchApp
-from kivy.lang import Builder
 from kivymd.app import MDApp
-from kivymd.uix.list import OneLineAvatarIconListItem, IconRightWidget, ImageLeftWidget, IRightBodyTouch, TwoLineAvatarListItem, ImageLeftWidgetWithoutTouch, ImageRightWidgetWithoutTouch, TwoLineAvatarIconListItem
-from kivymd.uix.menu import MDDropdownMenu
-
-import asyncio
-from kivy.properties import StringProperty
 from kivy.uix.screenmanager import ScreenManager, Screen, SlideTransition
-from kivymd.uix.relativelayout import MDRelativeLayout
-import os
-from utils import *
-
-from kivy.uix.textinput import TextInput
-
 from kivy.core.window import Window
 from kivy.utils import platform
-
-
-from kivymd.theming import ThemableBehavior
-from kivymd.uix.list import MDList
-from kivy.uix.button import Button
-from kivymd.uix.label import MDLabel
-from kivymd.uix.boxlayout import MDBoxLayout
-
-from kivy.clock import Clock
-from kivymd.uix.slider import MDSlider
-from kivy.properties import ObjectProperty, ColorProperty
-
-from kivy.uix.popup import Popup
-from kivy.uix.image import Image, AsyncImage
 
 import vk_methods as vk
 from custom_widgets import *
@@ -42,7 +15,7 @@ from custom_widgets import *
 # 6) track count in album [FIXED]
 # 7) make reload of screen on any change (delete, edit, add tracks) [FIXED] almost done secondary text update problem
 # 8) close audio_bar on side menu open
-# 9) track highlight does not work properly sometimes
+# 9) track highlight does not work properly sometimes [FIXED]
 # 10) side menu touch event should not trigger scrollview and scrollview elements
 # 11) rebuild login scheam
 # 12)
@@ -52,14 +25,27 @@ class CustomScreen(Screen):
     def prevent_loading_same(self,album,session = None):
         if 'app' not in dir(self):
             self.app = MDApp.get_running_app()
+
+        def _():
+            if self.app.player.get_current_track():
+                for child in self.ids.container.container.children:
+                    if not isinstance(child, (Track,VKTrack)):
+                        continue
+                    
+                    if self.app.player.get_current_track() == child.track[1]:
+                        child.highlighte()
+                        self.app.player._highlighted.append(child)
+                        break
                 
-        if 'session' in dir(self) and 'track_list' in dir(self): # prevent loading same twise
+        if 'session' in dir(self): # prevent loading same twise
             if album:
                 if self.session == session and self.album == album:
+                    _()
                     return True
 
             else:
                 if self.session == session:
+                    _()
                     return True
             
         return False
@@ -195,10 +181,10 @@ class CustomScreen(Screen):
 class Start(CustomScreen):
     def audios_listing(self, session = None):
         if self.prevent_loading_same(None, session=session):
-            print('Already loaded')
+            print('Already loaded')            
             return
              
-        self.ids.container.scroll_y = 1 # return to the top of scrollview
+        self.ids.container.scroll_view.scroll_y = 1 # return to the top of scrollview
         self.ids.accounts_list.scroll_y = 1
         self.session = session
         self.ids.nav_drawer.set_state('close') # close side menu
@@ -222,29 +208,47 @@ class Start(CustomScreen):
             pass
             
         # prepare tools
-        self.ids.main_screen_header.clear_widgets()
-        self.ids.main_screen_header.add_widget(
-            Tool(
-                self.ids.menu_row,
-                title="./icons/search.png",
-                text="Search",
-                action=self.switch_to_search,
-                bg_color = "#81BEF7"
-            )
-        )
-        self.ids.main_screen_header.add_widget(
-            Tool(
-                self.ids.menu_row,
-                title="./icons/song.png",
-                text="List of Albums",
-                action=self.switch_to_album_list,
-                bg_color = "#81BEF7"
-            )
-        )
         if self.app.audio_listing_key == 'user':
-            pass
+            self.ids.main_screen_header.clear_widgets()
+            self.ids.main_screen_header.add_widget(
+                Tool(
+                    self.ids.menu_row,
+                    title="./icons/search.png",
+                    text="Search",
+                    action=self.switch_to_search,
+                    bg_color = "#81BEF7"
+                )
+            )
+            self.ids.main_screen_header.add_widget(
+                Tool(
+                    self.ids.menu_row,
+                    title="./icons/song.png",
+                    text="List of Albums",
+                    action=self.switch_to_album_list,
+                    bg_color = "#81BEF7"
+                )
+            )
+        
         elif self.app.audio_listing_key == 'vk':
-            pass
+            self.ids.main_screen_header.clear_widgets()
+            self.ids.main_screen_header.add_widget(
+                Tool(
+                    self.ids.menu_row,
+                    title="./icons/search.png",
+                    text="Search",
+                    action=self.switch_to_search,
+                    bg_color = "#81BEF7"
+                )
+            )
+            self.ids.main_screen_header.add_widget(
+                Tool(
+                    self.ids.menu_row,
+                    title="./icons/song.png",
+                    text="List of Albums",
+                    action=self.switch_to_album_list,
+                    bg_color = "#81BEF7"
+                )
+            )
         elif self.app.audio_listing_key == 'selection':
             pass
         
@@ -256,12 +260,14 @@ class Start(CustomScreen):
 
     def edit_menu(self):
         menu_items = [
-            {"viewclass": "OneLineListItem","text": f"Selection","on_release": self.open_selection_menu},
-            {"viewclass": "OneLineListItem","text": f"Delete all","on_release": self.delete_all},
+            {"viewclass": "OneLineListItem","text": f"Selection",  "height": dp(50),
+             "on_release": self.open_selection_menu},
+            {"viewclass": "OneLineListItem","text": f"Delete all", "height": dp(50),
+             "on_release": self.delete_all},
             # dev purpose{"viewclass": "OneLineListItem","text": f"Popup debug","on_release": self.show_popup},
         ]
         self.drop_down_menu = MDDropdownMenu(
-            caller=self.ids.menu_row, items=menu_items,position="center",width_mult=4
+            caller=self.ids.menu_row, items=menu_items,position="center",width_mult=3, max_height=dp(140)
         )
         self.drop_down_menu.open()
         
@@ -330,7 +336,7 @@ class Album(CustomScreen):
         self.session = session
         self.album = album
 
-        self.ids.container.scroll_y = 1 # return to the top of scrollview
+        self.ids.container.scroll_view.scroll_y = 1 # return to the top of scrollview
         
         # prepare top app bar
         self.ids.menu_row.clear_widgets()
@@ -378,12 +384,15 @@ class Album(CustomScreen):
 
     def edit_menu(self):
         menu_items = [
-            {"viewclass": "OneLineListItem","text": f"Selection","on_release": self.open_selection_menu},
-            {"viewclass": "OneLineListItem","text": f"Delete album","on_release": self.delete_album},
-            {"viewclass": "OneLineListItem","text": f"Rename album","on_release": self.rename_album},
+            {"viewclass": "OneLineListItem","text": f"Selection",  "height": dp(50),
+             "on_release": self.open_selection_menu},
+            {"viewclass": "OneLineListItem","text": f"Delete album",  "height": dp(50),
+             "on_release": self.delete_album},
+            {"viewclass": "OneLineListItem","text": f"Rename album",  "height": dp(50),
+             "on_release": self.rename_album},
         ]
         self.drop_down_menu = MDDropdownMenu(
-            caller=self.ids.menu_row, items=menu_items,position="center",width_mult=4
+            caller=self.ids.menu_row, items=menu_items,position="center",width_mult=3, max_height=dp(190)
         )
         self.drop_down_menu.open()
 
@@ -442,7 +451,7 @@ class AlbumList(CustomScreen):
         
         self.session = session
 
-        self.ids.container.scroll_y = 1 # return to the top of scrollview
+        self.ids.container.scroll_view.scroll_y = 1 # return to the top of scrollview
         
         # prepare top app bar
         self.ids.menu_row.clear_widgets()
@@ -857,7 +866,7 @@ class LoginApp(MDApp):
         self.screen_container.add_widget(self.audio_bar)
         self.screen_container.fbind('isopen',self.player_screen.open_player,app=self)
 
-        self.platform = kivy.utils.platform
+        self.platform = platform
         if self.platform not in ['android','ios']:
             Window.size = (540, 1170)
             from download_monitor import DownloadMonitorDesktop

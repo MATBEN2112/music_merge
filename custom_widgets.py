@@ -17,40 +17,47 @@ from kivymd.uix.label import MDLabel
 from kivymd.uix.menu import MDDropdownMenu
 from kivy.uix.image import Image, AsyncImage
 from kivy.uix.screenmanager import ScreenManager, Screen, SlideTransition
-from kivy.graphics.context_instructions import Color
-from kivy.graphics.vertex_instructions import RoundedRectangle, Line, Rectangle
 from kivy.uix.behaviors import ButtonBehavior
 from kivy.core.text import Label as CoreLabel
+from kivymd.uix.navigationdrawer import MDNavigationDrawer
+from kivy.uix.button import Button
+from kivy.uix.scrollview import ScrollView
+from kivy.uix.label import Label
+from kivy.uix.floatlayout import FloatLayout
+
+from kivy.graphics.context_instructions import Color
+from kivy.graphics.vertex_instructions import RoundedRectangle, Line, Rectangle
+
 from kivy.metrics import sp, dp
+from kivy.clock import Clock
+from kivy.animation import Animation
+from kivy.effects.dampedscroll import DampedScrollEffect
+from kivy.properties import (
+    NumericProperty,
+    StringProperty,
+    BooleanProperty,
+    ColorProperty,
+    ObjectProperty,
+    DictProperty,
+    OptionProperty,
+    ListProperty)
+
 import os
-from vk_methods import VK_session
 import shutil
 import pickle
-from kivy.clock import Clock
-from utils import *
 import shutil
 import re
 from math import exp
 import asyncio
 
-from kivy.uix.label import Label
-from kivy.uix.floatlayout import FloatLayout
-from kivy.animation import Animation
-from kivy.properties import (
-    NumericProperty, StringProperty, BooleanProperty,ColorProperty,ObjectProperty)
+from vk_methods import VK_session
+from utils import *
 
 from drop_down_resent import DropDownResent
 from ticker import Ticker
 from draggablescreenlayout import DraggableScreenLayout
 from animations import LoadSign, CircularProgressBar, LoadingBar
 from album import AlbumButton
-#from sidemenu import SideMenu
-from kivymd.uix.navigationdrawer import MDNavigationDrawer
-from kivy.properties import ListProperty, OptionProperty, DictProperty, NumericProperty, BooleanProperty
-from kivy.uix.button import Button
-from kivy.effects.dampedscroll import DampedScrollEffect
-from kivy.uix.scrollview import ScrollView
-
     
 class PopupBody(BoxLayout):
     pass
@@ -126,7 +133,7 @@ class AddToAlbumPopup(Popup):
 class RenameTrackPopup(Popup):
     pass
 
-class AudioInfo(MDBoxLayout):
+class AudioInfo(BoxLayout):
     anim_to_hint = NumericProperty(0.05)
 
     status = OptionProperty('closed',options=("open", "closed"))
@@ -293,11 +300,11 @@ class SessionListElement(TwoLineAvatarIconListItem):
     
     def mange_session(self):
         menu_items = [
-            {"viewclass": "OneLineListItem","text": "Delete session",
+            {"viewclass": "OneLineListItem","text": "Delete session", "height": dp(50),
              "on_release":lambda : self.delete_session()},
         ]
         self.drop_down_menu = MDDropdownMenu(
-            caller=self, items=menu_items,position="center",width_mult=3, max_height=100
+            caller=self, items=menu_items,position="center",width_mult=3, max_height=dp(140)
         )
         self.drop_down_menu.open()
 
@@ -508,18 +515,18 @@ class ActionBase(ButtonBehavior):
         
     def open_edit_menu(self):
         menu_items = [
-            {"viewclass": "OneLineListItem","text": "Add to album","on_release":
+            {"viewclass": "OneLineListItem","text": "Add to album", "height": dp(50), "on_release":
              lambda : self.add_to_album()
              },
-            {"viewclass": "OneLineListItem","text": "Rename","on_release":
+            {"viewclass": "OneLineListItem","text": "Rename", "height": dp(50), "on_release":
              lambda : self.rename_track()
              },
-            {"viewclass": "OneLineListItem","text": "Delete","on_release":
+            {"viewclass": "OneLineListItem","text": "Delete", "height": dp(50), "on_release":
              lambda : self.delete_track()
              },
         ]
         self.drop_down_menu = MDDropdownMenu(
-            caller=self, items=menu_items,position="center",width_mult=3
+            caller=self, items=menu_items,position="center",width_mult=3, max_height=dp(190)
         )
         self.drop_down_menu.open()
 
@@ -737,7 +744,7 @@ class HighPerformanceContainer(GridLayout):
             self._has_more = True
         
         # empty list
-        if self._child_quantity == 0:
+        if self._child_quantity < 2:
             print('List is empty')
             self._empty_listing()
 
@@ -779,13 +786,12 @@ class HighPerformanceContainer(GridLayout):
         self._child_height = self.children[-1].height
 
     def _empty_listing(self):
-        if 'track' in self.child_kwargs[i]:
+        if self.child_kwargs and 'track' in self.child_kwargs[0]:
             self.add_widget(NoAvailableTracks())
         else:
             pass
             
     def load_down(self,*args):
-        # lock header pos
         if self.dummy:
             self.remove_widget(self.dummy)
             
@@ -937,7 +943,7 @@ class UpdatableScrollView(ScrollView):
     def on_touch_down(self, *args):
         ''' Creates task if any callback specified '''
 
-        if not self._did_overscroll:
+        if not self._did_overscroll and 1 > self.scroll_y > 0:
             self._is_human = True
         return super().on_touch_down(*args)
     
@@ -1054,16 +1060,14 @@ class UpdatableListingContainer(FloatLayout):
         
 
     def _selection_start(self):
-        print(312312)
-        self._move_header(self.scroll_view,1)
-        self._move_header(self.scroll_view,0)
+        print(self.parent.ids)
         self._hold = True
-        self.header.y = self._header_max
-        self.y = self._scrollview_max
+        self.header.y = self.parent.ids.menu_row.y
+        self.y = 0
         
     def _selection_end(self):
-        self.header.y = self._header_min
-        self.y = self._scrollview_min
+        self.header.y -= self.header.height
+        self.y = -self.header.height
         self._hold = False
         
     

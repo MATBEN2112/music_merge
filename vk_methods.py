@@ -221,9 +221,9 @@ class VK_session(object):
             print('Local audio list used.')
             return self.audio_list[album_id][0]
 
-
         url = 'https://m.vk.com/'
         response = await self.send_get_request(url)
+
         if not response:
             print('No response')
             return ['EOL']
@@ -239,6 +239,11 @@ class VK_session(object):
             'is_loading_all': 1
         }
         response = await self.send_post_request(url,params=params, allow_redirects=False)
+        
+        if not response: # relog needed [appear only in mobile version] [FIX]
+            print('Relog needed')
+            return ['EOL']
+        
         response_json = json.loads(response)
         
         if not response_json['data'][0]: # no permissions
@@ -395,14 +400,22 @@ def save_session(app_dir, session):# Save session
 
     u_img_url, u_name= search_re(REGEXP['u_img_name'], response.text).split('" alt="')
     uid = search_re(REGEXP['uid'], response.text)
-    os.mkdir(app_dir + f'/sessions/vk_{uid}/')
-    with open(app_dir + rf'/sessions/vk_{uid}/coockie_Jar', 'wb') as f:
+    i = 0
+    while True:
+        try:
+            os.mkdir(app_dir + f'/sessions/vk_{uid}_{i}/')
+        except FileExistsError:
+            i += 1
+        else:
+            break
+        
+    with open(app_dir + rf'/sessions/vk_{uid}_{i}/coockie_Jar', 'wb') as f:
         pickle.dump(session.cookies, f)
         
-    with open(app_dir + rf'/sessions/vk_{uid}/u_img.jpg', 'wb') as f:
+    with open(app_dir + rf'/sessions/vk_{uid}_{i}/u_img.jpg', 'wb') as f:
         f.write(session.get(u_img_url).content)
         
-    with open(app_dir + rf'/sessions/vk_{uid}/uid', 'wb') as f:
+    with open(app_dir + rf'/sessions/vk_{uid}_{i}/uid', 'wb') as f:
         pickle.dump({'uid': uid, 'u_name': u_name}, f)
     
 def login_request(login, password, captcha_sid='', captcha_key = ''):
@@ -554,4 +567,6 @@ def captcha(app_dir,session=requests.Session(), sid='123'):
     captcha_img_link = f'https://api.vk.com/captcha.php?sid={sid}'
     with open(app_dir+'captcha.jpg', 'wb') as f:
         f.write(session.get(captcha_img_link).content)
+
+
 

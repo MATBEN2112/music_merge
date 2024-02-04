@@ -484,7 +484,6 @@ class ScreenLayoutApp(App):
         return self.manager
 
     def play_stop(self,*args):
-        print(self.audio_bar.pos)
         self.player_screen.ids.action.text = 'play' if self.player_screen.ids.action.text=='stop' else 'stop'
         self.audio_bar.ids.action.text = 'play' if self.audio_bar.ids.action.text=='stop' else 'stop'
 
@@ -511,7 +510,6 @@ class ScreenLayoutApp(App):
         self.current = args[0].parent.children.index(args[0])
         self.player_screen.ids.song_name.text = args[0].text
         self.audio_bar.ids.song_name.text = args[0].text
-        print(self.audio_bar.collide_point(50,50))
 
     def add_w(self):
         self.main_screen.ids.box.add_widget(Button(
