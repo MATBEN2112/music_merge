@@ -21,8 +21,14 @@ class PlayerUI:
         self.pause()
         # save track listing data
         screen = self.app.manager.current_screen
-        track_obj_class, args, self.track_list, self.album_key = screen.ids.container.get_listing()
-
+        track_obj_class, args, track_list, album_key = screen.ids.container.get_listing()
+        if self.track_list == track_list and self.album_key == album_key:
+            new_list = True
+        else:
+            new_list = False
+            
+        self.track_list = track_list
+        self.album_key = album_key
         for i in range(len(self.track_list)):
             if self.track_list[i][1] == track_obj.track[1]:
                 self.key = i
@@ -31,9 +37,9 @@ class PlayerUI:
         self.current_track = track_obj.track
         print('New track to play arrived: ', self.current_track)
         # work with UI and load audio to player
-        self._start_player_session(track_obj)
+        self._start_player_session(track_obj, new_list)
 
-    def _start_player_session(self, track_obj):
+    def _start_player_session(self, track_obj, new_list):
         ''' Function starts music playback. Cases '''
 
         # highlighte and save track as element of UI
@@ -45,7 +51,7 @@ class PlayerUI:
         
         self.current_track_obj.highlighte()
         self._highlighted.append(track_obj)
-        self.load()
+        self.load(new_list)
         print('audio loaded')
         if self.app.audio_bar.status == 'closed':
             self.app.audio_bar.show()
@@ -145,7 +151,7 @@ class DesktopPlayer(PlayerUI):
         self.player = None
         self._highlighted = []
 
-    def load(self):
+    def load(self, new_list):
         if not self.current_track_obj:
             return
 
@@ -214,7 +220,7 @@ class DesktopPlayer(PlayerUI):
 
         self.pause()
         self.seek(0.1)
-        self.load()
+        self.load(False)
         self.play()
 
     def seek(self, *args):
@@ -264,48 +270,48 @@ class IOSPlayer(PlayerUI):
         self.current_track = None
         self.current_track_obj = None
         self.track_list = None
+        self.c_track_list = None
+        self.c_cookies = None
         self.album_key = None
         self.app = app
         self.IOS_player = autoclass('IOS_player') # [obj-c class IOS_player]
         self.player = self.IOS_player.alloc().init() # [obj-c method of class IOS_player]
+        self._highlighted = []
 
-    def load(self):
+    def load(self, new_list):
         if not self.current_track_obj:
             return
 
-        track_arr = NSMutableArray.arrayWithCapacity_(len(self.track_list))
-        for track in self.track_list:
-            if track == 'EOL':
-                track_arr.addObject_(NSString.alloc().initWithUTF8String_(track))
-            else:
-                img = NSString.alloc().initWithUTF8String_(track[4])
-                author = NSString.alloc().initWithUTF8String_(track[2])
-                song = NSString.alloc().initWithUTF8String_(track[3])
-                fn = NSString.alloc().initWithUTF8String_(track[1])
-                track_arr.addObject_(objc_arr(fn, author, song, img))
+        if new_list:
+            self.c_track_list = NSMutableArray.arrayWithCapacity_(len(self.track_list))
+            for track in self.track_list:
+                if track == 'EOL':
+                    self.c_track_list.addObject_(NSString.alloc().initWithUTF8String_(track))
+                else:
+                    img = NSString.alloc().initWithUTF8String_(track[4])
+                    author = NSString.alloc().initWithUTF8String_(track[2])
+                    song = NSString.alloc().initWithUTF8String_(track[3])
+                    fn = NSString.alloc().initWithUTF8String_(track[1])
+                    self.c_track_list.addObject_(objc_arr(fn, author, song, img))
 
         key = self.track_list.index(self.current_track)
         if isinstance(self.current_track_obj, Track):
             self.player.loadPlaylist_key_(track_arr,key) # obj-c method of class IOS_player
             
         elif isinstance(self.current_track_obj, VKTrack):
-            uid = int(self.current_track[5].u_id)
-            if self.current_track_obj.album_key:
-                section_id,next_from = None,None
-            else:
-                section_id = NSString.alloc().initWithUTF8String_(self.current_track[5].section_id_t)
-                next_from = NSString.alloc().initWithUTF8String_(self.current_track[5].next_from_t)
-                
-            cookies_list = self.current_track[5].cookies_list
-            cookies_arr = NSMutableArray.arrayWithCapacity_(len(cookies_list))
-            for cookie in cookies_list:
-                name = NSString.alloc().initWithUTF8String_(cookie[0])
-                value = NSString.alloc().initWithUTF8String_(cookie[1])
-                domain = NSString.alloc().initWithUTF8String_(cookie[2])
-                path = NSString.alloc().initWithUTF8String_(cookie[3])
-                cookies_arr.addObject_(objc_arr(name, value, domain, path))
+            uid = int(self.current_track_obj.session.u_id)
+            
+            cookies_list = self.current_track_obj.session.cookies_list
+            if not self.c_cookies:
+                self.c_cookies = NSMutableArray.arrayWithCapacity_(len(cookies_list))
+                for cookie in cookies_list:
+                    name = NSString.alloc().initWithUTF8String_(cookie[0])
+                    value = NSString.alloc().initWithUTF8String_(cookie[1])
+                    domain = NSString.alloc().initWithUTF8String_(cookie[2])
+                    path = NSString.alloc().initWithUTF8String_(cookie[3])
+                    self.c_cookies.addObject_(objc_arr(name, value, domain, path))
 
-            self.player.loadVKPlaylist_key_cookies_uid_sectionID_nextFrom_(track_arr, key, cookies_arr,uid,section_id,next_from) # obj-c method of class IOS_player
+            self.player.loadVKPlaylist_key_cookies_uid_(self.c_track_list, key, self.c_cookies,uid) # obj-c method of class IOS_player
             
         
     def play(self):

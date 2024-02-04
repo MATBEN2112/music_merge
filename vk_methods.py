@@ -205,8 +205,7 @@ class VK_session(object):
                     audio_id,
                     convert_ASCII(elem[4]),
                     convert_ASCII(elem[3]),
-                    elem[14].split(',')[-1],
-                    self
+                    elem[14].split(',')[-1]
                 ))
         return audio_list
             

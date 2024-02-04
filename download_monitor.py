@@ -197,7 +197,7 @@ class DownloadMonitorIOS(DownloadMonitor):
             self.task_list.update({task_key:track_obj})
             print(track_obj)
                 
-            m3u8 = await track_obj.session.get_link(track_obj.id)
+            m3u8 = await track_obj.session.get_link(track_obj.track[1])
             path = NSString.alloc().initWithUTF8String_(
                 track_obj.app.app_dir + '/downloads/' + str(task_key) + '.mp3'
             )
