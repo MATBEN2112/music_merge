@@ -55,11 +55,9 @@
     [self initPlayer:NULL cookies:NULL];
 }
 
-- (void) loadVKPlaylist:(NSMutableArray *)trackList key:(int)key cookies:(NSMutableArray *)cookiesList uid:(int)uid sectionID:(NSString *)sectionID nextFrom:(NSString *)nextFrom{
+- (void) loadVKPlaylist:(NSMutableArray *)trackList key:(int)key cookies:(NSMutableArray *)cookiesList uid:(int)uid{
     // Do initialization
     _session = [VKsessionManager sharedInstance:self];
-    _sectionID = sectionID;
-    _nextFrom = nextFrom;
     _uid = uid;
     _trackList = trackList;
     _key = key;
