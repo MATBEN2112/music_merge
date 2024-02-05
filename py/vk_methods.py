@@ -502,7 +502,7 @@ def two_fa(session, code, auth_hash = '', captcha_sid='', captcha_key=''):
         return (session, None, 'Logged in')
     
     elif status in [0, '8']:  # Incorrect code case
-        return (None, None, 'Secure code')
+        return (session, None, 'Secure code')
     
     elif status == '2' and data['payload'][1][1] != 2: # Captcha case
         captcha_sid = data['payload'][1][0][1:-1]

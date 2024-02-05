@@ -23,12 +23,13 @@ class PlayerUI:
         screen = self.app.manager.current_screen
         track_obj_class, args, track_list, album_key = screen.ids.container.get_listing()
         if self.track_list == track_list and self.album_key == album_key:
-            new_list = True
-        else:
             new_list = False
-            
-        self.track_list = track_list
-        self.album_key = album_key
+        else:
+            new_list = True
+            self.track_list = track_list
+            self.album_key = album_key
+
+        print('Track list status: ', new_list)
         for i in range(len(self.track_list)):
             if self.track_list[i][1] == track_obj.track[1]:
                 self.key = i
