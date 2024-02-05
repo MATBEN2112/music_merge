@@ -86,7 +86,7 @@
     // init player instance
     if (!_isStream){
         // set path for file
-        NSURL *url = [[NSURL alloc] initFileURLWithPath:[_track objectAtIndex:0]];
+        NSURL *url = [[NSURL alloc] initFileURLWithPath:[_track objectAtIndex:1]];
         NSLog(@"init player with url:%@",url);
         _player = [[AVAudioPlayer alloc] initWithContentsOfURL: url error:NULL];
         // Register event on end of audio playback.
@@ -96,8 +96,8 @@
         [self refresh];
         
     }else{
-        NSLog(@"Audio hash arrived: %@",[_track objectAtIndex:0]);
-        [_session getLink:cookiesList audioHash:[_track objectAtIndex:0]];
+        NSLog(@"Audio hash arrived: %@",[_track objectAtIndex:1]);
+        [_session getLink:cookiesList audioHash:[_track objectAtIndex:1]];
     }
 }
 
@@ -138,12 +138,12 @@
     if ((_track) && !([_track isEqual:@"EOL"]) && !(isnan(len)||isnan(pos))) {
         NSDictionary* info = @{
             @"key": [NSString stringWithFormat:@"%d", _key],
-            @"file": [_track objectAtIndex:0],
-            @"author": [_track objectAtIndex:1],
-            @"song": [_track objectAtIndex:2],
+            @"file": [_track objectAtIndex:1],
+            @"author": [_track objectAtIndex:2],
+            @"song": [_track objectAtIndex:3],
             @"len": [NSNumber numberWithFloat: len],
             @"pos": [NSNumber numberWithFloat: pos],
-            @"img": [_track objectAtIndex:3],
+            @"img": [_track objectAtIndex:4],
             @"status":[NSNumber numberWithBool: _isPlaying]
         };
         return info;
@@ -223,13 +223,13 @@
         [_session loadAudioInfo];
 
     } else {
-        UIImage *image = [UIImage imageWithContentsOfFile:[_track objectAtIndex:3]];
+        UIImage *image = [UIImage imageWithContentsOfFile:[_track objectAtIndex:4]];
         NSDictionary* info = @{
             MPMediaItemPropertyArtwork:[[MPMediaItemArtwork alloc] initWithBoundsSize:image.size requestHandler:^UIImage * _Nonnull(CGSize size) {
                 return image;
             }],
-            MPMediaItemPropertyArtist: [_track objectAtIndex:1],
-            MPMediaItemPropertyTitle: [_track objectAtIndex:2],
+            MPMediaItemPropertyArtist: [_track objectAtIndex:2],
+            MPMediaItemPropertyTitle: [_track objectAtIndex:3],
             MPNowPlayingInfoPropertyMediaType: @(MPMediaTypeMusic),
             MPMediaItemPropertyPlaybackDuration: @(_player.duration),
             MPNowPlayingInfoPropertyPlaybackRate: @(_isPlaying ? _player.rate : 0),
