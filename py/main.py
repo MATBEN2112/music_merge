@@ -282,7 +282,7 @@ class Start(CustomScreen):
             self.popup.dismiss()
             self.app.meta.delete_all() # DB class method
             self.app.change_appear()
-
+            delattr(self,'session')
             return self.audios_listing()
         
         self.popup = ConfirmationPopup()
