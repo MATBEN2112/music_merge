@@ -15,7 +15,6 @@ extern NSString *const durationPattern;
 @property (nonatomic) int uid;
 @property (nonatomic) BOOL isLoading;
 + (VKsessionManager *) sharedInstance:(IOS_player *) player;
-- (void) loadMore;
 - (void) loadAudioInfo;
 - (void) loadSession: (NSMutableArray *) cookies audioHash: (NSString *) hash;
 - (void) getLink: (NSMutableArray *) cookies audioHash: (NSString *) hash;

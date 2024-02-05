@@ -55,7 +55,7 @@
     [self initPlayer:NULL cookies:NULL];
 }
 
-- (void) loadVKPlaylist:(NSMutableArray *)trackList key:(int)key cookies:(NSMutableArray *)cookiesList uid:(int)uid{
+- (void) loadVKPlaylist:(NSMutableArray *)trackList key:(int)key cookies:(NSMutableArray *)cookiesList uid:(int)uid {
     // Do initialization
     _session = [VKsessionManager sharedInstance:self];
     _uid = uid;
@@ -86,7 +86,7 @@
     // init player instance
     if (!_isStream){
         // set path for file
-        NSURL *url = [[NSURL alloc] initFileURLWithPath:[_track objectAtIndex:1]];
+        NSURL *url = [[NSURL alloc] initFileURLWithPath:[_track objectAtIndex:0]];
         NSLog(@"init player with url:%@",url);
         _player = [[AVAudioPlayer alloc] initWithContentsOfURL: url error:NULL];
         // Register event on end of audio playback.
@@ -96,8 +96,8 @@
         [self refresh];
         
     }else{
-        NSLog(@"Audio hash arrived: %@",[_track objectAtIndex:1]);
-        [_session getLink:cookiesList audioHash:[_track objectAtIndex:1]];
+        NSLog(@"Audio hash arrived: %@",[_track objectAtIndex:0]);
+        [_session getLink:cookiesList audioHash:[_track objectAtIndex:0]];
     }
 }
 
@@ -138,17 +138,17 @@
     if ((_track) && !([_track isEqual:@"EOL"]) && !(isnan(len)||isnan(pos))) {
         NSDictionary* info = @{
             @"key": [NSString stringWithFormat:@"%d", _key],
-            @"file": [_track objectAtIndex:1],
-            @"author": [_track objectAtIndex:2],
-            @"song": [_track objectAtIndex:3],
+            @"file": [_track objectAtIndex:0],
+            @"author": [_track objectAtIndex:1],
+            @"song": [_track objectAtIndex:2],
             @"len": [NSNumber numberWithFloat: len],
             @"pos": [NSNumber numberWithFloat: pos],
-            @"img": [_track objectAtIndex:4],
+            @"img": [_track objectAtIndex:3],
             @"status":[NSNumber numberWithBool: _isPlaying]
         };
         return info;
     } else {
-        NSLog(@"No available track");
+        // No available track
         return NULL;
     }
         
@@ -199,9 +199,6 @@
     @catch (NSException *e){
         // list does not end until ending indentifier
         _key = _key-1;
-        if (![_session isLoading] && _isStream){
-            [_session loadMore];
-        }
         return NULL;
     }
 
@@ -223,13 +220,13 @@
         [_session loadAudioInfo];
 
     } else {
-        UIImage *image = [UIImage imageWithContentsOfFile:[_track objectAtIndex:4]];
+        UIImage *image = [UIImage imageWithContentsOfFile:[_track objectAtIndex:3]];
         NSDictionary* info = @{
             MPMediaItemPropertyArtwork:[[MPMediaItemArtwork alloc] initWithBoundsSize:image.size requestHandler:^UIImage * _Nonnull(CGSize size) {
                 return image;
             }],
-            MPMediaItemPropertyArtist: [_track objectAtIndex:2],
-            MPMediaItemPropertyTitle: [_track objectAtIndex:3],
+            MPMediaItemPropertyArtist: [_track objectAtIndex:1],
+            MPMediaItemPropertyTitle: [_track objectAtIndex:2],
             MPNowPlayingInfoPropertyMediaType: @(MPMediaTypeMusic),
             MPMediaItemPropertyPlaybackDuration: @(_player.duration),
             MPNowPlayingInfoPropertyPlaybackRate: @(_isPlaying ? _player.rate : 0),

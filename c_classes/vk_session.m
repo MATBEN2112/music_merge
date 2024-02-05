@@ -12,7 +12,6 @@ NSString *const nextFromPattern = @"\\b\"nextFrom\":\"(.*?)\",\\b";
 
 @implementation VKsessionManager
 - (id) init:(IOS_player *) player {
-    NSLog(@"CHILD");
     self = [super init];
     if (self){
         _cookieManager = [CookieManager sharedInstance];
